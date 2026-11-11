@@ -7,7 +7,7 @@
 The external-app test requires:
 
 - `NC_BASE_URL` reachable only from the test environment, default `http://127.0.0.1:18884` locally.
-- `NC_CONTAINER`: isolated test container, default `communications-nc36-qa`.
+- `NC_CONTAINER`: isolated test container, default `communications-ci-nextcloud`.
 - `NC_TEST_PASSWORD`: password shared by test accounts only; never production credentials.
 - `NC_ADMIN_USER` (default `qa_admin`), `NC_RECIPIENT_USER` (default `poc_second`) and `NC_UNRELATED_USER` (default `qa_unrelated`).
 - `PLAYWRIGHT_CHROMIUM_EXECUTABLE` for an existing local Chromium; omit when Playwright manages browsers.
@@ -18,4 +18,4 @@ Acceptance evidence must include the tested Nextcloud and LibreSign revisions, d
 
 ## CI source integrity
 
-The Nextcloud archive source is the version-36 development channel (`latest-master` as of November 2026). The bootstrap refuses a version other than 36. After the upstream master transitions to Nextcloud 37, the CI source must be updated to a verified Nextcloud 36 release artifact before the scheduled matrix can run. The LibreSign test pins a specific reviewed upstream commit and compiles its frontend assets; it is never used as an app-specific production adapter.
+The Nextcloud archive source is the development channel (`latest-master` for the current manifest requirement). The bootstrap reads the supported version from `appinfo/info.xml` and refuses any other version. When upstream master advances beyond the compatible version in the manifest, replace the archive source with a verified supported release artifact; the test will fail closed rather than silently testing the wrong version. The LibreSign test pins a specific reviewed upstream commit and compiles its frontend assets; it is never used as an app-specific production adapter.

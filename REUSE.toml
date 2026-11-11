@@ -3,7 +3,7 @@
 version = 1
 
 [[annotations]]
-path = ["package.json", "package-lock.json", "composer.json", "composer.lock", "*.json", "phpunit.xml.dist", "phpstan.neon.dist", "eslint.config.mjs", "playwright.config.mjs", ".gitignore", ".github/workflows/*.yml"]
+path = ["package.json", "package-lock.json", "composer.json", "composer.lock", "*.json", "l10n/*.json", "tests/ci/*.json", "phpunit.xml.dist", "phpstan.neon.dist", "eslint.config.mjs", "playwright.config.mjs", ".gitignore", ".github/workflows/*.yml"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 LibreCode Coop and contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"

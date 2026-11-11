@@ -1,6 +1,6 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
-# Comunicações (Communications)
+# Communications
 
 **An experimental Nextcloud app for institutional publications, notifications, and event-driven communication.**
 
@@ -11,9 +11,9 @@ Administrators publish information to eligible audiences using a single editor a
 ## Identity and requirements
 
 - App ID: `communications` (directory name must match).
-- Display name: **Comunicações**; English description: Communications.
+- Display name: **Communications**; Portuguese localization: **Comunicações**.
 - PHP >= 8.3 and Nextcloud **36** development version (in `appinfo/info.xml`).
-- SQLite is the currently verified integration environment. PostgreSQL and MariaDB compatibility needs verified CI evidence before release.
+- Local integration tests have passed on SQLite, PostgreSQL and MariaDB in Nextcloud 36-dev. Remote CI validation and stable-version certification remain required.
 - Optional Nextcloud apps: Notifications, Activity, Dashboard, Flow and Two-Factor Gateway. Providers must be configured separately.
 
 This project was derived from the local `contextualcampaigns` proof of concept. **It is a new app ID**, not a drop-in upgrade. Do not install it alongside `contextualcampaigns` in the same database; both historically use `cc_` tables. Data migration and upgrade from the old laboratory identifier are not supported.
