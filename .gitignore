@@ -1,0 +1,34 @@
+# Local environment, credentials, logs, and caches
+.env
+.env.*
+!.env.example
+*.log
+*.sqlite
+*.db
+node_modules/
+js/management.js
+js/campaigns.js
+js/flow.js
+css/management.css
+css/campaigns.css
+css/flow.css
+vendor/
+dist/
+dist-delivery/
+dist-flow/
+.cache/
+.lab/
+playwright-report/
+test-results/
+coverage/
+.phpunit.cache/
+.phpunit.result.cache
+.phpstan/
+.DS_Store
+__pycache__/
+*.pyc
+*.png
+!img/*.png
+
+# Disposable CI development instances
+.ci/
