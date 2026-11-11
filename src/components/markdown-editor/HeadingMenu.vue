@@ -10,7 +10,7 @@
 			class="markdown-heading-menu__toggle"
 			:aria-expanded="isOpen ? 'true' : 'false'"
 			aria-haspopup="menu"
-			:aria-label="t('communications', 'Estilo de título')"
+			:aria-label="t('communications', 'Heading style')"
 			@click.stop="toggleMenu"
 			@keydown.escape.prevent="closeMenu">
 			<NcIconSvgWrapper :path="isOpen ? mdiChevronUp : mdiChevronDown" :size="18" />
@@ -30,7 +30,7 @@
 					@click="clearHeading">
 					<span class="markdown-heading-menu__option markdown-heading-menu__option--p">
 						<!-- TRANSLATORS Menu option in the markdown editor that removes heading formatting and returns the text to normal paragraph style. -->
-						{{ t('communications', 'Parágrafo') }}
+						{{ t('communications', 'Paragraph') }}
 					</span>
 				</button>
 			</li>
@@ -77,7 +77,7 @@ const headingClass = (level) => {
 
 const headingText = (level) => {
 	// TRANSLATORS Label shown in the markdown editor heading menu for each option. {level} is the heading level number.
-	return t('communications', 'Título {level}', { level })
+	return t('communications', 'Heading {level}', { level })
 }
 
 const clearHeading = () => {

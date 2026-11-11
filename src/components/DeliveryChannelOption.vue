@@ -1,6 +1,7 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup>
+import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -39,7 +40,7 @@ function change(channel, enabled) {
           <template #trigger>
             <NcButton variant="tertiary" class="cc-delivery-channel-help"
                       :aria-label="'Detalhes sobre ' + channel.label"
-                      :title="'Por que este canal está ' + channel.status.toLowerCase() + '?'">
+                      :title="t('communications', 'Why is this channel {status}?', {status: channel.status.toLowerCase()})">
               <template #icon>
                 <NcIconSvgWrapper :path="mdiHelpCircleOutline" :size="18"/>
               </template>

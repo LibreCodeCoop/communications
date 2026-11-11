@@ -1,6 +1,8 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup>
+import { t, getLanguage } from '@nextcloud/l10n'
+
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 const emit=defineEmits(['unread-count'])
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -37,7 +39,7 @@ const gatewayChannels=ref([])
 const gatewayPlaceholder={
   sms:'+5521999999999', signal:'+5521999999999',
   telegram:'123456789', gowhatsapp:'+5521999999999',
-  whatsappbusiness:'+5521999999999', xmpp:'usuario@dominio.com',
+  whatsappbusiness:'+5521999999999', xmpp:'user@example.com',
 }
 async function toggleGatewaySettings() {
   gatewaySettingsOpen.value=!gatewaySettingsOpen.value
@@ -66,7 +68,7 @@ async function saveGatewaySettings() {
     ]))
     const data=await request('/api/gateway-preferences','POST',{channels})
     gatewayChannels.value=data.channels||[]
-    gatewaySuccess.value='Preferências salvas. Você pode cancelar o consentimento a qualquer momento.'
+    gatewaySuccess.value=t('communications', 'Preferences saved. You can withdraw consent at any time.')
   }catch(e){gatewayError.value=e.message}
   finally{gatewaySaving.value=false}
 }
@@ -109,7 +111,7 @@ const commentBefore = ref(null)
 let generation = 0
 
 function dateText(ts) {
-  return ts ? new Date(ts * 1000).toLocaleString(navigator.language || 'pt-BR', {
+  return ts ? new Date(ts * 1000).toLocaleString(getLanguage().replace('_', '-'), {
     dateStyle:'medium', timeStyle:'short',
   }) : ''
 }
@@ -123,7 +125,7 @@ async function request(path, method = 'GET', body) {
   }
   const response=await fetch(BASE+path, opts)
   const data=await response.json().catch(()=>({}))
-  if (!response.ok) throw new Error(data.error || 'Falha HTTP '+response.status)
+  if (!response.ok) throw new Error(data.error || t('communications', 'HTTP failure ')+response.status)
   return data
 }
 async function refresh() {
@@ -224,27 +226,25 @@ onUnmounted(()=>window.removeEventListener('popstate',onPopState))
 </script>
 
 <template>
-  <section class="cc-board-app" aria-label="Caixa de entrada">
+  <section class="cc-board-app" :aria-label="t('communications', 'Inbox')">
     <main class="cc-board-main">
       <header class="cc-board-heading">
         <div>
-          <h2>Suas mensagens</h2>
-          <p>Consulte os comunicados e avisos destinados a você.</p>
+          <h2>{{ t('communications', 'Your messages') }}</h2>
+          <p>{{ t('communications', 'View announcements and notices addressed to you.') }}</p>
         </div>
         <NcButton variant="tertiary" class="cc-gateway-preferences-button"
-                  text="Preferências de avisos" :pressed="gatewaySettingsOpen"
+                  :text="t('communications', 'Notification preferences')" :pressed="gatewaySettingsOpen"
                   @click="toggleGatewaySettings">
           <template #icon><NcIconSvgWrapper :path="mdiBellCogOutline" :size="19"/></template>
         </NcButton>
       </header>
-      <section v-if="gatewaySettingsOpen" class="cc-gateway-preferences" aria-label="Preferências de mensageria">
-        <h3>Receber avisos por outros canais</h3>
-        <p>Escolha individualmente onde deseja receber publicações. Os dados usados na
-           autenticação em dois fatores não serão reutilizados. Só serão enviadas mensagens
-           por canais com seu consentimento explícito e com o provedor configurado.</p>
+      <section v-if="gatewaySettingsOpen" class="cc-gateway-preferences" :aria-label="t('communications', 'Messaging preferences')">
+        <h3>{{ t('communications', 'Receive notifications through other channels') }}</h3>
+        <p>{{ t('communications', 'Choose the channels where you want to receive publications. Two-factor authentication data is never reused. Messages are sent only with your explicit consent and a configured provider.') }}</p>
         <NcNoteCard v-if="gatewayError" type="error" role="alert">{{ gatewayError }}</NcNoteCard>
         <NcNoteCard v-if="gatewaySuccess" type="success" role="status">{{ gatewaySuccess }}</NcNoteCard>
-        <p v-if="gatewayLoading">Carregando disponibilidade…</p>
+        <p v-if="gatewayLoading">{{ t('communications', 'Checking availability…') }}</p>
         <div v-else v-for="channel in gatewayChannels" :key="channel.id"
              class="cc-gateway-preference" :data-gateway="channel.id">
           <div class="cc-gateway-preference-heading">
@@ -252,113 +252,111 @@ onUnmounted(()=>window.removeEventListener('popstate',onPopState))
                                    :disabled="!channel.available && !channel.enabled">
               {{ channel.label }}
             </NcCheckboxRadioSwitch>
-            <span>{{ channel.available ? 'Configurado' : channel.installed ? 'Provedor não configurado' : 'Aplicativo não instalado' }}</span>
+            <span>{{ channel.available ? t('communications', 'Configured') : channel.installed ? t('communications', 'Provider not configured') : t('communications', 'App not installed') }}</span>
           </div>
           <template v-if="channel.enabled">
             <NcTextField v-model="channel.destination"
-                         :label="'Destino para '+channel.label"
+                         :label="t('communications', 'Destination for {channel}', {channel: channel.label})"
                          :placeholder="gatewayPlaceholder[channel.id]" :maxlength="190"
                          :disabled="!channel.available"/>
             <NcCheckboxRadioSwitch v-model="channel.sponsored" type="checkbox"
                                    :disabled="!channel.available">
-              Autorizo também conteúdo patrocinado neste canal
+              {{ t('communications', 'I also consent to sponsored content on this channel') }}
             </NcCheckboxRadioSwitch>
           </template>
         </div>
         <p v-if="gatewaySettingsLoaded && !gatewayChannels.some(ch => ch.available)" class="cc-gateway-preferences-hint">
-          Nenhum provedor está configurado neste Nextcloud. Solicite ao administrador a instalação
-          do Two-Factor Gateway e a configuração de um canal.
+          {{ t('communications', 'No provider is configured on this Nextcloud. Ask an administrator to install Two-Factor Gateway and configure a channel.') }}
         </p>
         <p class="cc-gateway-preferences-hint">
-          Desativar um canal e salvar remove seu identificador das preferências.
-          O envio é em fila; uma mensagem já enviada não pode ser recolhida.
+          {{ t('communications', 'Disabling a channel and saving removes its identifier from your preferences. Delivery is queued; sent messages cannot be recalled.') }}
         </p>
-        <NcButton v-if="gatewaySettingsLoaded" text="Salvar preferências"
+        <NcButton v-if="gatewaySettingsLoaded" :text="t('communications', 'Save preferences')"
                   variant="primary" :disabled="gatewaySaving" @click="saveGatewaySettings"/>
       </section>
       <NcNoteCard v-if="error" type="error" role="alert">{{ error }}</NcNoteCard>
       <template v-if="!selected">
         <div class="cc-board-search">
-          <NcTextField v-model="search" type="search" label="Pesquisar mensagens"
+          <NcTextField v-model="search" type="search" :label="t('communications', 'Search messages')"
                        @keyup.enter="doSearch" />
-          <NcButton text="Pesquisar" @click="doSearch">
+          <NcButton :text="t('communications', 'Search')" @click="doSearch">
             <template #icon><NcIconSvgWrapper :path="mdiMagnify" :size="20"/></template>
           </NcButton>
         </div>
-        <div class="cc-inbox-filters" role="group" aria-label="Filtro de mensagens">
+        <div class="cc-inbox-filters" role="group" :aria-label="t('communications', 'Message filter')">
           <NcButton :pressed="filter==='all'" :variant="filter==='all'?'primary':'tertiary'"
-                    text="Todas" @click="switchFilter('all')" />
+                    :text="t('communications', 'All')" @click="switchFilter('all')" />
           <NcButton :pressed="filter==='unread'" :variant="filter==='unread'?'primary':'tertiary'"
-                    :text="'Não lidas ('+unreadTotal+')'" @click="switchFilter('unread')" />
+                    :text="t('communications', 'Unread ({count})', {count: unreadTotal})" @click="switchFilter('unread')" />
         </div>
-        <p v-if="loading" role="status">Carregando mensagens…</p>
-        <NcEmptyContent v-else-if="items.length===0" name="Nenhuma mensagem encontrada"
-                        description="Você não tem mensagens nesse filtro." />
+        <p v-if="loading" role="status">{{ t('communications', 'Loading messages…') }}</p>
+        <NcEmptyContent v-else-if="items.length===0" :name="t('communications', 'No messages found')"
+                        :description="t('communications', 'You have no messages matching this filter.')" />
         <div v-else class="cc-board-list">
           <article v-for="item in items" :key="item.id" class="cc-board-article" :class="{'cc-board-unread':!item.readAt}"
                    :style="{textAlign:item.textAlign||'left'}">
             <div class="cc-board-metadata">
-              <strong v-if="!item.readAt" class="cc-unread-label">Não lida</strong>
+              <strong v-if="!item.readAt" class="cc-unread-label">{{ t('communications', 'Unread') }}</strong>
               <span>{{ item.author }}</span>
               <time :datetime="new Date(item.publishedAt*1000).toISOString()">{{ dateText(item.publishedAt) }}</time>
-              <span v-if="item.endsAt" class="cc-board-chip">Até {{ dateText(item.endsAt) }}</span>
-              <span v-if="item.source==='contextual'" class="cc-board-chip">Aviso contextual</span>
-              <span v-if="item.category==='sponsored'" class="cc-board-chip">Patrocinado</span>
+              <span v-if="item.endsAt" class="cc-board-chip">{{ t('communications', 'Until') }} {{ dateText(item.endsAt) }}</span>
+              <span v-if="item.source==='contextual'" class="cc-board-chip">{{ t('communications', 'Contextual notice') }}</span>
+              <span v-if="item.category==='sponsored'" class="cc-board-chip">{{ t('communications', 'Sponsored') }}</span>
             </div>
             <h2>{{ item.headline }}</h2>
             <NcRichText :text="item.message" :use-markdown="true" :reference-limit="0" />
             <footer class="cc-board-article-actions">
-              <NcButton text="Abrir mensagem" @click="openItem(item.id)">
+              <NcButton :text="t('communications', 'Open message')" @click="openItem(item.id)">
                 <template #icon><NcIconSvgWrapper :path="mdiCommentTextOutline" :size="18"/></template>
               </NcButton>
-              <span v-if="item.commentsEnabled">{{ item.commentCount }} comentário(s)</span>
+              <span v-if="item.commentsEnabled">{{ item.commentCount }} {{ t('communications', 'comment(s)') }}</span>
             </footer>
           </article>
         </div>
-        <nav v-if="total>10" class="cc-board-pagination" aria-label="Navegação de mensagens">
-          <NcButton text="Anterior" :disabled="page<=1" @click="changePage(-1)" />
-          <span>Página {{ page }} de {{ Math.ceil(total/10) }}</span>
-          <NcButton text="Próxima" :disabled="!hasMore" @click="changePage(1)" />
+        <nav v-if="total>10" class="cc-board-pagination" :aria-label="t('communications', 'Message navigation')">
+          <NcButton :text="t('communications', 'Previous')" :disabled="page<=1" @click="changePage(-1)" />
+          <span>{{ t('communications', 'Page') }} {{ page }} {{ t('communications', 'of') }} {{ Math.ceil(total/10) }}</span>
+          <NcButton :text="t('communications', 'Next')" :disabled="!hasMore" @click="changePage(1)" />
         </nav>
       </template>
       <template v-else>
-        <NcButton text="Voltar à caixa de entrada" variant="tertiary" @click="closeItem">
+        <NcButton :text="t('communications', 'Back to Inbox')" variant="tertiary" @click="closeItem">
           <template #icon><NcIconSvgWrapper :path="mdiArrowLeft" :size="18"/></template>
         </NcButton>
         <NcNoteCard v-if="selected.inInbox === false && selected.source === 'canal'" type="info" class="cc-direct-channel-note">
-          Mensagem recebida por outro canal. Ela não foi adicionada à sua Caixa de entrada.
+          {{ t('communications', 'This message arrived through another channel and was not added to your Inbox.') }}
         </NcNoteCard>
         <article class="cc-board-article cc-board-detail"
                  :style="{textAlign:selected.textAlign||'left'}">
           <div class="cc-board-metadata">
             <span>{{ selected.author }}</span>
             <time :datetime="new Date(selected.publishedAt*1000).toISOString()">{{ dateText(selected.publishedAt) }}</time>
-            <span v-if="selected.endsAt" class="cc-board-chip">Até {{ dateText(selected.endsAt) }}</span>
+            <span v-if="selected.endsAt" class="cc-board-chip">{{ t('communications', 'Until') }} {{ dateText(selected.endsAt) }}</span>
           </div>
           <h2 dir="auto">{{ selected.headline }}</h2>
           <NcRichText :text="selected.message" :use-markdown="true" :reference-limit="0"/>
           <a v-if="selected.ctaLabel && safeLink(selected.ctaUrl)" class="cc-board-cta"
              :href="safeLink(selected.ctaUrl)" rel="noopener noreferrer">{{ selected.ctaLabel }}</a>
         </article>
-        <section v-if="selected.commentsEnabled" class="cc-board-comments" :aria-label="'Comentários de '+selected.headline">
-          <h2>Comentários ({{ selected.commentCount }})</h2>
+        <section v-if="selected.commentsEnabled" class="cc-board-comments" :aria-label="t('communications', 'Comments on {title}', {title: selected.headline})">
+          <h2>{{ t('communications', 'Comments (') }}{{ selected.commentCount }})</h2>
           <form @submit.prevent="sendComment">
-            <NcTextArea v-model="commentDraft" label="Escrever comentário"
-                        :maxlength="4000" :rows="3" placeholder="Escreva seu comentário. Use @identificador para mencionar uma pessoa." />
-            <NcButton variant="primary" text="Publicar comentário" :disabled="commentBusy || !commentDraft.trim()"
+            <NcTextArea v-model="commentDraft" :label="t('communications', 'Write a comment')"
+                        :maxlength="4000" :rows="3" :placeholder="t('communications', 'Write your comment. Use @identifier to mention someone.')" />
+            <NcButton variant="primary" :text="t('communications', 'Post comment')" :disabled="commentBusy || !commentDraft.trim()"
                       @click="sendComment" />
           </form>
-          <div v-if="comments.length===0" class="cc-board-empty-comments">Ainda não há comentários.</div>
+          <div v-if="comments.length===0" class="cc-board-empty-comments">{{ t('communications', 'No comments yet.') }}</div>
           <div v-for="comment in comments" :key="comment.id" class="cc-board-comment">
             <div class="cc-board-metadata">
               <strong>{{ comment.author }}</strong>
               <time :datetime="new Date(comment.createdAt*1000).toISOString()">{{ dateText(comment.createdAt) }}</time>
               <NcButton v-if="comment.canDelete" size="small" variant="tertiary"
-                        text="Excluir" :disabled="commentBusy" @click="removeComment(comment)"/>
+                        :text="t('communications', 'Delete')" :disabled="commentBusy" @click="removeComment(comment)"/>
             </div>
             <NcRichText :text="comment.message" :use-markdown="true" :reference-limit="0"/>
           </div>
-          <NcButton v-if="commentHasMore" text="Carregar comentários anteriores" @click="loadComments(true)"/>
+          <NcButton v-if="commentHasMore" :text="t('communications', 'Load earlier comments')" @click="loadComments(true)"/>
         </section>
       </template>
     </main>

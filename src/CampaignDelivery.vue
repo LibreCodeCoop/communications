@@ -3,6 +3,7 @@
   SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 <script setup>
+import { t } from '@nextcloud/l10n'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import CampaignPresentation from './components/CampaignPresentation.vue'
 
@@ -173,7 +174,7 @@ onUnmounted(()=>{
 
 <template>
   <section v-if="banners.length" class="cc-live-stack"
-           role="region" aria-label="Comunicados disponíveis">
+           role="region" :aria-label="t('communications', 'Available announcements')">
     <CampaignPresentation v-for="item in banners" :key="item.deliveryId"
                           :campaign="item" :open="true"
                           @close="finish(item,'dismiss')"

@@ -2,7 +2,8 @@
   - SPDX-FileCopyrightText: 2026 LibreCode coop and LibreCode contributors
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
-<script setup>
+<script setup>import { t } from '@nextcloud/l10n'
+
 import { computed } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
@@ -28,7 +29,7 @@ const textStyle = computed(()=>{
     ? 'color-mix(in srgb, '+c+' 25%, var(--color-main-text) 75%)' : undefined
   return {textAlign:props.campaign.text_align || 'left', color}
 })
-const title = computed(() => props.campaign.headline || props.campaign.title || 'Campanha sem título')
+const title = computed(() => props.campaign.headline || props.campaign.title || t('communications', 'Untitled campaign'))
 const message = computed(() => props.campaign.message || '')
 const presentation = computed(() => props.campaign.presentation === 'modal' ? 'modal' : 'banner')
 const ctaLabel = computed(() => props.campaign.cta_label || props.campaign.ctaLabel || '')
@@ -49,8 +50,8 @@ function updateOpen(open) { if (!open) close() }
       <NcIconSvgWrapper v-if="appearance.iconPath" class="cc-banner-note-icon" :path="appearance.iconPath" :size="20" :style="{color:'var(--note-theme)'}" inline />
       <span v-else class="cc-note-empty-icon" aria-hidden="true"></span>
     </template>
-    <span v-if="preview" class="cc-preview-screenreader-note">Modo de teste. Nenhuma interação será registrada.</span>
-    <p v-if="sponsored" class="cc-sponsored-label">Conteúdo patrocinado</p>
+    <span v-if="preview" class="cc-preview-screenreader-note">{{ t('communications', 'Test mode. No interaction is recorded.') }}</span>
+    <p v-if="sponsored" class="cc-sponsored-label">{{ t('communications', 'Sponsored content') }}</p>
     <div class="cc-live-content" :style="textStyle" dir="auto">
       <h2 dir="auto">{{ title }}</h2>
       <NcRichText :text="message" :use-markdown="true" :reference-limit="0" />
@@ -58,8 +59,8 @@ function updateOpen(open) { if (!open) close() }
     <div class="cc-live-actions">
       <NcButton v-if="ctaLabel && link" variant="tertiary" :href="preview ? undefined : link" :target="preview ? undefined : target"
                 :text="ctaLabel" @click="click" />
-      <NcButton v-if="sponsored" variant="tertiary" text="Ocultar publicidade" @click="optout" />
-      <NcButton v-if="campaign.dismissible!==false" variant="primary" text="Entendi" @click="close" />
+      <NcButton v-if="sponsored" variant="tertiary" :text="t('communications', 'Hide sponsored content')" @click="optout" />
+      <NcButton v-if="campaign.dismissible!==false" variant="primary" :text="t('communications', 'Got it')" @click="close" />
     </div>
   </NcNoteCard>
 
@@ -70,14 +71,14 @@ function updateOpen(open) { if (!open) close() }
             size="normal"
             @update:open="updateOpen">
     <div class="cc-live-dialog-content" dir="auto" :data-theme="theme" :style="[{...appearance.style}, textStyle]">
-      <p v-if="sponsored" class="cc-sponsored-label">Conteúdo patrocinado</p>
-      <span v-if="preview" class="cc-preview-screenreader-note">Modo de teste. Nenhuma interação será registrada.</span>
+      <p v-if="sponsored" class="cc-sponsored-label">{{ t('communications', 'Sponsored content') }}</p>
+      <span v-if="preview" class="cc-preview-screenreader-note">{{ t('communications', 'Test mode. No interaction is recorded.') }}</span>
       <NcRichText :text="message" :use-markdown="true" :reference-limit="0" />
       <div class="cc-live-actions">
         <NcButton v-if="ctaLabel && link" variant="tertiary" :href="preview ? undefined : link" :target="preview ? undefined : target"
                   :text="ctaLabel" @click="click" />
-        <NcButton v-if="sponsored" variant="tertiary" text="Ocultar publicidade" @click="optout" />
-        <NcButton variant="primary" text="Entendi" @click="close" />
+        <NcButton v-if="sponsored" variant="tertiary" :text="t('communications', 'Hide sponsored content')" @click="optout" />
+        <NcButton variant="primary" :text="t('communications', 'Got it')" @click="close" />
       </div>
     </div>
   </NcDialog>

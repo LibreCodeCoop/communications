@@ -1,6 +1,8 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup>
+import { t } from '@nextcloud/l10n'
+
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -39,7 +41,7 @@ function applyHistory() {
 }
 function onUnreadCount(total) {unreadCount.value=total}
 function onEditorView(next) {editorView.value=next}
-const hubTitle=computed(()=>section.value==='inbox'?'Caixa de entrada':'Publicações')
+const hubTitle=computed(()=>section.value==='inbox'?t('communications', 'Inbox'):t('communications', 'Publications'))
 onMounted(()=>{applyHistory();window.addEventListener('popstate',applyHistory)})
 onUnmounted(()=>window.removeEventListener('popstate',applyHistory))
 </script>
@@ -49,26 +51,26 @@ onUnmounted(()=>window.removeEventListener('popstate',applyHistory))
     <div class="cc-hub-shell">
       <header class="cc-hub-top">
         <div class="cc-hub-brand">
-          <h1>Comunicações</h1>
-          <p>Envie e acompanhe avisos, comunicados e mensagens no Nextcloud.</p>
+          <h1>{{ t('communications', 'Communications') }}</h1>
+          <p>{{ t('communications', 'Send and manage announcements and messages in Nextcloud.') }}</p>
         </div>
-        <NcButton v-if="canEdit && section==='publications' && editorView==='list'" variant="primary" text="Nova publicação" @click="navigate('publications',true)">
+        <NcButton v-if="canEdit && section==='publications' && editorView==='list'" variant="primary" :text="t('communications', 'New publication')" @click="navigate('publications',true)">
           <template #icon><NcIconSvgWrapper :path="mdiPlus" :size="20" /></template>
         </NcButton>
       </header>
-      <nav class="cc-hub-tabs" aria-label="Áreas de comunicações">
+      <nav class="cc-hub-tabs" :aria-label="t('communications', 'Communication areas')">
         <NcButton class="cc-hub-tab" :class="{'cc-hub-tab-active':section==='inbox'}"
                   :pressed="section==='inbox'" variant="tertiary"
                   @click="navigate('inbox')">
           <template #icon><NcIconSvgWrapper :path="mdiInboxOutline" :size="19"/></template>
-          <span>Caixa de entrada</span>
-          <span v-if="unreadCount!==null && unreadCount>0" class="cc-hub-count" :aria-label="unreadCount+' não lidas'">{{ unreadCount }}</span>
+          <span>{{ t('communications', 'Inbox') }}</span>
+          <span v-if="unreadCount!==null && unreadCount>0" class="cc-hub-count" :aria-label="t('communications', 'Unread messages: {count}', {count: unreadCount})">{{ unreadCount }}</span>
         </NcButton>
         <NcButton v-if="canEdit" class="cc-hub-tab" :class="{'cc-hub-tab-active':section==='publications'}"
                   :pressed="section==='publications'" variant="tertiary"
                   @click="navigate('publications')">
           <template #icon><NcIconSvgWrapper :path="mdiFileDocumentEditOutline" :size="19"/></template>
-          <span>Publicações</span>
+          <span>{{ t('communications', 'Publications') }}</span>
         </NcButton>
       </nav>
       <!-- v-show belongs on real DOM wrappers: CampaignAdmin has a fragment

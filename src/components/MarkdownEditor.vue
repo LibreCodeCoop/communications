@@ -177,29 +177,29 @@ const emit = defineEmits<{
 	(event: 'update:modelValue', value: string): void
 }>()
 // TRANSLATORS Accessible label for markdown toolbar containing formatting shortcut actions.
-const markdownFormattingShortcutsLabel = t('communications', 'Ferramentas de formatação Markdown')
+const markdownFormattingShortcutsLabel = t('communications', 'Markdown formatting tools')
 // TRANSLATORS Toolbar button label applying bold markdown formatting.
-const boldLabel = t('communications', 'Negrito')
+const boldLabel = t('communications', 'Bold')
 // TRANSLATORS Toolbar button label applying italic markdown formatting.
-const italicLabel = t('communications', 'Itálico')
+const italicLabel = t('communications', 'Italic')
 // TRANSLATORS Toolbar button label toggling unordered (bulleted) markdown list.
-const unorderedListLabel = t('communications', 'Lista com marcadores')
+const unorderedListLabel = t('communications', 'Bulleted list')
 // TRANSLATORS Toolbar button label toggling ordered (numbered) markdown list.
-const orderedListLabel = t('communications', 'Lista numerada')
+const orderedListLabel = t('communications', 'Numbered list')
 // TRANSLATORS Toolbar button label toggling markdown blockquote formatting.
-const blockquoteLabel = t('communications', 'Citação')
+const blockquoteLabel = t('communications', 'Quote')
 // TRANSLATORS Toolbar button label toggling inline code markdown formatting.
-const inlineCodeLabel = t('communications', 'Código em linha')
+const inlineCodeLabel = t('communications', 'Inline code')
 // TRANSLATORS Toolbar button label inserting markdown fenced code block.
-const codeBlockLabel = t('communications', 'Bloco de código')
+const codeBlockLabel = t('communications', 'Code block')
 // TRANSLATORS Toolbar button label inserting markdown hyperlink.
-const linkLabel = t('communications', 'Inserir link')
+const linkLabel = t('communications', 'Insert link')
 // TRANSLATORS Toolbar button label inserting markdown horizontal rule separator.
-const horizontalRuleLabel = t('communications', 'Linha horizontal')
+const horizontalRuleLabel = t('communications', 'Horizontal rule')
 // TRANSLATORS Toolbar button label for undo action in markdown editor.
-const undoLabel = t('communications', 'Desfazer')
+const undoLabel = t('communications', 'Undo')
 // TRANSLATORS Toolbar button label for redo action in markdown editor.
-const redoLabel = t('communications', 'Refazer')
+const redoLabel = t('communications', 'Redo')
 
 const toggleSurroundSelection = (view: EditorView, prefix: string, suffix: string = prefix) => {
 	const mainSelection = view.state.selection.main

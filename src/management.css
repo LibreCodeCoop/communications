@@ -1078,7 +1078,7 @@
  .cc-delivery-channel-help-content {min-width:0;max-width:min(280px,calc(100vw - 48px));}
 }
 
-/* Gateway channels remain part of the single "Avisar também" delivery model. */
+/* Gateway channels remain part of the single "Also notify" delivery model. */
 .cc-gateway-provider-details {margin-top:12px;border:1px solid var(--color-border);
  border-radius:10px;padding:9px 13px;background:var(--color-main-background);}
 .cc-gateway-provider-details>summary {display:flex;gap:12px;justify-content:space-between;

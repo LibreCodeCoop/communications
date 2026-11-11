@@ -1,6 +1,8 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup>
+import { t } from '@nextcloud/l10n'
+
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
@@ -97,7 +99,7 @@ const pageRouteValue = computed({
   },
 })
 const routeOptions = computed(()=>[
-  {value:ANY_PAGE,label:'Qualquer página deste aplicativo',description:'Todas as páginas de interface reconhecidas'},
+  {value:ANY_PAGE,label:t('communications', 'Any page in this app'),description:t('communications', 'All recognized interface pages')},
   ...routes.value,
 ])
 const routeVariables = computed(()=>[...new Set([...props.pageRoute.matchAll(/\{([A-Za-z][A-Za-z0-9_]*)\}/g)].map(match=>match[1]))])
@@ -116,35 +118,35 @@ watch([()=>props.modelValue,()=>props.placement], (next,previous)=>{
   if (previous[0] !== next[0] || previous[1] !== next[1]) emit('update:pageFilters',{})
 })
 const selectedRouteLabel = computed(()=>
-  props.pageRoute==='' ? 'Qualquer página do aplicativo'
+  props.pageRoute==='' ? t('communications', 'Any application page')
     : routes.value.find(route=>route.value===props.pageRoute)?.label||props.pageRoute
 )
 const webhookExample = computed(()=>JSON.stringify({
-  campaignId:props.campaignId||'<ID da campanha após salvar>',
-  uid:'usuario_nextcloud', eventId:'evento-unico-001',
+  campaignId:props.campaignId||t('communications', '<campaign ID after saving>'),
+  uid:'nextcloud_user', eventId:'unique-event-001',
 },null,2))
 const summary = computed(()=>{
-  if(selectedIntent.value==='board')return 'Disponível assim que ativar'
-  if(selectedIntent.value==='schedule')return 'Durante o período definido, na próxima visita elegível'
+  if(selectedIntent.value==='board')return t('communications', 'Available on activation')
+  if(selectedIntent.value==='schedule')return t('communications', 'During the chosen period, on the next eligible visit')
   if(selectedIntent.value==='advanced'&&selectedAdvanced.value)
     return selectedAdvanced.value.label+' → '+selectedAdvanced.value.actions[0].label
-  if(!selectedApp.value)return 'Escolha um aplicativo'
+  if(!selectedApp.value)return t('communications', 'Choose an app')
   if(selectedMode.value==='visit')return selectedApp.value.label+' → '+selectedRouteLabel.value
-  return selectedAction.value?selectedApp.value.label+' → '+selectedAction.value.label:'Selecione um evento do aplicativo'
+  return selectedAction.value?selectedApp.value.label+' → '+selectedAction.value.label:t('communications', 'Select an application event')
 })
 const explanation = computed(()=>{
   if(selectedIntent.value==='board')
-    return 'Ao ativar, os canais de envio entram na fila; o conteúdo aparece na Caixa de entrada se selecionada e banners ou janelas serão vistos na próxima visita elegível.'
+    return t('communications', 'On activation, outbound channels are queued; content appears in Inbox if selected, and banners or dialogs appear on the next eligible visit.')
   if(selectedIntent.value==='schedule')
-    return 'A publicação só se torna elegível durante a vigência; a apresentação ocorre quando o usuário voltar ao Nextcloud.'
+    return t('communications', 'The publication becomes eligible only within its availability period; it appears when the user returns to Nextcloud.')
   if(selectedIntent.value==='advanced'&&selectedAdvancedId.value==='webhook')
-    return 'O evento HMAC indica campaignId e uid. Apenas esta campanha e o usuário indicado podem receber a apresentação, respeitando o público-alvo e a frequência.'
+    return t('communications', 'The HMAC event specifies campaignId and uid. Only this campaign and the specified user can receive the presentation, subject to audience and frequency limits.')
   if(selectedIntent.value==='advanced'&&selectedAdvancedId.value==='flow')
-    return 'O Flow verifica as condições configuradas antes de registrar a ocorrência para o usuário.'
+    return t('communications', 'Flow checks the configured conditions before recording the occurrence for that user.')
   if(selectedMode.value==='visit'&&selectedApp.value)
-    return props.pageRoute ? 'Apenas quando o usuário autenticado entrar nessa rota de interface. Parâmetros variáveis da URL não são armazenados.'
-      : 'Ao abrir qualquer página de interface de '+selectedApp.value.label+'. Chamadas de API, downloads e páginas de outros aplicativos não disparam esta campanha.'
-  return selectedAction.value?.description||'Escolha um evento confiável emitido pelo aplicativo.'
+    return props.pageRoute ? t('communications', 'Only when the authenticated user opens this interface route. Variable URL parameters are not stored.')
+      : t('communications', 'When opening any interface page in ')+selectedApp.value.label+t('communications', '. API calls, downloads, and other apps\' pages do not trigger this campaign.')
+  return selectedAction.value?.description||t('communications', 'Choose a trusted event emitted by the application.')
 })
 const canSelectEvent = computed(()=>!!selectedApp.value?.canEvents)
 const canSelectPage = computed(()=>!!selectedApp.value?.canPages)
@@ -235,7 +237,7 @@ async function loadRoutes(app){
     const json=await response.json()
     if(generation===routeGeneration)routes.value=json.routes||[]
   }catch(error){
-    if(generation===routeGeneration)routeError.value='Não foi possível consultar as páginas deste aplicativo.'
+    if(generation===routeGeneration)routeError.value=t('communications', 'Could not retrieve pages for this app.')
   }finally{
     if(generation===routeGeneration)routeLoading.value=false
   }
@@ -250,9 +252,9 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
 
 <template>
   <div class="cc-automation" data-testid="automation-builder">
-    <h2 class="cc-automation-title">Quando disponibilizar a publicação?</h2>
+    <h2 class="cc-automation-title">{{ t('communications', 'When should the publication become available?') }}</h2>
 
-    <div class="cc-automation-intents" role="group" aria-label="Origem do disparo">
+    <div class="cc-automation-intents" role="group" :aria-label="t('communications', 'Trigger source')">
       <NcButton v-for="intent in intents" :key="intent.id"
                 class="cc-automation-intent-card"
                 :pressed="selectedIntent===intent.id"
@@ -271,20 +273,20 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
       <div v-if="selectedIntent==='app'" class="cc-automation-configuration">
 
         <div class="cc-automation-field">
-          <div class="cc-field-label"><label for="cc-app-source">Escolha um aplicativo *</label>
+          <div class="cc-field-label"><label for="cc-app-source">{{ t('communications', 'Choose an application *') }}</label>
             <NcPopover popup-role="dialog" :triggers="['click', 'focus', 'hover']" placement="bottom-start" class="cc-app-help-popover">
               <template #trigger>
-                <NcButton variant="tertiary" aria-label="Ajuda: seleção de aplicativos" title="Ajuda sobre aplicativos">
+                <NcButton variant="tertiary" :aria-label="t('communications', 'Help: selecting applications')" :title="t('communications', 'Help about applications')">
                   <template #icon><NcIconSvgWrapper :path="mdiHelpCircleOutline" :size="20" /></template>
                 </NcButton>
               </template>
-              <p class="cc-help-content">Somente aplicativos habilitados com eventos integrados ou páginas navegáveis aparecem. A descoberta das páginas é automática. Um aplicativo só oferece eventos de negócio quando possui um adaptador confiável.</p>
+              <p class="cc-help-content">{{ t('communications', 'Only enabled apps with integrated events or browsable pages are shown. Pages are discovered automatically. Business events require a trusted adapter.') }}</p>
             </NcPopover>
           </div>
           <NcSelect v-model="appValue" :options="appOptions" :reduce="app=>app.id"
                     :filterable="false" :clearable="true" input-id="cc-app-source"
-                    label="label" placeholder="Pesquisar aplicativos instalados..."
-                    aria-label-combobox="Selecionar aplicativo"
+                    label="label" :placeholder="t('communications', 'Search installed apps...')"
+                    :aria-label-combobox="t('communications', 'Select application')"
                     @search="appSearch=$event">
             <template #option="option">
               <div class="cc-automation-option">
@@ -293,8 +295,8 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
                 <span>
                   <strong>{{ option.label }}</strong>
                   <small>
-                    {{ option.canEvents&&option.canPages?'Eventos e páginas':
-                      option.canEvents?'Eventos disponíveis':'Páginas disponíveis' }}
+                    {{ option.canEvents&&option.canPages?t('communications', 'Events and pages'):
+                      option.canEvents?t('communications', 'Events available'):t('communications', 'Pages available') }}
                   </small>
                 </span>
               </div>
@@ -306,29 +308,29 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
               </span>
             </template>
           </NcSelect>
-          <p v-if="applications.length > 12" class="cc-native-hint">{{ applications.length }} opções: pesquise pelo nome para encontrar outras.</p>
+          <p v-if="applications.length > 12" class="cc-native-hint">{{ applications.length }} {{ t('communications', 'options: search by name to find more.') }}</p>
         </div>
 
         <template v-if="selectedApp">
           <div v-if="canSelectEvent&&canSelectPage" class="cc-automation-mode">
-            <NcRadioGroup v-model="modeValue" label="O que deve acontecer?">
+            <NcRadioGroup v-model="modeValue" :label="t('communications', 'What should happen?')">
               <div class="cc-automation-mode-options">
-                <NcRadioGroupButton value="event" label="Um evento do aplicativo" />
-                <NcRadioGroupButton value="visit" label="Acesso a uma página" />
+                <NcRadioGroupButton value="event" :label="t('communications', 'An application event')" />
+                <NcRadioGroupButton value="visit" :label="t('communications', 'Page visit')" />
               </div>
             </NcRadioGroup>
           </div>
           <div v-else class="cc-native-hint cc-automation-only-mode">
-            {{ canSelectPage?'Este aplicativo oferece páginas de interface.':'Este aplicativo oferece eventos integrados, mas não possui página própria na navegação.' }}
+            {{ canSelectPage?t('communications', 'This app provides interface pages.'):t('communications', 'This app provides integrated events but has no navigation page.') }}
           </div>
 
           <div v-if="selectedMode==='event'" class="cc-automation-field">
-            <label for="cc-app-event">Evento do aplicativo *</label>
+            <label for="cc-app-event">{{ t('communications', 'Application event *') }}</label>
             <NcSelect v-model="actionValue" :options="actionOptions"
                       :reduce="action=>action.value" :clearable="false"
                       input-id="cc-app-event" label="label"
-                      placeholder="Selecione o evento..."
-                      aria-label-combobox="Selecionar evento do aplicativo">
+                      :placeholder="t('communications', 'Select an event...')"
+                      :aria-label-combobox="t('communications', 'Select application event')">
               <template #option="option">
                 <div class="cc-automation-option">
                   <NcIconSvgWrapper :path="mdiCheckCircleOutline" :size="18"/>
@@ -340,12 +342,12 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
           </div>
 
           <div v-else class="cc-automation-field">
-            <label for="cc-app-route">Página ou rota web *</label>
+            <label for="cc-app-route">{{ t('communications', 'Web page or route *') }}</label>
             <NcSelect v-model="pageRouteValue" :options="routeOptions"
                       :reduce="route=>route.value" :clearable="false" label="label"
                       input-id="cc-app-route" :disabled="routeLoading"
-                      :placeholder="routeLoading ? 'Consultando páginas...' : ''"
-                      aria-label-combobox="Selecionar página web">
+                      :placeholder="routeLoading ? t('communications', 'Loading pages…') : ''"
+                      :aria-label-combobox="t('communications', 'Select web page')">
               <template #option="option">
                 <div class="cc-automation-option">
                   <NcIconSvgWrapper :path="mdiWeb" :size="18"/>
@@ -353,21 +355,21 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
                 </div>
               </template>
             </NcSelect>
-            <div v-if="pageRoute && routeVariables.length" class="cc-route-filters" role="group" aria-label="Restrições das variáveis da rota">
-              <h4>Filtros para esta rota (opcionais)</h4>
-              <p class="cc-native-hint">Restringe somente os valores das variáveis do caminho; nenhuma URL concreta é armazenada. Use comparações seguras no lugar de expressões regulares arbitrárias.</p>
+            <div v-if="pageRoute && routeVariables.length" class="cc-route-filters" role="group" :aria-label="t('communications', 'Route variable restrictions')">
+              <h4>{{ t('communications', 'Filters for this route (optional)') }}</h4>
+              <p class="cc-native-hint">{{ t('communications', 'Restricts only path variable values; no concrete URL is stored. Use safe comparisons instead of arbitrary regular expressions.') }}</p>
               <div v-for="variable in routeVariables" :key="variable" class="cc-route-filter">
-                <label :for="'cc-route-operator-'+variable">Variável {{ '{'+variable+'}' }}</label>
+                <label :for="'cc-route-operator-'+variable">{{ t('communications', 'Variable') }} {{ '{'+variable+'}' }}</label>
                 <select :id="'cc-route-operator-'+variable" class="cc-route-filter-select"
                         :value="pageFilters[variable]?.operator||'any'"
                         @change="changeRouteFilter(variable,'operator',$event.target.value)">
-                  <option value="any">Qualquer valor</option>
-                  <option value="equals">Igual a</option>
-                  <option value="prefix">Começa com</option>
-                  <option value="digits">Somente números</option>
+                  <option value="any">{{ t('communications', 'Any value') }}</option>
+                  <option value="equals">{{ t('communications', 'Equals') }}</option>
+                  <option value="prefix">{{ t('communications', 'Starts with') }}</option>
+                  <option value="digits">{{ t('communications', 'Numbers only') }}</option>
                 </select>
                 <template v-if="['equals','prefix'].includes(pageFilters[variable]?.operator)">
-                  <label :for="'cc-route-value-'+variable">Valor para {{ variable }}</label>
+                  <label :for="'cc-route-value-'+variable">{{ t('communications', 'Value for') }} {{ variable }}</label>
                   <input :id="'cc-route-value-'+variable" type="text" maxlength="96"
                          class="cc-route-filter-value" :value="pageFilters[variable]?.value||''"
                          :placeholder="'Ex.: '+(variable==='view'?'recent':'123')"
@@ -375,44 +377,44 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
                 </template>
               </div>
             </div>
-            <p v-if="routeLoading" class="cc-native-hint">Consultando o roteador nativo do Nextcloud...</p>
+            <p v-if="routeLoading" class="cc-native-hint">{{ t('communications', 'Checking the native Nextcloud router...') }}</p>
             <NcNoteCard v-if="routeError" type="error">{{ routeError }}</NcNoteCard>
-            <p class="cc-native-hint">Somente rotas web GET reconhecidas pelo Nextcloud. Endpoints API, OCS, arquivos e parâmetros privados são excluídos.</p>
+            <p class="cc-native-hint">{{ t('communications', 'Only GET web routes recognized by Nextcloud. API endpoints, OCS routes, files, and private parameters are excluded.') }}</p>
           </div>
         </template>
       </div>
 
       <div v-else-if="selectedIntent==='board'" class="cc-automation-configuration">
-        <NcNoteCard type="info">Sem gatilho técnico: a publicação fica disponível na Caixa de entrada ao ser ativada. Os destinatários e os avisos são configurados na próxima etapa.</NcNoteCard>
+        <NcNoteCard type="info">{{ t('communications', 'Without a technical trigger, the publication becomes available in Inbox when activated. Recipients and notifications are configured in the next step.') }}</NcNoteCard>
       </div>
 
       <div v-else-if="selectedIntent==='schedule'" class="cc-automation-configuration">
-        <p class="cc-native-hint">A mensagem ficará disponível no período escolhido e aparecerá na próxima visita do usuário.</p>
+        <p class="cc-native-hint">{{ t('communications', 'The message will be available during the selected period and appear on the user\'s next visit.') }}</p>
       </div>
 
       <div v-else class="cc-automation-configuration">
-        <h3>Integração ou Flow</h3>
+        <h3>{{ t('communications', 'Integration or Flow') }}</h3>
         <div class="cc-automation-field">
-          <label for="cc-advanced">Fonte do evento *</label>
+          <label for="cc-advanced">{{ t('communications', 'Event source *') }}</label>
           <NcSelect v-model="advancedValue" :options="advancedSources" :reduce="source=>source.id"
-                    :clearable="true" input-id="cc-advanced" label="label" placeholder="Escolher integração..."/>
+                    :clearable="true" input-id="cc-advanced" label="label" :placeholder="t('communications', 'Choose an integration...')"/>
         </div>
         <NcNoteCard v-if="selectedAdvanced" type="info">
           <p>{{ selectedAdvanced.setup }}</p>
           <div v-if="selectedAdvanced.id==='webhook'" class="cc-automation-webhook">
-            <p v-if="!campaignId">Salve primeiro a campanha para obter seu identificador e configurar a integração.</p>
-            <p v-else>Use o identificador {{ campaignId }} no campo <code>campaignId</code>. A integração não envia a campanha para um grupo inteiro.</p>
+            <p v-if="!campaignId">{{ t('communications', 'Save the campaign first to get its identifier and configure the integration.') }}</p>
+            <p v-else>{{ t('communications', 'Use the identifier') }} {{ campaignId }} {{ t('communications', 'in the field') }} <code>campaignId</code>{{ t('communications', '. The integration does not send the campaign to an entire group.') }}</p>
             <pre>{{ webhookExample }}</pre>
           </div>
           <div v-if="selectedAdvanced.id==='flow'" class="cc-automation-flow">
-            <p v-if="campaignId">Selecione esta campanha pelo nome na operação “Disparar campanha contextual” do Flow.</p>
-            <p v-else>Salve a campanha antes de criar o vínculo com a regra do Flow.</p>
-            <NcButton text="Abrir Nextcloud Flow" :href="flowLink()" target="_blank">
+            <p v-if="campaignId">{{ t('communications', 'Select this campaign by name in Flow\'s “Trigger contextual campaign” operation.') }}</p>
+            <p v-else>{{ t('communications', 'Save the campaign before linking it to the Flow rule.') }}</p>
+            <NcButton :text="t('communications', 'Open Nextcloud Flow')" :href="flowLink()" target="_blank">
               <template #icon><NcIconSvgWrapper :path="mdiOpenInNew" :size="18"/></template>
             </NcButton>
           </div>
         </NcNoteCard>
-        <NcNoteCard v-else type="info">O Flow avalia condições internas. Um webhook HMAC registra um evento somente para o usuário indicado em <code>uid</code>; não faz divulgação em massa.</NcNoteCard>
+        <NcNoteCard v-else type="info">{{ t('communications', 'Flow evaluates internal conditions. An HMAC webhook records an event only for the user specified in') }} <code>uid</code>{{ t('communications', '; it never broadcasts to all users.') }}</NcNoteCard>
       </div>
 
       <div v-if="modelValue && selectedIntent && selectedIntent !== 'schedule'" class="cc-automation-result" role="status">
