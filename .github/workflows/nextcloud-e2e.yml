@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: Nextcloud 36 E2E
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '19 4 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: communications-nc36-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compatibility:
+    name: Nextcloud 36 / ${{ matrix.database }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, pgsql, mariadb]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --include=dev --include=optional
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Provision isolated Nextcloud 36, database and optional LibreSign
+        run: bash scripts/ci/bootstrap.sh '${{ matrix.database }}'
+        env:
+          INSTALL_LIBRESIGN: ${{ matrix.database == 'sqlite' && '1' || '0' }}
+      - name: Verify publication and recipient isolation
+        run: npx playwright test tests/e2e/app-smoke.spec.mjs
+      - name: Verify generic LibreSign completion contract
+        if: matrix.database == 'sqlite'
+        run: npm run test:e2e:libresign
+      - name: Shutdown isolated test environment
+        if: always()
+        run: docker compose -f tests/ci/compose.yml -p communications-ci down --volumes --remove-orphans || true
+        env:
+          NC_TEST_PASSWORD: ephemeral-cleanup-only

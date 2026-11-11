@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+services:
+  nextcloud:
+    image: nextcloud:35-apache
+    container_name: ${NC_CONTAINER:-communications-ci-nc36}
+    entrypoint: ["/usr/local/bin/apache2-foreground"]
+    restart: "no"
+    ports:
+      - "127.0.0.1:${NC_PORT:-18884}:80"
+    volumes:
+      - ${NC_RUNTIME_DIR:-../../.ci/runtime}/nextcloud:/var/www/html
+      - ../..:/var/www/html/custom_apps/communications
+      - ${NC_RUNTIME_DIR:-../../.ci/runtime}/libresign:/var/www/html/custom_apps/libresign:ro
+  postgres:
+    image: postgres:17-alpine
+    profiles: ["postgresql"]
+    restart: "no"
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${NC_TEST_PASSWORD:?Provide a generated ephemeral lab password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud"]
+      interval: 3s
+      retries: 40
+  mariadb:
+    image: mariadb:11.8.9
+    profiles: ["mariadb"]
+    restart: "no"
+    environment:
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: ${NC_TEST_PASSWORD:?Provide a generated ephemeral lab password}
+      MYSQL_ROOT_PASSWORD: ${NC_TEST_PASSWORD:?Provide a generated ephemeral lab password}
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 3s
+      retries: 40
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${NC_CI_SUBNET:-10.241.42.0/24}
