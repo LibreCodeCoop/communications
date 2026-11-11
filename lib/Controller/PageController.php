@@ -4,6 +4,7 @@ declare(strict_types=1);
 /** SPDX-License-Identifier: AGPL-3.0-or-later */
 namespace OCA\Communications\Controller;
 
+use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Http\Response;
@@ -22,6 +23,7 @@ class PageController extends Controller {
  #[NoAdminRequired]
  #[NoCSRFRequired]
  #[UseSession]
+ #[FrontpageRoute(verb: 'GET', url: '/')]
  public function index(): Response {
   return $this->renderHub();
  }
@@ -29,11 +31,13 @@ class PageController extends Controller {
  #[NoAdminRequired]
  #[NoCSRFRequired]
  #[UseSession]
+ #[FrontpageRoute(verb: 'GET', url: '/board')]
  public function board(): TemplateResponse {
   return $this->renderHub();
  }
 
  private function renderHub(): TemplateResponse {
+  Util::addTranslations('communications');
   Util::addScript('communications', 'management');
   Util::addStyle('communications', 'management');
   return new TemplateResponse('communications','main',[

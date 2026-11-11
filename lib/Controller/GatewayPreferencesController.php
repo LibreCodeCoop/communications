@@ -4,6 +4,7 @@ declare(strict_types=1);
 /** SPDX-License-Identifier: AGPL-3.0-or-later */
 namespace OCA\Communications\Controller;
 
+use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCA\Communications\Service\GatewayRecipientPreferences;
 use OCA\Communications\Service\GatewayTransport;
 use OCP\AppFramework\Controller;
@@ -20,6 +21,7 @@ final class GatewayPreferencesController extends Controller {
   private IUserSession $session,
   private GatewayRecipientPreferences $preferences,
   private GatewayTransport $gateway,
+  private \OCP\IL10N $l10n,
  ) { parent::__construct('communications',$request); }
 
  private function uid(): ?string { return $this->session->getUser()?->getUID(); }
@@ -28,9 +30,10 @@ final class GatewayPreferencesController extends Controller {
  #[NoAdminRequired]
  #[NoCSRFRequired]
  #[UseSession]
+ #[FrontpageRoute(verb: 'GET', url: '/api/gateway-preferences')]
  public function index(): JSONResponse {
   $uid=$this->uid();
-  if ($uid===null) { return new JSONResponse(['error'=>'Login necessário.'],401); }
+  if ($uid===null) { return new JSONResponse(['error'=>$this->l10n->t('Login required.')],401); }
   $saved=$this->preferences->forUser($uid);
   $channels=[];
   foreach (GatewayTransport::LABELS as $id=>$label) {
@@ -49,9 +52,10 @@ final class GatewayPreferencesController extends Controller {
  /** Full replacement: disabled channels lose their stored destinations. */
  #[NoAdminRequired]
  #[UseSession]
+ #[FrontpageRoute(verb: 'POST', url: '/api/gateway-preferences')]
  public function update(array $channels=[]): JSONResponse {
   $uid=$this->uid();
-  if ($uid===null) { return new JSONResponse(['error'=>'Login necessário.'],401); }
+  if ($uid===null) { return new JSONResponse(['error'=>$this->l10n->t('Login required.')],401); }
   try {
    $this->preferences->replace($uid,$channels);
    return $this->index();

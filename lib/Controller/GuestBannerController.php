@@ -3,6 +3,7 @@
 declare(strict_types=1);
 /** SPDX-License-Identifier: AGPL-3.0-or-later */
 namespace OCA\Communications\Controller;
+use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCA\Communications\Service\CampaignRepository;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -18,6 +19,7 @@ final class GuestBannerController extends Controller {
 
  #[PublicPage]
  #[NoCSRFRequired]
+ #[FrontpageRoute(verb: 'GET', url: '/api/public-banners')]
  public function index():JSONResponse {
   $r=new JSONResponse(['banners'=>$this->campaigns->publicForGuests(time())]);
   $r->addHeader('Cache-Control','private, no-store, max-age=0');
