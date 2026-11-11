@@ -1,0 +1,43 @@
+{
+  "name": "librecode/communications",
+  "description": "Nextcloud institutional publications and event-triggered communications",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "require": {
+    "php": ">=8.3"
+  },
+  "require-dev": {
+    "nextcloud/ocp": "^35.0",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^11.5",
+    "symfony/console": "^7.4",
+    "symfony/routing": "^7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "OCA\\Communications\\": "lib/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "OCA\\Communications\\Tests\\": "tests/php/"
+    }
+  },
+  "scripts": {
+    "lint": "bash scripts/ci/php-lint.sh",
+    "test": "phpunit --configuration phpunit.xml.dist",
+    "analyse": "phpstan analyse --configuration phpstan.neon.dist --no-progress",
+    "check": [
+      "@lint",
+      "@test",
+      "@analyse"
+    ]
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {},
+    "platform": {
+      "php": "8.3.0"
+    }
+  }
+}

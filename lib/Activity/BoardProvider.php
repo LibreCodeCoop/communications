@@ -1,0 +1,45 @@
+<?php
+/** SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors */
+declare(strict_types=1);
+/** SPDX-License-Identifier: AGPL-3.0-or-later */
+namespace OCA\Communications\Activity;
+
+use OCA\Communications\Service\BoardService;
+use OCA\Communications\Service\PublicationLink;
+use OCP\Activity\IEvent;
+use OCP\Activity\IManager;
+use OCP\Activity\IProvider;
+use OCP\Activity\Exceptions\UnknownActivityException;
+use OCP\IURLGenerator;
+
+/** The activity stream does not reveal inaccessible or expired posts. */
+final class BoardProvider implements IProvider {
+ public function __construct(
+  private BoardService $board,
+  private IManager $activities,
+  private IURLGenerator $urls,
+ ) {}
+
+ public function parse($language,IEvent $event,?IEvent $previousEvent=null):IEvent {
+  if ($event->getApp()!=='communications'
+      || $event->getSubject()!=='board_published'
+      || $event->getObjectType()!=='cc_board_announcement') {
+   throw new UnknownActivityException();
+  }
+  try {
+   $uid=$this->activities->getCurrentUserId();
+  } catch (\Throwable $error) {
+   throw new UnknownActivityException('Missing activity viewer',0,$error);
+  }
+  if ($event->getAffectedUser()!==$uid) {
+   throw new UnknownActivityException('This activity belongs to another account');
+  }
+  $post=$this->board->view($uid,(int)$event->getObjectId());
+  if ($post===null) { throw new UnknownActivityException('Announcement is unavailable'); }
+  return $event
+   ->setParsedSubject('Novo comunicado: '.$post['headline'])
+   ->setParsedMessage(mb_substr(trim(strip_tags($post['message'])),0,350))
+   ->setLink(PublicationLink::absolute($this->urls,(int)$post['id']))
+   ->setIcon($this->urls->getAbsoluteURL($this->urls->imagePath('communications','app.svg')));
+ }
+}

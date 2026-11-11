@@ -1,0 +1,27 @@
+/* SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors */
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+.cc-guest-stack {
+ position:relative;z-index:9000;box-sizing:border-box;
+ display:grid;gap:6px;padding:8px clamp(10px,3vw,28px);
+ background:var(--color-main-background,#fff);color:var(--color-main-text,#202020);
+ border-bottom:1px solid var(--color-border,#ddd);
+}
+.cc-guest-item {
+ --cc-guest-accent:#1b79ae;
+ display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+ padding:12px 16px;border-radius:8px;border-inline-start:4px solid var(--cc-guest-accent);
+ background:color-mix(in srgb,var(--cc-guest-accent) 11%,var(--color-main-background,#fff));
+ box-shadow:0 1px 3px #0001;
+}
+.cc-guest-item[data-type=success]{--cc-guest-accent:#237c49}
+.cc-guest-item[data-type=warning]{--cc-guest-accent:#ae760c}
+.cc-guest-item[data-type=error]{--cc-guest-accent:#bb3540}
+.cc-guest-item[data-type=neutral]{--cc-guest-accent:#888}
+.cc-guest-copy{min-width:0;display:grid;gap:4px;line-height:1.45;}
+.cc-guest-headline{font-size:15px;}
+.cc-guest-message{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cc-guest-link{color:var(--color-primary-element,#0872b9);text-decoration:underline;font-weight:600;justify-self:start}
+.cc-guest-close{border:0;background:transparent;color:inherit;border-radius:8px;
+ cursor:pointer;font-size:23px;line-height:1;min-width:34px;min-height:34px}
+.cc-guest-close:hover,.cc-guest-close:focus-visible{outline:2px solid var(--cc-guest-accent)}
+@media(max-width:480px){.cc-guest-item{padding:10px;gap:6px}}
