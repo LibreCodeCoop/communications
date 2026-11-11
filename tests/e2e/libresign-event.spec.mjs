@@ -94,9 +94,9 @@ test('LibreSign completion is discovered and delivered through generic native-ev
 
     // Exercise the real UI: the event must be selectable using the same
     // application/event controls as any other enabled Nextcloud app.
-    await admin.locator('.cc-hub-tabs button').filter({ hasText: 'Publicações' }).click()
-    await admin.locator('.cc-hub-top button').filter({ hasText: 'Nova publicação' }).click()
-    await admin.locator('.cc-automation-intent-card').filter({ hasText: 'Em um aplicativo' }).click()
+    await admin.locator('.cc-hub-tabs button').filter({ hasText: 'Publications' }).click()
+    await admin.locator('.cc-hub-top button').filter({ hasText: 'New publication' }).click()
+    await admin.locator('.cc-automation-intent-card').filter({ hasText: 'In an app' }).click()
     await admin.locator('#cc-app-source').click()
     await admin.getByRole('option').filter({ hasText: 'LibreSign' }).first().click()
     await expect(admin.locator('#cc-app-event')).toBeVisible()
