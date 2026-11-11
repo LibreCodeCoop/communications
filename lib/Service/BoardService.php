@@ -22,6 +22,7 @@ class BoardService {
   private IGroupManager $groups,
   private IConfig $config,
   private NotificationManager $notifications,
+  private \OCP\IL10N $l10n,
  ) {}
 
  /**
@@ -262,11 +263,11 @@ class BoardService {
 
  public function createComment(string $uid,int $id,string $message): array {
   $c = $this->view($uid,$id);
-  if ($c===null) { throw new InvalidArgumentException('Comunicado indisponível.'); }
-  if (!$c['commentsEnabled']) { throw new InvalidArgumentException('Comentários desabilitados.'); }
+  if ($c===null) { throw new InvalidArgumentException($this->l10n->t('Announcement unavailable.')); }
+  if (!$c['commentsEnabled']) { throw new InvalidArgumentException($this->l10n->t('Comments are disabled.')); }
   $message = trim($message);
   if ($message==='' || mb_strlen($message)>4000) {
-   throw new InvalidArgumentException('Informe um comentário de até 4.000 caracteres.');
+   throw new InvalidArgumentException($this->l10n->t('Enter a comment of at most 4,000 characters.'));
   }
   $now = time();
   $qb = $this->db->getQueryBuilder();
@@ -276,7 +277,7 @@ class BoardService {
    ->andWhere($qb->expr()->gte('created_at',$qb->createNamedParameter($now-5,IQueryBuilder::PARAM_INT)))
    ->setMaxResults(1)->executeQuery();
   $recent = $rs->fetchOne(); $rs->closeCursor();
-  if ($recent!==false) { throw new InvalidArgumentException('Aguarde alguns segundos antes de comentar novamente.'); }
+  if ($recent!==false) { throw new InvalidArgumentException($this->l10n->t('Wait a few seconds before commenting again.')); }
   $insert = $this->db->getQueryBuilder();
   $insert->insert(self::TABLE)->values([
    'campaign_id'=>$insert->createNamedParameter($id,IQueryBuilder::PARAM_INT),

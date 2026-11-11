@@ -19,11 +19,14 @@ final class BoardNotifier implements INotifier {
   private BoardService $board,
   private IURLGenerator $urls,
   private IUserManager $users,
+  private \OCP\IL10N $l10n,
+  private \OCP\L10N\IFactory $l10nFactory,
  ) {}
  public function getID():string { return 'communications'; }
- public function getName():string { return 'Mural de comunicados'; }
+ public function getName():string { return $this->l10n->t('Announcement board'); }
 
  public function prepare(INotification $notification,string $languageCode):INotification {
+  $localized = $this->l10nFactory->get('communications', $languageCode);
   if ($notification->getApp() !== 'communications') {
    throw new UnknownNotificationException();
   }
@@ -33,14 +36,14 @@ final class BoardNotifier implements INotifier {
    $item=$this->board->notificationAllowed($notification->getUser(),(int)$notification->getObjectId());
    if ($item===null) { throw new AlreadyProcessedException(); }
    $author=$this->users->getDisplayName($item['actor']) ?: $item['actor'];
-   $notification->setParsedSubject($author.' mencionou você no mural de comunicados')
-    ->setParsedMessage('Abra o comunicado para ler e responder.');
+   $notification->setParsedSubject($author.$localized->t(' mentioned you on the announcement board'))
+    ->setParsedMessage($localized->t('Open the announcement to read and reply.'));
    $id=$item['campaignId'];
   } elseif ($subject==='published' && $type==='cc_board_announcement') {
    $id=(int)$notification->getObjectId();
    $item=$this->board->view($notification->getUser(),$id);
    if ($item===null) { throw new AlreadyProcessedException(); }
-   $notification->setParsedSubject('Novo comunicado: '.$item['headline'])
+   $notification->setParsedSubject($localized->t('New announcement: ').$item['headline'])
     ->setParsedMessage(mb_substr(trim(strip_tags($item['message'])),0,350));
   } else {
    throw new UnknownNotificationException();

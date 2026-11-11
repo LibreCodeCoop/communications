@@ -15,19 +15,19 @@ use OCP\IUserManager;
 class CampaignRepository {
  public const TABLE = 'cc_campaigns';
  public const TRIGGERS = [
-  'nextcloud.user.login' => 'Login interativo',
-  'nextcloud.files.created' => 'Arquivo criado (Files)',
-  'nextcloud.files.updated' => 'Arquivo atualizado (Files)',
-  'nextcloud.files.deleted' => 'Arquivo removido (Files)',
-  'nextcloud.user.first_login' => 'Primeiro login',
-  'nextcloud.share.created' => 'Compartilhamento criado',
-  'nextcloud.share.accepted' => 'Compartilhamento aceito',
-  'nextcloud.comment.created' => 'Comentário publicado',
-  'nextcloud.page.opened' => 'Página de aplicativo aberta',
-  'nextcloud.time.window' => 'Campanha agendada por data',
-  'nextcloud.flow.matched' => 'Regra do Nextcloud Flow atendida',
-  'external.webhook' => 'Webhook externo autenticado',
-  'nextcloud.board.published' => 'Comunicado persistente no mural',
+  'nextcloud.user.login' => 'Interactive login',
+  'nextcloud.files.created' => 'File created (Files)',
+  'nextcloud.files.updated' => 'File updated (Files)',
+  'nextcloud.files.deleted' => 'File removed (Files)',
+  'nextcloud.user.first_login' => 'First login',
+  'nextcloud.share.created' => 'Share created',
+  'nextcloud.share.accepted' => 'Share accepted',
+  'nextcloud.comment.created' => 'Comment published',
+  'nextcloud.page.opened' => 'Application page opened',
+  'nextcloud.time.window' => 'Date-scheduled campaign',
+  'nextcloud.flow.matched' => 'Nextcloud Flow rule matched',
+  'external.webhook' => 'Authenticated external webhook',
+  'nextcloud.board.published' => 'Persistent announcement on the board',
  ];
  public const STATUSES = ['draft', 'active', 'paused', 'archived'];
  public const PRESENTATIONS = ['banner', 'modal', 'board', 'none'];
@@ -55,6 +55,7 @@ class CampaignRepository {
   private TriggerCatalog $triggerCatalog,
   private WebRouteCatalog $webRoutes,
   private NativeEventSubscriptions $nativeSubscriptions,
+  private \OCP\IL10N $l10n,
  ) {}
 
  /**
@@ -251,26 +252,27 @@ class CampaignRepository {
   }
   if ($values === null) { $values = []; }
   if (!is_array($values) || !array_is_list($values) || count($values) > self::MAX_TARGETS) {
-   throw new InvalidArgumentException('Seleção inválida para ' . $field . '.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid selection for ') . $field . '.');
   }
   $ids = [];
   foreach ($values as $value) {
    if (!is_string($value) || trim($value) !== $value || $value === '' || mb_strlen($value) > 64) {
-    throw new InvalidArgumentException('Identificador inválido em ' . $field . '.');
+    throw new InvalidArgumentException($this->l10n->t('Invalid identifier in ') . $field . '.');
    }
    $ids[$value] = $value;
   }
-  if ($required && $ids === []) { throw new InvalidArgumentException('Selecione ao menos um destinatário.'); }
+  if ($required && $ids === []) { throw new InvalidArgumentException($this->l10n->t('Select at least one recipient.')); }
   return array_values($ids);
  }
 
  public function validate(array $payload): array {
-  $text = static function (string $key, int $max, bool $required = false) use ($payload): string {
+  $l10n = $this->l10n;
+  $text = static function (string $key, int $max, bool $required = false) use ($payload, $l10n): string {
    $value = $payload[$key] ?? '';
-   if (!is_string($value)) { throw new InvalidArgumentException('Campo inválido: ' . $key); }
+   if (!is_string($value)) { throw new InvalidArgumentException($l10n->t('Invalid field: ') . $key); }
    $value = trim($value);
    if (($required && $value === '') || mb_strlen($value) > $max) {
-    throw new InvalidArgumentException('Revise o campo ' . $key . ' (máximo ' . $max . ' caracteres).');
+    throw new InvalidArgumentException($l10n->t('Review the field ') . $key . $l10n->t(' (maximum ') . $max . $l10n->t(' characters).'));
    }
    return $value;
   };
@@ -281,20 +283,20 @@ class CampaignRepository {
   $ctaLabel = $text('cta_label', 80);
   $ctaUrl = $text('cta_url', 1900);
   if (($ctaLabel === '') !== ($ctaUrl === '')) {
-   throw new InvalidArgumentException('Informe tanto o texto quanto o endereço do botão.');
+   throw new InvalidArgumentException($this->l10n->t('Enter both button text and URL.'));
   }
   if ($ctaUrl !== '' && !CtaUrl::isAllowed($ctaUrl)) {
-   throw new InvalidArgumentException('Link inválido. Use HTTP(S), mailto:, tel: ou caminho interno / sem caracteres inseguros.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid link. Use HTTP(S), mailto:, tel: or a safe internal path.'));
   }
   $trigger = $text('trigger_key', 64, true);
-  if (!$this->triggerCatalog->supports($trigger)) { throw new InvalidArgumentException('Este gatilho não está disponível. Verifique se a integração está habilitada.'); }
+  if (!$this->triggerCatalog->supports($trigger)) { throw new InvalidArgumentException($this->l10n->t('Trigger unavailable. Verify that the integration is enabled.')); }
   $presentation = $text('presentation', 12, true);
   if (!in_array($presentation, self::PRESENTATIONS, true)) {
-   throw new InvalidArgumentException('Formato de apresentação inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid presentation format.'));
   }
   $audience = $text('audience_type', 20, true);
   if (!in_array($audience, ['all', 'admins', 'group', 'users'], true)) {
-   throw new InvalidArgumentException('Público-alvo inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid target audience.'));
   }
   $groups = $audience === 'group'
    ? $this->targets($payload, 'audience_groups', 'audience_group', true) : [];
@@ -302,35 +304,35 @@ class CampaignRepository {
    ? $this->targets($payload, 'audience_users', '', true) : [];
   foreach ($groups as $group) {
    if ($this->groupManager->get($group) === null) {
-    throw new InvalidArgumentException('O grupo selecionado não existe: ' . $group);
+    throw new InvalidArgumentException($this->l10n->t('Selected group does not exist: ') . $group);
    }
   }
   foreach ($users as $uid) {
    if ($this->userManager->get($uid) === null) {
-    throw new InvalidArgumentException('O usuário selecionado não existe.');
+    throw new InvalidArgumentException($this->l10n->t('Selected user does not exist.'));
    }
   }
   $excluded = $this->targets($payload, 'excluded_groups', '', false);
   foreach ($excluded as $groupId) {
    if ($this->groupManager->get($groupId) === null) {
-    throw new InvalidArgumentException('Um grupo excluído não existe.');
+    throw new InvalidArgumentException($this->l10n->t('An excluded group does not exist.'));
    }
   }
   $groupMatch = $text('group_match', 8) ?: 'any';
   if (!in_array($groupMatch, ['any', 'all'], true)) {
-   throw new InvalidArgumentException('Critério de grupos inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid group matching criteria.'));
   }
   $excludedMatch = $text('excluded_match', 8) ?: 'any';
   if (!in_array($excludedMatch, ['any', 'all'], true)) {
-   throw new InvalidArgumentException('Critério de exclusão de grupos inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid group exclusion criteria.'));
   }
   $placement = $text('placement', 32) ?: 'any';
   if (!$this->triggerCatalog->supportsPlacement($placement)) {
-   throw new InvalidArgumentException('Local de apresentação inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid display location.'));
   }
   $appTargetMode = $text('app_target_mode', 12) ?: 'legacy';
   if (!in_array($appTargetMode, ['legacy','all','only','exclude'], true)) {
-   throw new InvalidArgumentException('Modo de seleção de aplicativos inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid application selection mode.'));
   }
   $appTargetApps = [];
   if ($trigger === 'nextcloud.page.opened' || in_array($presentation,['board','none'],true)) {
@@ -339,21 +341,21 @@ class CampaignRepository {
    $appTargetApps = $this->targets($payload,'app_target_apps','',true);
    foreach ($appTargetApps as $appId) {
     if ($appId==='any' || !$this->triggerCatalog->supportsPlacement($appId)) {
-     throw new InvalidArgumentException('Aplicativo selecionado não está disponível: '.$appId);
+     throw new InvalidArgumentException($this->l10n->t('Selected application is unavailable: ').$appId);
     }
    }
   }
   $pageRoute = $text('page_route', 255);
   $pageFilters = $payload['page_filters'] ?? [];
-  if (!is_array($pageFilters)) { throw new InvalidArgumentException('Filtros de rota inválidos.'); }
+  if (!is_array($pageFilters)) { throw new InvalidArgumentException($this->l10n->t('Invalid route filters.')); }
   if ($trigger === 'nextcloud.page.opened') {
    // Page triggers need a concrete navigable app even when its route is wildcard.
    // Otherwise the saved campaign can never match a browser visit.
    if (in_array($placement,['any','settings','admin_settings'],true)) {
-    throw new InvalidArgumentException('Selecione um aplicativo com páginas para o gatilho de navegação.');
+    throw new InvalidArgumentException($this->l10n->t('Select an app with pages for the navigation trigger.'));
    }
    if ($pageRoute !== '' && !$this->webRoutes->isSelectable($placement,$pageRoute)) {
-    throw new InvalidArgumentException('Selecione uma rota web válida do aplicativo, não uma rota de API.');
+    throw new InvalidArgumentException($this->l10n->t('Select a valid web route rather than an API endpoint.'));
    }
    $pageFilters = $this->webRoutes->normalizeFilters($pageRoute, $pageFilters);
   } else {
@@ -362,16 +364,16 @@ class CampaignRepository {
   }
   $frequency = $text('frequency', 12) ?: 'event';
   if (!in_array($frequency, self::FREQUENCIES, true)) {
-   throw new InvalidArgumentException('Frequência inválida.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid frequency.'));
   }
   $category = $text('category', 16) ?: 'institutional';
   if (!in_array($category, self::CATEGORIES, true)) {
-   throw new InvalidArgumentException('Categoria de campanha inválida.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid campaign category.'));
   }
   $boardVisible = ($payload['board_visible'] ?? false) === true || ($payload['board_visible'] ?? 0) === 1 || $presentation === 'board';
   $guestVisible = $payload['guest_visible'] ?? false;
   if (!in_array($guestVisible,[true,false,0,1],true)) {
-   throw new InvalidArgumentException('Opção de visitantes sem sessão inválida.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid anonymous-visitor option.'));
   }
   $guestVisible = $guestVisible===true || $guestVisible===1;
   if ($guestVisible && ($audience!=='all'
@@ -379,13 +381,13 @@ class CampaignRepository {
       || $category!=='institutional' || $placement!=='any'
       || !in_array($appTargetMode,['legacy','all'],true)
       || $boardVisible)) {
-   throw new InvalidArgumentException('Visitantes sem sessão exigem banner institucional, público geral, por data e sem filtro de aplicativo.');
+   throw new InvalidArgumentException($this->l10n->t('Anonymous visitors require a time-scheduled institutional banner for everyone without app restrictions.'));
   }
   $notificationFlags = [];
   foreach (['notify_users','notify_activity','notify_email'] as $key) {
    $value = $payload[$key] ?? false;
    if (!in_array($value,[true,false,0,1],true)) {
-    throw new InvalidArgumentException('Configuração inválida do canal: '.$key);
+    throw new InvalidArgumentException($this->l10n->t('Invalid channel configuration: ').$key);
    }
    $notificationFlags[$key] = ($value === true || $value === 1) ? 1 : 0;
   }
@@ -393,7 +395,7 @@ class CampaignRepository {
   if (!is_array($gatewayChannels) || !array_is_list($gatewayChannels)
     || count($gatewayChannels)>count(GatewayTransport::LABELS)
     || count($gatewayChannels)!==count(array_unique($gatewayChannels, SORT_REGULAR))) {
-   throw new InvalidArgumentException('Canais Two-Factor Gateway inválidos.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid Two-Factor Gateway channels.'));
   }
   foreach ($gatewayChannels as $gateway) {
    if (!is_string($gateway) || !isset(GatewayTransport::LABELS[$gateway])) {
@@ -402,23 +404,23 @@ class CampaignRepository {
   }
   $hasOutbound=array_sum($notificationFlags)>0 || $gatewayChannels!==[];
   if ($guestVisible && $hasOutbound) {
-   throw new InvalidArgumentException('Banners públicos anônimos não enviam mensagens individuais.');
+   throw new InvalidArgumentException($this->l10n->t('Anonymous public banners do not send individual messages.'));
   }
   // Any trigger may deliver without a visual surface. All channels follow
   // the same event occurrence; a recipient-scoped outbox prevents global
   // sends when an individual action is observed.
   if ($presentation==='none' && !$boardVisible && !$hasOutbound) {
-   throw new InvalidArgumentException('Escolha ao menos um destino de entrega.');
+   throw new InvalidArgumentException($this->l10n->t('Select at least one delivery destination.'));
   }
   $commentsEnabled = ($payload['comments_enabled'] ?? true) !== false && ($payload['comments_enabled'] ?? 1) !== 0;
   $dismissible = ($payload['dismissible'] ?? true) !== false && ($payload['dismissible'] ?? 1) !== 0;
   $alignment = $text('text_align', 8) ?: 'left';
   if (!in_array($alignment, ['left','center','right'], true)) {
-   throw new InvalidArgumentException('Alinhamento inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid alignment.'));
   }
   $textColor = $text('text_color', 9);
   if ($textColor !== '' && !preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/D', $textColor)) {
-   throw new InvalidArgumentException('Cor do texto inválida.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid text color.'));
   }
   if (strlen($textColor) === 4) {
    $textColor = '#' . $textColor[1] . $textColor[1]
@@ -426,27 +428,27 @@ class CampaignRepository {
   }
   $manualOrder = $payload['manual_order'] ?? 0;
   if (!is_int($manualOrder) && (!is_string($manualOrder) || !preg_match('/^-?[0-9]{1,6}$/D', $manualOrder))) {
-   throw new InvalidArgumentException('Ordem de apresentação inválida.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid presentation order.'));
   }
   $manualOrder = (int)$manualOrder;
   if ($manualOrder < -1000000 || $manualOrder > 1000000) { throw new InvalidArgumentException('Ordem fora do limite.'); }
   $translated = $payload['translated_content'] ?? [];
-  if (!is_array($translated)) { throw new InvalidArgumentException('Traduções inválidas.'); }
-  if (count($translated) > 12) { throw new InvalidArgumentException('Número excessivo de idiomas.'); }
+  if (!is_array($translated)) { throw new InvalidArgumentException($this->l10n->t('Invalid translations.')); }
+  if (count($translated) > 12) { throw new InvalidArgumentException($this->l10n->t('Too many languages.')); }
   $safeTranslations = [];
   foreach ($translated as $locale => $item) {
    if (!is_string($locale) || !preg_match('/^[a-z]{2}(?:_[A-Z]{2})?$/D', $locale)
        || !is_array($item) || array_is_list($item) || count($item) > 3) {
-    throw new InvalidArgumentException('Tradução com formato inválido.');
+    throw new InvalidArgumentException($this->l10n->t('Invalid translation format.'));
    }
    if (array_diff(array_keys($item), ['headline','message','cta_label']) !== []) {
-    throw new InvalidArgumentException('Campos de tradução não permitidos.');
+    throw new InvalidArgumentException($this->l10n->t('Translation fields not allowed.'));
    }
    $values = [];
    foreach (['headline'=>180, 'message'=>5000, 'cta_label'=>80] as $field => $max) {
     if (!isset($item[$field])) { continue; }
     if (!is_string($item[$field]) || mb_strlen($item[$field]) > $max) {
-     throw new InvalidArgumentException('Texto traduzido inválido.');
+     throw new InvalidArgumentException($this->l10n->t('Invalid translated text.'));
     }
     $values[$field] = trim($item[$field]);
    }
@@ -458,11 +460,11 @@ class CampaignRepository {
   // The legacy "board" presentation remains accepted for saved content.
   $theme = $text('theme', 12) ?: 'default';
   if (!in_array($theme, self::THEMES, true)) {
-   throw new InvalidArgumentException('Tema inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid theme.'));
   }
   $bannerColor = $text('banner_color', 9) ?: '#6748AC';
   if (!preg_match('/^#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{6}|[a-fA-F0-9]{8})$/D', $bannerColor)) {
-   throw new InvalidArgumentException('A cor deve usar #RGB, #RRGGBB ou #RRGGBBAA.');
+   throw new InvalidArgumentException($this->l10n->t('Color must use #RGB, #RRGGBB or #RRGGBBAA.'));
   }
   if (strlen($bannerColor) === 4) {
    $bannerColor = '#' . $bannerColor[1] . $bannerColor[1]
@@ -471,12 +473,12 @@ class CampaignRepository {
   $bannerColor = strtoupper($bannerColor);
   $bannerIcon = $text('banner_icon', 12) ?: 'auto';
   if (!in_array($bannerIcon, self::BANNER_ICONS, true)) {
-   throw new InvalidArgumentException('Selecione um ícone permitido ou a opção sem ícone.');
+   throw new InvalidArgumentException($this->l10n->t('Select an allowed icon or the no-icon option.'));
   }
-  $integer = static function (string $name, int $max) use ($payload): int {
+  $integer = static function (string $name, int $max) use ($payload, $l10n): int {
    $value = $payload[$name] ?? 0;
    if (filter_var($value, FILTER_VALIDATE_INT) === false || (int)$value < 0 || (int)$value > $max) {
-    throw new InvalidArgumentException('Número inválido: ' . $name);
+    throw new InvalidArgumentException($l10n->t('Invalid number: ') . $name);
    }
    return (int)$value;
   };
@@ -488,27 +490,27 @@ class CampaignRepository {
   }
   $status = $text('status', 12, true);
   if (!in_array($status, self::STATUSES, true)) {
-   throw new InvalidArgumentException('Status da campanha inválido.');
+   throw new InvalidArgumentException($l10n->t('Invalid campaign status.'));
   }
   $priority = $payload['priority'] ?? 10;
   if (filter_var($priority, FILTER_VALIDATE_INT) === false || (int)$priority < 0 || (int)$priority > 100) {
-   throw new InvalidArgumentException('A prioridade deve estar entre 0 e 100.');
+   throw new InvalidArgumentException($this->l10n->t('Priority must be between 0 and 100.'));
   }
-  $parseTimestamp = static function (string $key) use ($payload): ?int {
+  $parseTimestamp = static function (string $key) use ($payload, $l10n): ?int {
    $value = $payload[$key] ?? null;
    if ($value === null || $value === '') { return null; }
    if (filter_var($value, FILTER_VALIDATE_INT) === false || (int)$value < 0) {
-    throw new InvalidArgumentException('Data inválida: ' . $key);
+    throw new InvalidArgumentException($l10n->t('Invalid date: ') . $key);
    }
    return (int)$value;
   };
   $starts = $parseTimestamp('starts_at');
   $ends = $parseTimestamp('ends_at');
   if ($trigger === 'nextcloud.time.window' && $starts === null) {
-   throw new InvalidArgumentException('Campanhas por data exigem início de vigência.');
+   throw new InvalidArgumentException($this->l10n->t('Scheduled campaigns require a start date.'));
   }
   if ($starts !== null && $ends !== null && $ends <= $starts) {
-   throw new InvalidArgumentException('O término deve ser posterior ao início.');
+   throw new InvalidArgumentException($this->l10n->t('The end date must be after the start date.'));
   }
   return [
    'name' => $name, 'description' => $description, 'headline' => $headline,
@@ -597,7 +599,7 @@ class CampaignRepository {
   */
  public function move(int $id,string $direction,?int $targetId=null):?array {
   if (!in_array($direction,['up','down','before','after'],true)) {
-   throw new InvalidArgumentException('Movimento de ordenação inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid reordering operation.'));
   }
   $rows=array_values(array_filter($this->all(),
    static fn(array $c):bool=>$c['status']!=='archived'));
@@ -614,7 +616,7 @@ class CampaignRepository {
    [$rows[$index],$rows[$neighbor]]=[$rows[$neighbor],$rows[$index]];
   } else {
    if ($targetId===null || $targetId<1) {
-    throw new InvalidArgumentException('Selecione a campanha de destino.');
+    throw new InvalidArgumentException($this->l10n->t('Select the destination campaign.'));
    }
    if ($targetId===$id) {return $rows;}
    $current=$rows[$index];
@@ -624,7 +626,7 @@ class CampaignRepository {
     if ((int)$row['id']===$targetId) {$position=$i;break;}
    }
    if ($position===null) {
-    throw new InvalidArgumentException('Campanha de destino indisponível.');
+    throw new InvalidArgumentException($this->l10n->t('Destination campaign unavailable.'));
    }
    array_splice($rows,$position+($direction==='after'?1:0),0,[$current]);
   }
@@ -657,10 +659,10 @@ class CampaignRepository {
   $original=$this->find($id);
   if ($original===null) {return false;}
   if ($original['status']!=='archived') {
-   throw new InvalidArgumentException('Arquive a publicação antes de excluí-la definitivamente.');
+   throw new InvalidArgumentException($this->l10n->t('Archive the publication before deleting it permanently.'));
   }
   if ($confirmName==='' || !hash_equals($original['name'],$confirmName)) {
-   throw new InvalidArgumentException('Confirme exatamente o nome interno para excluir definitivamente.');
+   throw new InvalidArgumentException($this->l10n->t('Enter the exact internal name to permanently delete the publication.'));
   }
   $this->db->beginTransaction();
   try {
@@ -677,7 +679,7 @@ class CampaignRepository {
     ->where($qb->expr()->eq('id',$qb->createNamedParameter($id,IQueryBuilder::PARAM_INT)))
     ->andWhere($qb->expr()->eq('status',$qb->createNamedParameter('archived')))
     ->executeStatement();
-   if ($deleted!==1) { throw new \RuntimeException('Exclusão concorrente ou estado alterado.'); }
+   if ($deleted!==1) { throw new \RuntimeException($this->l10n->t('Concurrent deletion or changed state.')); }
    $this->db->commit();
   } catch (\Throwable $error) {
    $this->db->rollBack();
@@ -691,7 +693,7 @@ class CampaignRepository {
 
  public function setStatus(int $id, string $status): ?array {
   if (!in_array($status, self::STATUSES, true)) {
-   throw new InvalidArgumentException('Status da campanha inválido.');
+   throw new InvalidArgumentException($this->l10n->t('Invalid campaign status.'));
   }
   $original = $this->find($id);
   if ($original === null) { return null; }

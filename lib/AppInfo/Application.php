@@ -71,12 +71,14 @@ class Application extends App implements IBootstrap {
   $path = $server->get(IRequest::class)->getPathInfo();
   if ($user===null && (preg_match('~^/(?:index\.php/)?login/?$~',$path)
       || preg_match('~^/(?:index\.php/)?(?:s|f)/[A-Za-z0-9_-]{8,120}/?$~',$path))) {
+   Util::addTranslations('communications');
    Util::addScript('communications','guest');
    Util::addStyle('communications','guest');
   }
   if ($user !== null && !str_contains($path, '/apps/communications')) {
    // Most pages have no eligible campaign: load the small preflight script
    // and lazily inject the Vue renderer only after an actual claim.
+   Util::addTranslations('communications');
    Util::addScript('communications', 'loader');
   }
   if ($user !== null) {
@@ -87,7 +89,7 @@ class Application extends App implements IBootstrap {
      'app' => 'communications',
      'type' => 'link',
      'order' => 97,
-     'name' => 'Comunicações',
+     'name' => $server->get(\OCP\IL10N::class)->t('Communications'),
      'href' => $urls->linkToRoute('communications.page.index'),
      'icon' => $urls->imagePath('communications', 'app.svg'),
     ];

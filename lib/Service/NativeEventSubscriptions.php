@@ -24,6 +24,7 @@ final class NativeEventSubscriptions {
   private IAppManager $apps,
   private IDBConnection $db,
   private NativeEventCatalog $catalog,
+   private \OCP\IL10N $l10n,
  ) {}
 
  /**
@@ -96,7 +97,7 @@ final class NativeEventSubscriptions {
   $keys = $result->fetchFirstColumn();
   $result->closeCursor();
   if (!in_array($trigger, $keys, true) && count($keys) >= self::MAX_SUBSCRIPTIONS) {
-   throw new \InvalidArgumentException('Limite de 80 tipos de eventos ativos atingido. Desative alguma campanha antes de ativar outra origem.');
+   throw new \InvalidArgumentException($this->l10n->t('The limit of 80 active event types has been reached. Disable another campaign before activating a new source.'));
   }
  }
 

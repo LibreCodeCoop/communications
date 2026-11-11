@@ -18,9 +18,12 @@ final class BoardProvider implements IProvider {
   private BoardService $board,
   private IManager $activities,
   private IURLGenerator $urls,
+  private \OCP\IL10N $l10n,
+  private \OCP\L10N\IFactory $l10nFactory,
  ) {}
 
  public function parse($language,IEvent $event,?IEvent $previousEvent=null):IEvent {
+  $localized = $this->l10nFactory->get('communications', (string)$language);
   if ($event->getApp()!=='communications'
       || $event->getSubject()!=='board_published'
       || $event->getObjectType()!=='cc_board_announcement') {
@@ -37,7 +40,7 @@ final class BoardProvider implements IProvider {
   $post=$this->board->view($uid,(int)$event->getObjectId());
   if ($post===null) { throw new UnknownActivityException('Announcement is unavailable'); }
   return $event
-   ->setParsedSubject('Novo comunicado: '.$post['headline'])
+   ->setParsedSubject($localized->t('New announcement: ').$post['headline'])
    ->setParsedMessage(mb_substr(trim(strip_tags($post['message'])),0,350))
    ->setLink(PublicationLink::absolute($this->urls,(int)$post['id']))
    ->setIcon($this->urls->getAbsoluteURL($this->urls->imagePath('communications','app.svg')));

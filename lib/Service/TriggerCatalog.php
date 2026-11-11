@@ -25,14 +25,15 @@ final class TriggerCatalog {
   private WebRouteCatalog $webRoutes,
   private NativeEventCatalog $nativeEvents,
   private GatewayTransport $gatewayTransport,
+  private \OCP\IL10N $l10n,
  ) {}
 
  public function intents(): array {
   return [
-   ['id'=>'app', 'label'=>'Em um aplicativo', 'description'=>'Ação realizada ou visita a uma página do aplicativo', 'icon'=>'application-outline'],
-   ['id'=>'schedule', 'label'=>'Em uma data ou período', 'description'=>'Durante uma janela de publicação', 'icon'=>'calendar-clock-outline'],
-   ['id'=>'board', 'label'=>'Ao ativar a publicação', 'description'=>'Enviar os canais de saída ao ativar; banners ou janelas aparecem na próxima visita elegível', 'icon'=>'bulletin-board'],
-   ['id'=>'advanced', 'label'=>'Regra avançada ou integração', 'description'=>'Usar condições do Flow ou um sistema externo', 'icon'=>'source-branch'],
+   ['id'=>'app', 'label'=>$this->l10n->t('In an app'), 'description'=>$this->l10n->t('Action performed or visit to an application page'), 'icon'=>'application-outline'],
+   ['id'=>'schedule', 'label'=>$this->l10n->t('On a date or during a period'), 'description'=>$this->l10n->t('During a publication window'), 'icon'=>'calendar-clock-outline'],
+   ['id'=>'board', 'label'=>$this->l10n->t('On publication activation'), 'description'=>$this->l10n->t('Queue outbound channels on activation; banners and dialogs appear on the next eligible visit'), 'icon'=>'bulletin-board'],
+   ['id'=>'advanced', 'label'=>$this->l10n->t('Advanced rule or integration'), 'description'=>$this->l10n->t('Use Flow conditions or an external system'), 'icon'=>'source-branch'],
   ];
  }
 
@@ -40,88 +41,88 @@ final class TriggerCatalog {
   $sources = [
    [
     'id'=>'files', 'appId'=>'files', 'intent'=>'action',
-    'label'=>'Arquivos', 'description'=>'Criação, atualização ou exclusão no Files',
-    'keywords'=>['arquivo','documento','enviar','upload','alterar','excluir','pasta'],
+    'label'=>$this->l10n->t('Files'), 'description'=>$this->l10n->t('File creation, update or deletion in Files'),
+    'keywords'=>['file','document','send','upload','modify','delete','folder'],
     'actions'=>[
-     ['key'=>'nextcloud.files.created','label'=>'Arquivo criado','description'=>'Depois que alguém enviar ou criar um arquivo'],
-     ['key'=>'nextcloud.files.updated','label'=>'Arquivo atualizado','description'=>'Depois de modificar um arquivo existente'],
-     ['key'=>'nextcloud.files.deleted','label'=>'Arquivo excluído','description'=>'Depois de excluir um arquivo'],
+     ['key'=>'nextcloud.files.created','label'=>$this->l10n->t('File created'),'description'=>$this->l10n->t('After someone uploads or creates a file')],
+     ['key'=>'nextcloud.files.updated','label'=>$this->l10n->t('File updated'),'description'=>$this->l10n->t('After an existing file is modified')],
+     ['key'=>'nextcloud.files.deleted','label'=>$this->l10n->t('File deleted'),'description'=>$this->l10n->t('After a file is deleted')],
     ],
    ],
    [
     'id'=>'sharing', 'appId'=>'files_sharing', 'intent'=>'action',
-    'label'=>'Compartilhamentos', 'description'=>'Criação ou aceitação de compartilhamentos',
-    'keywords'=>['share','compartilhar','aceitar','destinatário','permissão'],
+    'label'=>$this->l10n->t('Shares'), 'description'=>$this->l10n->t('Share creation or acceptance'),
+    'keywords'=>['share','share','accept','recipient','permission'],
     'actions'=>[
-     ['key'=>'nextcloud.share.created','label'=>'Compartilhamento criado','description'=>'Quando uma pessoa compartilhar um item'],
-     ['key'=>'nextcloud.share.accepted','label'=>'Compartilhamento aceito','description'=>'Quando uma pessoa aceitar um compartilhamento recebido'],
+     ['key'=>'nextcloud.share.created','label'=>$this->l10n->t('Share created'),'description'=>$this->l10n->t('When someone shares an item')],
+     ['key'=>'nextcloud.share.accepted','label'=>$this->l10n->t('Share accepted'),'description'=>$this->l10n->t('When someone accepts a shared item')],
     ],
    ],
    [
     'id'=>'users', 'appId'=>'core', 'intent'=>'action',
-    'label'=>'Acesso e contas', 'description'=>'Login de usuários autenticados',
-    'keywords'=>['login','acesso','entrar','conta','boas-vindas'],
+    'label'=>$this->l10n->t('Accounts and access'), 'description'=>$this->l10n->t('Authenticated user logins'),
+    'keywords'=>['login','access','enter','account','welcome'],
     'actions'=>[
-     ['key'=>'nextcloud.user.login','label'=>'Login interativo','description'=>'Em cada entrada por formulário de login'],
-     ['key'=>'nextcloud.user.first_login','label'=>'Primeiro login','description'=>'Quando uma conta entrar pela primeira vez'],
+     ['key'=>'nextcloud.user.login','label'=>$this->l10n->t('Interactive login'),'description'=>$this->l10n->t('On each login through the login form')],
+     ['key'=>'nextcloud.user.first_login','label'=>$this->l10n->t('First login'),'description'=>$this->l10n->t('When an account logs in for the first time')],
     ],
    ],
    [
     'id'=>'comments', 'appId'=>'comments', 'intent'=>'action',
-    'label'=>'Comentários', 'description'=>'Mensagens criadas nos comentários do Nextcloud',
-    'keywords'=>['comentário','comentar','mensagem'],
+    'label'=>$this->l10n->t('Comments'), 'description'=>$this->l10n->t('Messages posted in Nextcloud comments'),
+    'keywords'=>['comment','comment','message'],
     'actions'=>[
-     ['key'=>'nextcloud.comment.created','label'=>'Comentário publicado','description'=>'Depois que alguém publicar um comentário'],
+     ['key'=>'nextcloud.comment.created','label'=>$this->l10n->t('Comment published'),'description'=>$this->l10n->t('After someone posts a comment')],
     ],
    ],
    [
     'id'=>'navigation', 'appId'=>'core', 'intent'=>'visit',
-    'label'=>'Navegação', 'description'=>'Mostrar ao entrar em um aplicativo compatível',
-    'keywords'=>['abrir','entrar','visitar','files','dashboard','página','aplicativo'],
+    'label'=>$this->l10n->t('Navigation'), 'description'=>$this->l10n->t('Display on entry to a supported app'),
+    'keywords'=>['open','enter','visit','files','dashboard','page','app'],
     'actions'=>[
-     ['key'=>'nextcloud.page.opened','label'=>'Página de aplicativo aberta',
-      'description'=>'Na entrada da área selecionada em “Onde apresentar”'],
+     ['key'=>'nextcloud.page.opened','label'=>$this->l10n->t('Application page opened'),
+      'description'=>$this->l10n->t('On entry to the area selected in “Where to display”')],
     ],
    ],
    [
     'id'=>'board', 'appId'=>'communications', 'intent'=>'board',
-    'label'=>'Publicação imediata', 'description'=>'Entregar a mensagem aos destinatários sem aguardar um evento técnico',
-    'keywords'=>['mural','comunicado','anúncio','publicar','notícia','histórico','imediato'],
+    'label'=>$this->l10n->t('Immediate publication'), 'description'=>$this->l10n->t('Deliver the message without waiting for a technical event'),
+    'keywords'=>['board','announcement','notice','publish','news','history','immediate'],
     'actions'=>[
-     ['key'=>'nextcloud.board.published','label'=>'Publicação imediata',
-      'description'=>'Envio imediato em fila, com banner/modal na próxima visita e Caixa de entrada opcional'],
+     ['key'=>'nextcloud.board.published','label'=>$this->l10n->t('Immediate publication'),
+      'description'=>$this->l10n->t('Immediate queued delivery, banner or modal on next visit and optional Inbox')],
     ],
    ],
    [
     'id'=>'scheduler', 'appId'=>'core', 'intent'=>'schedule',
-    'label'=>'Agendamento', 'description'=>'Disponível durante o período de publicação',
-    'keywords'=>['data','agendado','período','hora','programar'],
+    'label'=>$this->l10n->t('Scheduling'), 'description'=>$this->l10n->t('Available during the publication period'),
+    'keywords'=>['data','scheduled','period','hour','schedule'],
     'actions'=>[
-     ['key'=>'nextcloud.time.window','label'=>'Publicação disponível no período',
-      'description'=>'Na próxima visita elegível durante as datas configuradas'],
+     ['key'=>'nextcloud.time.window','label'=>$this->l10n->t('Publication available during the period'),
+      'description'=>$this->l10n->t('On the next eligible visit within the configured dates')],
     ],
    ],
    [
     'id'=>'flow', 'appId'=>'workflowengine', 'intent'=>'advanced',
-    'label'=>'Nextcloud Flow', 'description'=>'Condições avançadas sobre arquivos e ações',
-    'keywords'=>['regra','fluxo','mime','tipo','extensão','pasta','condição','automação'],
+    'label'=>'Nextcloud Flow', 'description'=>$this->l10n->t('Advanced conditions on files and actions'),
+    'keywords'=>['rule','flow','mime','type','extension','folder','condition','automation'],
     'actionUrl'=>'/index.php/settings/admin/workflow',
-    'setup'=>'Salve a campanha e, no Flow, crie uma regra de arquivos com condições. Escolha a operação “Disparar campanha contextual” e selecione esta campanha pelo nome.',
+    'setup'=>$this->l10n->t('Save the campaign, then create a conditional file rule in Flow. Choose the “Trigger contextual campaign” operation and select this campaign by name.'),
     'actions'=>[
-     ['key'=>'nextcloud.flow.matched','label'=>'Uma regra do Flow foi atendida',
-      'description'=>'O Flow verifica os filtros; o aplicativo só controla a entrega'],
+     ['key'=>'nextcloud.flow.matched','label'=>$this->l10n->t('A Flow rule matched'),
+      'description'=>$this->l10n->t('Flow checks the filters; this app only controls delivery')],
     ],
    ],
   ];
   if (strlen($this->config->getValueString('communications','webhook_secret','')) >= 32) {
    $sources[] = [
     'id'=>'webhook','appId'=>'communications','intent'=>'advanced',
-    'label'=>'Webhook externo', 'description'=>'Um sistema autorizado informa um evento para um usuário específico',
-    'keywords'=>['api','webhook','integração','externo','mautic','sistema'],
-    'setup'=>'A integração envia uma chamada HMAC com campaignId (identificador DESTA campanha), uid (UM usuário do Nextcloud) e eventId (identificador único). Só esta campanha e este usuário recebem a ocorrência; as regras de público e frequência ainda são aplicadas. Não há disparo para todos os usuários. Consulte docs/API.md.',
+    'label'=>$this->l10n->t('External webhook'), 'description'=>$this->l10n->t('An authorized external system reports an event for a specific user'),
+    'keywords'=>['api','webhook','integration','external','mautic','system'],
+    'setup'=>$this->l10n->t('The integration sends an HMAC request containing campaignId (THIS campaign\'s ID), uid (ONE Nextcloud user) and eventId (unique event ID). Only this campaign and user receive the event, subject to audience and frequency rules. No broadcast to all users occurs. See docs/API.md.'),
     'actions'=>[
-     ['key'=>'external.webhook','label'=>'Evento HMAC de campanha e usuário',
-      'description'=>'Registrar a ocorrência apenas para campaignId e uid indicados no webhook'],
+     ['key'=>'external.webhook','label'=>$this->l10n->t('Campaign-and-user HMAC event'),
+      'description'=>$this->l10n->t('Record the event only for campaignId and uid specified in the webhook')],
     ],
    ];
   }
@@ -136,8 +137,8 @@ final class TriggerCatalog {
     $appLabel = is_array($info) && is_string($info['name'] ?? null) ? $info['name'] : $app;
     $nativeByApp[$app] = [
      'id'=>'auto_' . $app, 'appId'=>$app, 'intent'=>'action',
-     'label'=>$appLabel, 'description'=>'Eventos PHP tipados descobertos automaticamente',
-     'keywords'=>['evento','php','automático','eventdispatcher'],
+     'label'=>$appLabel, 'description'=>$this->l10n->t('Automatically discovered typed PHP events'),
+     'keywords'=>['event','php','automatic','eventdispatcher'],
      'actions'=>[],
     ];
    }
@@ -207,9 +208,9 @@ final class TriggerCatalog {
   */
  public function placements(): array {
   $options = [
-   ['value'=>'any','label'=>'Qualquer página compatível'],
-   ['value'=>'settings','label'=>'Configurações pessoais'],
-   ['value'=>'admin_settings','label'=>'Configurações de administração'],
+   ['value'=>'any','label'=>$this->l10n->t('Any compatible page')],
+   ['value'=>'settings','label'=>$this->l10n->t('Personal settings')],
+   ['value'=>'admin_settings','label'=>$this->l10n->t('Administration settings')],
   ];
   $seen = ['any'=>true,'settings'=>true,'admin_settings'=>true];
   $navIcons = [];
@@ -288,8 +289,8 @@ final class TriggerCatalog {
     $byApp[$id] = [
      'id'=>$id, 'label'=>$placement['label'],
      'icon'=>$placement['icon'] ?? null,
-     'description'=>'Páginas acessíveis na navegação do Nextcloud',
-     'keywords'=>['página','rota','acessar','abrir'],
+     'description'=>$this->l10n->t('Pages reachable through Nextcloud navigation'),
+     'keywords'=>['page','route','access','open'],
      'canEvents'=>false, 'canPages'=>true, 'actions'=>[],
     ];
    }
@@ -309,37 +310,37 @@ final class TriggerCatalog {
   $gateway = $this->gatewayTransport->installed();
   $sources = [
    [
-    'id'=>'notifications', 'label'=>'Notificações do Nextcloud',
+    'id'=>'notifications', 'label'=>$this->l10n->t('Nextcloud Notifications'),
     'installed'=>$notifications, 'ready'=>$notifications,
     'availability'=>$notifications ? 'ready' : 'missing_app',
-    'status'=>$notifications ? 'Disponível' : 'Não instalado',
+    'status'=>$notifications ? $this->l10n->t('Available') : $this->l10n->t('Not installed'),
     'help'=>$notifications
-     ? 'Envia um aviso pelo sininho do Nextcloud a cada destinatário autorizado, com link de leitura restrito, sem exigir uma cópia na Caixa de entrada.'
-     : 'O aplicativo Notifications não está habilitado neste Nextcloud. Um administrador precisa instalar e ativar Notifications em Aplicativos antes de usar o sininho. O serviço notify_push, se existir, não substitui o aplicativo Notifications.',
+     ? $this->l10n->t('Sends a bell notification to each authorized recipient with a restricted link, without requiring an Inbox copy.')
+     : $this->l10n->t('Notifications is not enabled in this Nextcloud. An administrator must install and enable the Notifications app before using bell notifications. The notify_push service does not replace Notifications.'),
    ],
    [
     'id'=>'activity', 'label'=>'Activity do Nextcloud',
     'installed'=>$activity, 'ready'=>$activity,
     'availability'=>$activity ? 'ready' : 'missing_app',
-    'status'=>$activity ? 'Disponível' : 'Não instalado',
+    'status'=>$activity ? $this->l10n->t('Available') : $this->l10n->t('Not installed'),
     'help'=>$activity
-     ? 'Registra uma atividade para o destinatário autorizado, com link de detalhe restrito. Não exige cópia na Caixa de entrada.'
-     : 'O aplicativo Activity não está habilitado neste Nextcloud. É preciso instalar e ativar Activity em Aplicativos antes de registrar avisos nesse canal.',
+     ? $this->l10n->t('Records an Activity entry for the authorized recipient with a restricted details link. No Inbox copy required.')
+     : $this->l10n->t('Activity is not enabled in this Nextcloud. Install and enable Activity before recording notifications through that channel.'),
    ],
    [
     'id'=>'email', 'label'=>'E-mail',
     'installed'=>true, 'ready'=>true, 'availability'=>'requires_configuration',
-    'status'=>'Verificar SMTP',
-    'help'=>'O adaptador de e-mail já está implementado. O envio real exige um servidor de e-mail configurado pelo administrador do Nextcloud e endereços válidos dos destinatários. A disponibilidade de SMTP não é verificada por este catálogo.',
+    'status'=>$this->l10n->t('Check SMTP'),
+    'help'=>$this->l10n->t('The email adapter is available. Real delivery requires a mail server configured by the Nextcloud administrator and valid recipient addresses. This catalog does not verify SMTP availability.'),
    ],
    [
     'id'=>'twofactor_gateway','label'=>'Two-Factor Gateway',
     'installed'=>$gateway,'ready'=>false,
     'availability'=>$gateway ? 'configured_per_provider' : 'missing_app',
-    'status'=>$gateway ? 'Ver canais' : 'Não instalado',
+    'status'=>$gateway ? $this->l10n->t('View channels') : $this->l10n->t('Not installed'),
     'help'=>$gateway
-     ? 'Integração nativa com o serviço direto do Two-Factor Gateway, como integração nativa. Configure os provedores e solicite a cada destinatário adesão explícita nas Preferências de avisos.'
-     : 'Instale e configure o Two-Factor Gateway para utilizar SMS, Signal, Telegram, WhatsApp ou XMPP. O envio depende do provedor e de consentimento do destinatário.',
+     ? $this->l10n->t('Uses the native direct-provider service of Two-Factor Gateway. Configure providers and require explicit recipient consent in notification preferences.')
+     : $this->l10n->t('Install and configure Two-Factor Gateway for SMS, Signal, Telegram, WhatsApp or XMPP. Delivery requires a provider and recipient consent.'),
    ],
   ];
   foreach (GatewayTransport::LABELS as $id=>$label) {
@@ -348,12 +349,12 @@ final class TriggerCatalog {
     'id'=>'gateway:'.$id,'label'=>$label,
     'installed'=>$gateway,'ready'=>$ready,
     'availability'=>!$gateway ? 'missing_app' : ($ready ? 'ready' : 'missing_configuration'),
-    'status'=>!$gateway ? 'Não instalado' : ($ready ? 'Disponível' : 'Não configurado'),
+    'status'=>!$gateway ? $this->l10n->t('Not installed') : ($ready ? $this->l10n->t('Available') : $this->l10n->t('Not configured')),
     'help'=>!$gateway
-     ? 'O aplicativo Two-Factor Gateway precisa estar instalado. Este canal permanece inativo e não envia mensagens.'
+     ? $this->l10n->t('Two-Factor Gateway must be installed. This channel remains inactive and sends no messages.')
      : ($ready
-       ? 'Gateway direto configurado. Cada destinatário ainda precisa informar seu próprio identificador e autorizar este canal em Caixa de entrada → Preferências de avisos; publicidade requer autorização adicional.'
-       : 'Este provedor não possui um gateway direto completo configurado no Two-Factor Gateway. Configure-o em Administração → Segurança. Só depois será possível selecioná-lo.'),
+       ? $this->l10n->t('Direct gateway configured. Each recipient must supply an identifier and authorize this channel in Inbox → Notification preferences; sponsored content requires additional consent.')
+       : $this->l10n->t('This provider has no fully configured direct gateway in Two-Factor Gateway. Configure it under Administration → Security before selecting it.')),
    ];
   }
   return $sources;

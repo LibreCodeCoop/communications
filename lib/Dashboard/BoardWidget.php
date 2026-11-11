@@ -14,9 +14,9 @@ use OCP\Dashboard\Model\WidgetButton;
 use OCP\IURLGenerator;
 
 class BoardWidget implements IAPIWidgetV2, IIconWidget, IButtonWidget {
- public function __construct(private BoardService $board,private IURLGenerator $urls) {}
+ public function __construct(private BoardService $board,private IURLGenerator $urls, private \OCP\IL10N $l10n) {}
  public function getId():string { return 'communications-board'; }
- public function getTitle():string { return 'Mural de comunicados'; }
+ public function getTitle():string { return $this->l10n->t('Announcement board'); }
  public function getOrder():int { return 15; }
  public function getIconClass():string { return 'icon-sound'; }
  public function getIconUrl():string {
@@ -40,13 +40,13 @@ class BoardWidget implements IAPIWidgetV2, IIconWidget, IButtonWidget {
     (string)$item['publishedAt']
    );
   }
-  return new WidgetItems($result,$result===[] ? 'Nenhum comunicado disponível para você.' : '');
+  return new WidgetItems($result,$result===[] ? $this->l10n->t('No announcements are available for you.') : '');
  }
  public function getWidgetButtons(string $userId):array {
   return [new WidgetButton(
    WidgetButton::TYPE_MORE,
    $this->urls->linkToRouteAbsolute('communications.page.board'),
-   'Abrir o mural'
+   $this->l10n->t('Open announcement board')
   )];
  }
 }

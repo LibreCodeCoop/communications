@@ -25,6 +25,7 @@ final class NativeEventCatalog {
  public function __construct(
   private IAppManager $apps,
   private IAppConfig $config,
+  private \OCP\IL10N $l10n,
  ) {}
 
  public static function triggerKey(string $eventClass): string {
@@ -165,12 +166,12 @@ final class NativeEventCatalog {
     $short = $reflection->getShortName();
     $phase = str_starts_with($short, 'Before') ? 'before' : 'unknown';
     $webhook = is_a($class, \OCP\EventDispatcher\IWebhookCompatibleEvent::class, true);
-    $description = ($phase === 'before' ? 'Antes da operação; não confirma sua conclusão. ' :
-      'O momento do evento depende do aplicativo; não comprova, sozinho, o resultado da operação. ')
-      . 'Destinatário: usuário autenticado desta requisição, não necessariamente o afetado. '
+    $description = ($phase === 'before' ? $this->l10n->t('Before the operation; does not confirm completion. ') :
+      $this->l10n->t('The timing of this event depends on the app and does not prove the operation completed. '))
+      . $this->l10n->t('Recipient: the authenticated user of this request, not necessarily the affected user. ')
       . (NativeEventSubscriptions::eventIsMutationByName($class)
-         ? 'Para preservar páginas rápidas, este gatilho ignora GET, HEAD e OPTIONS. ' : '')
-      . ($webhook ? 'Compatível com Webhook Listeners.' : 'Evento PHP interno.');
+         ? $this->l10n->t('To keep page requests fast, this trigger ignores GET, HEAD and OPTIONS. ') : '')
+      . ($webhook ? $this->l10n->t('Compatible with Webhook Listeners.') : $this->l10n->t('Internal PHP event.'));
     $key = self::triggerKey($class);
     $out[$class] = [
      'key' => $key, 'appId' => $appId, 'class' => $class,

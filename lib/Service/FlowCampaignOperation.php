@@ -25,22 +25,23 @@ class FlowCampaignOperation implements ISpecificOperation {
   private EventStore $events,
   private IURLGenerator $urls,
   private LoggerInterface $logger,
+  private \OCP\IL10N $l10n,
  ) {}
 
  public function getEntityId(): string { return FileEntity::class; }
- public function getDisplayName(): string { return 'Disparar campanha contextual'; }
- public function getDescription(): string { return 'Quando a regra for atendida, apresentar uma campanha escolhida pelo nome.'; }
+ public function getDisplayName(): string { return $this->l10n->t('Trigger contextual campaign'); }
+ public function getDescription(): string { return $this->l10n->t('When a rule matches, display the campaign selected by name.'); }
  public function getIcon(): string { return $this->urls->imagePath('communications', 'app.svg'); }
  public function isAvailableForScope(int $scope): bool { return $scope === IManager::SCOPE_ADMIN; }
- public function getTriggerHint(): string { return 'Um evento de arquivo cumpre uma regra de campanha'; }
+ public function getTriggerHint(): string { return $this->l10n->t('A file event matches a campaign rule'); }
 
  public function validateOperation(string $name, array $checks, string $operation): void {
   if (!ctype_digit($operation) || (int)$operation <= 0) {
-   throw new \UnexpectedValueException('Informe o ID numérico da campanha.');
+   throw new \UnexpectedValueException($this->l10n->t('Enter the numeric campaign ID.'));
   }
   $campaign = $this->campaigns->find((int)$operation);
   if ($campaign === null || $campaign['trigger_key'] !== 'nextcloud.flow.matched') {
-   throw new \UnexpectedValueException('A campanha deve existir e usar o gatilho Nextcloud Flow.');
+   throw new \UnexpectedValueException($this->l10n->t('The campaign must exist and use the Nextcloud Flow trigger.'));
   }
  }
 

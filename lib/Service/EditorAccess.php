@@ -12,7 +12,7 @@ use OCP\IGroupManager;
 class EditorAccess {
  private const APP = 'communications';
  private const KEY = 'editor_groups_v1';
- public function __construct(private IAppConfig $config,private IGroupManager $groups) {}
+ public function __construct(private IAppConfig $config,private IGroupManager $groups, private \OCP\IL10N $l10n) {}
  public function isAdmin(?string $uid):bool {
   return $uid !== null && $this->groups->isAdmin($uid);
  }
@@ -34,15 +34,15 @@ class EditorAccess {
  }
  /** @param list<string> $items */
  public function configure(?string $actor,array $items):array {
-  if (!$this->isAdmin($actor)) { throw new InvalidArgumentException('Somente administradores podem delegar edição.'); }
+  if (!$this->isAdmin($actor)) { throw new InvalidArgumentException($this->l10n->t('Only administrators can delegate editing.')); }
   if (!array_is_list($items) || count($items)>20) {
-   throw new InvalidArgumentException('Escolha no máximo vinte grupos editoriais.');
+   throw new InvalidArgumentException($this->l10n->t('Select at most twenty editorial groups.'));
   }
   $selected=[];
   foreach ($items as $id) {
    if (!is_string($id) || !preg_match('/^[A-Za-z0-9_.:@-]{1,64}$/D',$id)
        || $this->groups->get($id)===null) {
-    throw new InvalidArgumentException('Grupo editorial não encontrado.');
+    throw new InvalidArgumentException($this->l10n->t('Editorial group not found.'));
    }
    $selected[$id]=$id;
   }
