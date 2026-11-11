@@ -96,6 +96,13 @@ if ! docker exec -u www-data "$NC_CONTAINER" php occ status --output json 2>/dev
 fi
 docker exec -u www-data "$NC_CONTAINER" php occ config:system:set trusted_domains 1 --value localhost >/dev/null
 docker exec -u www-data "$NC_CONTAINER" php occ config:system:set trusted_domains 2 --value 127.0.0.1 >/dev/null
+# Disable only the disposable lab's first-login wizard: its modal intercepts
+# Playwright clicks before the application UI can be exercised. This is a
+# test-fixture setting and does not change Communications or production setup.
+installed_apps="$(docker exec -u www-data "$NC_CONTAINER" php occ app:list --output json)"
+if printf '%s' "$installed_apps" | python3 -c 'import json,sys; sys.exit("firstrunwizard" not in json.load(sys.stdin).get("enabled", {}))'; then
+  docker exec -u www-data "$NC_CONTAINER" php occ app:disable firstrunwizard
+fi
 docker exec -u www-data "$NC_CONTAINER" php occ app:enable communications
 if [[ "${INSTALL_LIBRESIGN:-0}" == 1 ]]; then
   docker exec -u www-data "$NC_CONTAINER" php occ app:enable libresign
