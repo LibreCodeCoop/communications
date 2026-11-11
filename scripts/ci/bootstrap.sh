@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 export NC_TEST_PASSWORD="${NC_TEST_PASSWORD:-$(openssl rand -hex 16)}"
-export NC_CONTAINER="${NC_CONTAINER:-communications-ci-nc36}"
+export NC_CONTAINER="${NC_CONTAINER:-communications-ci-nextcloud}"
 export NC_PORT="${NC_PORT:-18884}"
 export NC_BASE_URL="http://127.0.0.1:${NC_PORT}"
 export NC_ADMIN_USER="qa_admin" NC_RECIPIENT_USER="poc_second" NC_UNRELATED_USER="qa_unrelated"
@@ -14,12 +14,13 @@ case "$DB" in sqlite|pgsql|mariadb) ;; *) echo 'Choose sqlite, pgsql or mariadb'
 root="${NC_RUNTIME_DIR:-$PWD/.ci/runtime}"
 export NC_RUNTIME_DIR="$root"
 mkdir -p "$root"
+NC_EXPECTED_VERSION="$(python3 scripts/ci/read_app_requirements.py --value nextcloud_max)"
 if [[ ! -f "$root/nextcloud/version.php" ]]; then
-  if [[ -n "${NC36_LOCAL_SOURCE:-}" ]]; then
+  if [[ -n "${NC_SERVER_LOCAL_SOURCE:-}" ]]; then
     mkdir -p "$root/nextcloud"
-    rsync -rl --exclude '/config/' --exclude '/data/' --exclude '/custom_apps/' "$NC36_LOCAL_SOURCE/" "$root/nextcloud/"
+    rsync -rl --exclude '/config/' --exclude '/data/' --exclude '/custom_apps/' "$NC_SERVER_LOCAL_SOURCE/" "$root/nextcloud/"
   else
-    archive_url="${NC36_ARCHIVE_URL:-https://download.nextcloud.com/server/daily/latest-master.tar.bz2}"
+    archive_url="${NC_SERVER_ARCHIVE_URL:-https://download.nextcloud.com/server/daily/latest-master.tar.bz2}"
     # Fail closed if the upstream archive is corrupted or lacks a digest.
     curl --fail --location --retry 3 --show-error --output "$root/nextcloud.tar.bz2" "$archive_url"
     curl --fail --location --retry 3 --show-error --output "$root/nextcloud.sha256" "${archive_url}.sha256"
@@ -30,8 +31,8 @@ if [[ ! -f "$root/nextcloud/version.php" ]]; then
     rm "$root/nextcloud.tar.bz2" "$root/nextcloud.sha256"
   fi
 fi
-if ! grep -qE '\$OC_Version[[:space:]]*=[[:space:]]*(\[|array\()[[:space:]]*36,' "$root/nextcloud/version.php"; then
-  echo 'Not a Nextcloud 36 snapshot; stop instead of silently testing another version' >&2
+if ! grep -qE '\$OC_Version[[:space:]]*=[[:space:]]*(\[|array\()[[:space:]]*'"$NC_EXPECTED_VERSION"',' "$root/nextcloud/version.php"; then
+  echo "Nextcloud version mismatch: app manifest requires $NC_EXPECTED_VERSION" >&2
   head -n 6 "$root/nextcloud/version.php" >&2
   exit 2
 fi
@@ -40,8 +41,9 @@ if [[ "${INSTALL_LIBRESIGN:-0}" == '1' && ! -f "$root/libresign/appinfo/info.xml
     mkdir -p "$root/libresign"
     rsync -rl "$LIBRESIGN_LOCAL_SOURCE/" "$root/libresign/"
   else
-    git clone -q https://github.com/LibreSign/libresign.git "$root/libresign"
+    git clone -q --recurse-submodules https://github.com/LibreSign/libresign.git "$root/libresign"
     git -C "$root/libresign" checkout -q "$LIBRESIGN_REF"
+    git -C "$root/libresign" submodule update --init --recursive
     docker run --rm --user "$(id -u):$(id -g)" -v "$root/libresign:/app" \
       -w /app composer:2 composer install --no-dev --no-interaction --no-progress
     # A source checkout is not a release artifact: build the frontend assets
@@ -110,8 +112,9 @@ for uid in poc_second qa_unrelated; do
 done
 docker exec -u www-data "$NC_CONTAINER" php occ status --output json
 if [[ -n "${GITHUB_ENV:-}" ]]; then
+  echo "::add-mask::$NC_TEST_PASSWORD"
   for name in NC_BASE_URL NC_CONTAINER NC_TEST_PASSWORD NC_ADMIN_USER NC_RECIPIENT_USER NC_UNRELATED_USER; do
     printf '%s=%s\n' "$name" "${!name}" >> "$GITHUB_ENV"
   done
 fi
-printf 'NC36 isolated test lab ready: db=%s libresign=%s\n' "$DB" "${INSTALL_LIBRESIGN:-0}"
+printf "Nextcloud ${NC_EXPECTED_VERSION} isolated test lab ready: db=%s libresign=%s\n" "$DB" "${INSTALL_LIBRESIGN:-0}"
