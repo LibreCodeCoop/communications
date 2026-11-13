@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -21,31 +22,31 @@ $prefix = '/apps/communications';
 $matching = [];
 
 foreach ($routes as $name => $route) {
-    if (!str_starts_with($name, 'communications.')) {
-        continue;
-    }
-    $matching[$name] = [
-        'path' => $route->getPath(),
-        'methods' => array_map('strtoupper', $route->getMethods()),
-    ];
+	if (!str_starts_with($name, 'communications.')) {
+		continue;
+	}
+	$matching[$name] = [
+		'path' => $route->getPath(),
+		'methods' => array_map('strtoupper', $route->getMethods()),
+	];
 }
 
 $failures = [];
 foreach ($expected as $item) {
-    $path = $prefix . ($item['url'] === '/' ? '/' : $item['url']);
-    // Attribute routing canonicalizes controller and method names to lowercase
-    // and removes underscores from compound controller names.
-    $expectedName = 'communications.' . strtolower(str_replace('_', '', str_replace('#', '.', $item['name'])));
-    $actual = $matching[$expectedName] ?? null;
-    if ($actual === null || $actual['path'] !== $path || !in_array($item['verb'], $actual['methods'], true)) {
-        $failures[] = sprintf('%s %s %s: expected named route missing or mismatched',
-            $expectedName, $item['verb'], $path);
-    }
+	$path = $prefix . ($item['url'] === '/' ? '/' : $item['url']);
+	// Attribute routing canonicalizes controller and method names to lowercase
+	// and removes underscores from compound controller names.
+	$expectedName = 'communications.' . strtolower(str_replace('_', '', str_replace('#', '.', $item['name'])));
+	$actual = $matching[$expectedName] ?? null;
+	if ($actual === null || $actual['path'] !== $path || !in_array($item['verb'], $actual['methods'], true)) {
+		$failures[] = sprintf('%s %s %s: expected named route missing or mismatched',
+			$expectedName, $item['verb'], $path);
+	}
 }
 
 if ($failures !== []) {
-    fwrite(STDERR, implode("\n", $failures) . "\n");
-    fwrite(STDERR, json_encode($matching, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
-    exit(1);
+	fwrite(STDERR, implode("\n", $failures) . "\n");
+	fwrite(STDERR, json_encode($matching, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+	exit(1);
 }
 printf("All %d declared controller routes resolve in Nextcloud.\n", count($expected));
