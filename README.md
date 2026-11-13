@@ -42,9 +42,10 @@ composer install
 composer cs:check
 composer test
 composer analyse
+composer mutation:test # requires PCOV or Xdebug coverage
 ```
 
-The Vue components and browser entrypoints use strict TypeScript. Vitest exercises front-end contracts; Stryker currently enforces an 85% mutation-score floor for the security-critical CTA link sanitizer, not the entire frontend. CSS uses Nextcloud theme variables and component styles or `.cc-` namespace isolation, checked by Stylelint and a selector-isolation test. Migration history is intentionally a single initial schema for this unreleased app.
+The Vue components and browser entrypoints use strict TypeScript. Vitest exercises front-end contracts; Stryker currently enforces an 85% mutation-score floor for the security-critical frontend CTA link sanitizer, not the entire frontend. Infection enforces a separate 90% mutation-score floor for the backend `CtaUrl` sanitizer, not the entire PHP application. CSS uses Nextcloud theme variables and component styles or `.cc-` namespace isolation, checked by Stylelint and a selector-isolation test. Migration history is intentionally a single initial schema for this unreleased app.
 
 CI workflows are synchronized from the organization's [`LibreCodeCoop/.github` templates](https://github.com/LibreCodeCoop/.github/tree/main/workflow-templates), with provenance in `.github/actions-lock.txt`; the app-specific Playwright and mutation jobs remain local. Never hand-edit an organization-managed workflow.
 
