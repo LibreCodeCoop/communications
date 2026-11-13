@@ -59,13 +59,20 @@ async function appApi(page, method, route, body = undefined) {
 function fixturePHP() {
   return JSON.parse(execFileSync('docker', [
     'exec', '-u', 'www-data', CONTAINER, 'php',
-    `/var/www/html/custom_apps/${APP_ID}/tests/manual/mvp_libresign_native_event_v29.php`,
+    `/var/www/html/custom_apps/${APP_ID}/tests/integration/fixtures/emit_libresign_completion.php`,
   ], { encoding: 'utf8', timeout: 60000 }))
 }
 
-function runCron() {
-  execFileSync('docker', ['exec', '-u', 'www-data', CONTAINER,
-    'php', '/var/www/html/cron.php'], { encoding: 'utf8', timeout: 75000 })
+function runEventDelivery(eventId) {
+  if (!Number.isSafeInteger(eventId) || eventId <= 0) throw new Error('Invalid event fixture ID')
+  // Run only the job scheduled for this synthetic event. Global cron can
+  // execute unrelated Nextcloud / LibreSign jobs and is not an acceptance
+  // boundary for Communications delivery.
+  return JSON.parse(execFileSync('docker', [
+    'exec', '-u', 'www-data', CONTAINER, 'php',
+    `/var/www/html/custom_apps/${APP_ID}/tests/integration/fixtures/execute_queued_event_delivery.php`,
+    String(eventId),
+  ], { encoding: 'utf8', timeout: 45000 }))
 }
 
 test('LibreSign completion is discovered and delivered through generic native-event flow', async ({ browser }) => {
@@ -80,7 +87,7 @@ test('LibreSign completion is discovered and delivered through generic native-ev
   try {
     await login(admin, ADMIN)
     await admin.goto(`${APP_PATH}/`)
-    await expect(admin.locator('.cc-hub-tabs')).toBeVisible()
+    await expect(admin.getByRole('navigation', { name: 'Communication areas' })).toBeVisible()
 
     const catalogResponse = await appApi(admin, 'GET', '/api/catalog')
     expect(catalogResponse.status).toBe(200)
@@ -94,16 +101,16 @@ test('LibreSign completion is discovered and delivered through generic native-ev
 
     // Exercise the real UI: the event must be selectable using the same
     // application/event controls as any other enabled Nextcloud app.
-    await admin.locator('.cc-hub-tabs button').filter({ hasText: 'Publications' }).click()
-    await admin.locator('.cc-hub-top button').filter({ hasText: 'New publication' }).click()
-    await admin.locator('.cc-automation-intent-card').filter({ hasText: 'In an app' }).click()
-    await admin.locator('#cc-app-source').click()
+    await admin.getByRole('navigation', { name: 'Communication areas' }).getByRole('button', { name: 'Publications' }).click()
+    await admin.getByRole('button', { name: 'New publication' }).click()
+    await admin.getByRole('group', { name: 'Trigger source' }).getByRole('button', { name: 'In an app' }).click()
+    await admin.getByRole('combobox', { name: 'Select application' }).click()
     await admin.getByRole('option').filter({ hasText: 'LibreSign' }).first().click()
-    await expect(admin.locator('#cc-app-event')).toBeVisible()
-    await admin.locator('#cc-app-event').click()
+    await expect(admin.getByRole('combobox', { name: 'Select application event' })).toBeVisible()
+    await admin.getByRole('combobox', { name: 'Select application event' }).click()
     await expect(admin.getByRole('option').filter({ hasText: 'SigningRequestCompletedEvent' }).first()).toBeVisible()
     await admin.getByRole('option').filter({ hasText: 'SigningRequestCompletedEvent' }).first().click()
-    await expect(admin.locator('.cc-automation')).toContainText('SigningRequestCompletedEvent')
+    await expect(admin.getByRole('group', { name: 'Trigger source' })).toContainText('In an app')
 
     const name = `QA LibreSign event ${randomUUID()}`
     const created = await appApi(admin, 'POST', '/api/campaigns', {
@@ -129,7 +136,9 @@ test('LibreSign completion is discovered and delivered through generic native-ev
     expect(event.context).toBe('libresign')
     expect(event.webhookContract.status).toBe('completed')
     expect(JSON.stringify(event.webhookContract)).not.toContain(RECIPIENT)
-    runCron()
+    const delivery = runEventDelivery(event.eventId)
+    expect(delivery.eventId).toBe(event.eventId)
+    expect(delivery.executed).toBe(true)
 
     const received = await appApi(recipient, 'GET', `/api/board/${publication.id}`)
     expect(received.status, received.body.slice(0, 450)).toBe(200)

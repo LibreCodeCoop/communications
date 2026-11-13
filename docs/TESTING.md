@@ -19,3 +19,7 @@ Acceptance evidence must include the tested Nextcloud and LibreSign revisions, d
 ## CI source integrity
 
 The Nextcloud archive source is the development channel (`latest-master` for the current manifest requirement). The bootstrap reads the supported version from `appinfo/info.xml` and refuses any other version. When upstream master advances beyond the compatible version in the manifest, replace the archive source with a verified supported release artifact; the test will fail closed rather than silently testing the wrong version. The LibreSign test pins a specific reviewed upstream commit and compiles its frontend assets; it is never used as an app-specific production adapter.
+
+### Scoped event delivery in CI
+
+The browser compatibility scenario creates a synthetic LibreSign completion event and executes only its queued `EventChannelDeliveryJob` using the **test-only** CLI fixture in `tests/integration/fixtures/execute_queued_event_delivery.php`. This exercises the production queue worker without running Nextcloud's global `cron.php`, which may execute unrelated jobs for installed apps and exceed browser-test timeouts. The fixture refuses events outside its synthetic LibreSign recipient and requires exactly one matching queued job. The browser still verifies authorized delivery and denial to unrelated users.
