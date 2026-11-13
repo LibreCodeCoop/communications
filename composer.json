@@ -8,6 +8,7 @@
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.59",
+    "infection/infection": "^0.35",
     "nextcloud/coding-standard": "^1.5",
     "nextcloud/ocp": "^35.0",
     "phpstan/phpstan": "^2.1",
@@ -35,11 +36,14 @@
       "@analyse"
     ],
     "cs:check": "php-cs-fixer fix --dry-run --diff --using-cache=no",
-    "cs:fix": "php-cs-fixer fix --using-cache=no"
+    "cs:fix": "php-cs-fixer fix --using-cache=no",
+    "mutation:test": "infection lib/Service/CtaUrl.php --threads=2 --no-progress --no-interaction"
   },
   "config": {
     "sort-packages": true,
-    "allow-plugins": {},
+    "allow-plugins": {
+      "infection/extension-installer": false
+    },
     "platform": {
       "php": "8.3.0"
     }
