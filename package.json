@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "test:e2e:libresign": "playwright test tests/e2e/libresign-event.spec.mjs",
     "lint": "eslint src tests scripts vite*.js playwright.config.mjs",
-    "audit": "npm audit --audit-level=high"
+    "audit": "npm audit --audit-level=high",
+    "test": "npm run test:unit"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",

@@ -3,13 +3,30 @@
 version = 1
 
 [[annotations]]
-path = ["package.json", "package-lock.json", "composer.json", "composer.lock", "*.json", "l10n/*.json", "tests/ci/*.json", "phpunit.xml.dist", "phpstan.neon.dist", "eslint.config.mjs", "playwright.config.mjs", ".gitignore", ".github/workflows/*.yml"]
+path = [
+    "package.json",
+    "package-lock.json",
+    "composer.json",
+    "composer.lock",
+    "*.json",
+    "l10n/*.json",
+    "tests/ci/*.json",
+    "tests/integration/*.json",
+    "phpunit.xml.dist",
+    "phpstan.neon.dist",
+    "eslint.config.mjs",
+    "playwright.config.mjs",
+    ".gitignore",
+]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 LibreCode Coop and contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
 
 [[annotations]]
-path = ["LICENSE", "LICENSES/AGPL-3.0-or-later.txt"]
+path = [
+    "LICENSE",
+    "LICENSES/AGPL-3.0-or-later.txt",
+]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2007 Free Software Foundation, Inc."
 SPDX-License-Identifier = "AGPL-3.0-or-later"

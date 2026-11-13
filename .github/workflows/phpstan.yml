@@ -18,12 +18,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Read PHP requirement from appinfo/info.xml
-        id: compatibility
-        run: python3 scripts/ci/read_app_requirements.py >> "$GITHUB_OUTPUT"
+      - name: Read Nextcloud and PHP compatibility from official version matrix
+        id: versions
+        uses: nextcloud-libraries/nextcloud-version-matrix@71959de73c244b11ecbf4503b87c41d65b0f64ae # v1.3.4
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2.40.0
         with:
-          php-version: ${{ steps.compatibility.outputs.php_min }}
+          php-version: ${{ steps.versions.outputs.php-min }}
           extensions: mbstring, intl, dom, xml, zip, sqlite3, pdo_sqlite
           coverage: none
           tools: composer:v2

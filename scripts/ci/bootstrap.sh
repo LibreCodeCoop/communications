@@ -14,7 +14,16 @@ case "$DB" in sqlite|pgsql|mariadb) ;; *) echo 'Choose sqlite, pgsql or mariadb'
 root="${NC_RUNTIME_DIR:-$PWD/.ci/runtime}"
 export NC_RUNTIME_DIR="$root"
 mkdir -p "$root"
-NC_EXPECTED_VERSION="$(python3 scripts/ci/read_app_requirements.py --value nextcloud_max)"
+NC_EXPECTED_VERSION="$(python3 - <<'PYXML'
+import xml.etree.ElementTree as ET
+
+manifest = ET.parse('appinfo/info.xml').getroot()
+version = manifest.find('./dependencies/nextcloud')
+if version is None or not version.get('max-version'):
+    raise ValueError('The Nextcloud version range is missing in appinfo/info.xml')
+print(version.get('max-version'))
+PYXML
+)"
 if [[ ! -f "$root/nextcloud/version.php" ]]; then
   if [[ -n "${NC_SERVER_LOCAL_SOURCE:-}" ]]; then
     mkdir -p "$root/nextcloud"

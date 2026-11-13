@@ -7,6 +7,8 @@
     "php": ">=8.3"
   },
   "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.59",
+    "nextcloud/coding-standard": "^1.5",
     "nextcloud/ocp": "^35.0",
     "phpstan/phpstan": "^2.1",
     "phpunit/phpunit": "^11.5",
@@ -24,14 +26,16 @@
     }
   },
   "scripts": {
-    "lint": "bash scripts/ci/php-lint.sh",
+    "lint": "find lib templates tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l",
     "test": "phpunit --configuration phpunit.xml.dist",
     "analyse": "phpstan analyse --configuration phpstan.neon.dist --no-progress",
     "check": [
       "@lint",
       "@test",
       "@analyse"
-    ]
+    ],
+    "cs:check": "php-cs-fixer fix --dry-run --diff --using-cache=no",
+    "cs:fix": "php-cs-fixer fix --using-cache=no"
   },
   "config": {
     "sort-packages": true,
