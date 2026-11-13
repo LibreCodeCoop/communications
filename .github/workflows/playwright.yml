@@ -15,14 +15,14 @@ jobs:
   requirements:
     runs-on: ubuntu-latest
     outputs:
-      nextcloud: ${{ steps.compatibility.outputs.nextcloud_max }}
+      nextcloud: ${{ steps.versions.outputs.branches-max }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Read PHP requirement from appinfo/info.xml
-        id: compatibility
-        run: python3 scripts/ci/read_app_requirements.py >> "$GITHUB_OUTPUT"
+      - name: Read Nextcloud and PHP compatibility from official version matrix
+        id: versions
+        uses: nextcloud-libraries/nextcloud-version-matrix@71959de73c244b11ecbf4503b87c41d65b0f64ae # v1.3.4
   playwright:
     name: Nextcloud ${{ needs.requirements.outputs.nextcloud }} / ${{ matrix.database }}
     needs: requirements
@@ -49,6 +49,8 @@ jobs:
           INSTALL_LIBRESIGN: ${{ matrix.database == 'sqlite' && '1' || '0' }}
       - name: Verify attribute routes against the original route contract
         run: docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/ci/assert-routes.php
+      - name: Verify initial database schema contract
+        run: docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/schema_snapshot.php
       - name: Verify publication and recipient isolation
         run: npx playwright test tests/e2e/app-smoke.spec.mjs
       - name: Verify generic LibreSign completion contract
