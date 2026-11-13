@@ -1,7 +1,8 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { t } from '@nextcloud/l10n'
+import type { AutomationCatalog, NativeIntent, NativeSource, NativeAction, NativeApplication, TriggerIntent, TriggerMode, PageRouteFilters, PageRouteOption } from '../types/communications'
 
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -17,29 +18,42 @@ import {
   mdiPuzzleOutline, mdiCheckCircleOutline, mdiOpenInNew, mdiWeb, mdiHelpCircleOutline, mdiBullhornOutline,
 } from '@mdi/js'
 
-const props = defineProps({
-  modelValue: { type:String, default:'' },
-  placement: { type:String, default:'any' },
-  pageRoute: { type:String, default:'' },
-  pageFilters: { type:Object, default:()=>({}) },
-  catalog: { type:Object, default:()=>({intents:[],sources:[],applications:[],placements:[]}) },
-  campaignId: { type:Number, default:null },
+const props = withDefaults(defineProps<{
+  modelValue?: string
+  placement?: string
+  pageRoute?: string
+  pageFilters?: PageRouteFilters
+  catalog?: AutomationCatalog
+  campaignId?: number | null
+}>(), {
+  modelValue: '',
+  placement: 'any',
+  pageRoute: '',
+  pageFilters: () => ({}),
+  catalog: () => ({sources: [], applications: [], intents: [], placements: []}),
+  campaignId: null,
 })
-const emit = defineEmits(['update:modelValue','update:placement','update:pageRoute','update:pageFilters','intent-change'])
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  'update:placement': [value: string]
+  'update:pageRoute': [value: string]
+  'update:pageFilters': [value: PageRouteFilters]
+  'intent-change': [value: {from: TriggerIntent | null; to: TriggerIntent}]
+}>()
 const BASE = (window.OC?.webroot || '') + '/index.php/apps/communications'
-const selectedIntent = ref(null)
-const selectedAppId = ref(null)
-const selectedMode = ref('event')
-const selectedAdvancedId = ref(null)
+const selectedIntent = ref<TriggerIntent | null>(null)
+const selectedAppId = ref<string | null>(null)
+const selectedMode = ref<TriggerMode>('event')
+const selectedAdvancedId = ref<string | null>(null)
 const appSearch = ref('')
 const MAX_OPTIONS = 12
-const routes = ref([])
+const routes = ref<PageRouteOption[]>([])
 const routeLoading = ref(false)
 const routeError = ref('')
 let routeGeneration = 0
 
-const intentIcons = {app:mdiApps, schedule:mdiCalendarMonthOutline, advanced:mdiSourceBranch, board:mdiBullhornOutline}
-const sourceIcons = {
+const intentIcons: Record<TriggerIntent, string> = {app:mdiApps, schedule:mdiCalendarMonthOutline, advanced:mdiSourceBranch, board:mdiBullhornOutline}
+const sourceIcons: Record<string, string> = {
   files:mdiFolderOutline, files_sharing:mdiShareVariantOutline, core:mdiAccountOutline,
   comments:mdiCommentTextOutline, dashboard:mdiWeb,
 }
@@ -54,12 +68,12 @@ const actionOptions = computed(()=>(selectedApp.value?.actions||[]).map(action=>
   label:action.label,value:action.key,description:action.description,
 })))
 const filteredApplications = computed(()=>{
-  const term = appSearch.value.trim().toLocaleLowerCase('pt-BR')
+  const term = appSearch.value.trim().toLocaleLowerCase()
   if(!term)return applications.value
   return applications.value.filter(app=>[
     app.label,app.description,...(app.keywords||[]),
     ...(app.actions||[]).flatMap(action=>[action.label,action.description]),
-  ].join(' ').toLocaleLowerCase('pt-BR').includes(term))
+  ].join(' ').toLocaleLowerCase().includes(term))
 })
 const appOptions = computed(()=>{
   const chosen=selectedApp.value
@@ -69,15 +83,15 @@ const appOptions = computed(()=>{
 })
 const appValue = computed({
   get:()=>selectedAppId.value,
-  set:id=>selectApp(id),
+  set:(id: string | null)=>selectApp(id),
 })
 const actionValue = computed({
   get:()=>props.modelValue,
-  set:key=>emit('update:modelValue',key||''),
+  set:(key: string)=>emit('update:modelValue',key||''),
 })
 const advancedValue = computed({
   get:()=>selectedAdvancedId.value,
-  set:id=>{
+  set:(id: string | null)=>{
     selectedAdvancedId.value=id
     const source=advancedSources.value.find(item=>item.id===id)
     emit('update:modelValue',source?.actions[0]?.key||'')
@@ -86,14 +100,14 @@ const advancedValue = computed({
 })
 const modeValue = computed({
   get:()=>selectedMode.value,
-  set:mode=>selectMode(mode),
+  set:(mode: TriggerMode)=>selectMode(mode),
 })
 // Do not use an empty value for NcSelect: it is interpreted as "no selection"
 // and the placeholder overlaps the selected label on some Nextcloud themes.
 const ANY_PAGE = '__any_page__'
 const pageRouteValue = computed({
   get:()=>props.pageRoute || ANY_PAGE,
-  set:route=>{
+  set:(route: string)=>{
     emit('update:pageRoute',!route || route===ANY_PAGE ? '' : route)
     emit('update:pageFilters',{})
   },
@@ -103,7 +117,7 @@ const routeOptions = computed(()=>[
   ...routes.value,
 ])
 const routeVariables = computed(()=>[...new Set([...props.pageRoute.matchAll(/\{([A-Za-z][A-Za-z0-9_]*)\}/g)].map(match=>match[1]))])
-function changeRouteFilter(name, field, value) {
+function changeRouteFilter(name: string, field: 'operator' | 'value', value: string): void {
   const next={...props.pageFilters}
   if (field==='operator' && value==='any') {
     delete next[name]
@@ -151,7 +165,7 @@ const explanation = computed(()=>{
 const canSelectEvent = computed(()=>!!selectedApp.value?.canEvents)
 const canSelectPage = computed(()=>!!selectedApp.value?.canPages)
 
-function syncSelection(){
+function syncSelection(): void {
   if(!props.modelValue)return
   if(props.modelValue==='nextcloud.board.published'){
     selectedIntent.value='board'
@@ -178,7 +192,7 @@ function syncSelection(){
 }
 watch([()=>props.modelValue,()=>props.placement,applications,advancedSources],syncSelection,{immediate:true})
 
-function chooseIntent(id){
+function chooseIntent(id: TriggerIntent): void {
   if(selectedIntent.value===id)return
   emit('intent-change', {from:selectedIntent.value, to:id})
   selectedIntent.value=id
@@ -199,7 +213,7 @@ function chooseIntent(id){
     emit('update:pageRoute','')
   }
 }
-function selectApp(id){
+function selectApp(id: string | null): void {
   selectedAppId.value=id||null
   appSearch.value=''
   const app=applications.value.find(x=>x.id===id)
@@ -208,7 +222,7 @@ function selectApp(id){
   selectedMode.value=mode
   selectMode(mode)
 }
-function selectMode(mode){
+function selectMode(mode: TriggerMode): void {
   if(!selectedApp.value)return
   if(mode==='event'&&!canSelectEvent.value)return
   if(mode==='visit'&&!canSelectPage.value)return
@@ -225,7 +239,7 @@ function selectMode(mode){
     ))
   }
 }
-async function loadRoutes(app){
+async function loadRoutes(app: string | null): Promise<void> {
   const generation=++routeGeneration
   routes.value=[]
   routeError.value=''
@@ -234,7 +248,7 @@ async function loadRoutes(app){
   try{
     const response=await fetch(BASE+'/api/routes?app='+encodeURIComponent(app),{credentials:'same-origin'})
     if(!response.ok)throw new Error('HTTP '+response.status)
-    const json=await response.json()
+    const json = await response.json() as { routes?: PageRouteOption[] }
     if(generation===routeGeneration)routes.value=json.routes||[]
   }catch(error){
     if(generation===routeGeneration)routeError.value=t('communications', 'Could not retrieve pages for this app.')
@@ -246,8 +260,12 @@ watch([selectedAppId,selectedMode],([app,mode])=>{
   if(mode==='visit'&&app)void loadRoutes(app)
   else{routeGeneration++;routes.value=[]}
 },{immediate:true})
-function sourceIcon(id){return sourceIcons[id]||mdiPuzzleOutline}
-function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/workflow'}
+function sourceIcon(id: string): string {return sourceIcons[id]||mdiPuzzleOutline}
+const selectApplicationValue = (app: NativeApplication): string => app.id
+const selectActionValue = (action: {value: string}): string => action.value
+const selectRouteValue = (route: PageRouteOption): string => route.value
+const selectSourceValue = (source: NativeSource): string => source.id
+function flowLink(): string {return (window.OC?.webroot||'')+'/index.php/settings/admin/workflow'}
 </script>
 
 <template>
@@ -283,7 +301,7 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
               <p class="cc-help-content">{{ t('communications', 'Only enabled apps with integrated events or browsable pages are shown. Pages are discovered automatically. Business events require a trusted adapter.') }}</p>
             </NcPopover>
           </div>
-          <NcSelect v-model="appValue" :options="appOptions" :reduce="app=>app.id"
+          <NcSelect v-model="appValue" :options="appOptions" :reduce="selectApplicationValue"
                     :filterable="false" :clearable="true" input-id="cc-app-source"
                     label="label" :placeholder="t('communications', 'Search installed apps...')"
                     :aria-label-combobox="t('communications', 'Select application')"
@@ -327,7 +345,7 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
           <div v-if="selectedMode==='event'" class="cc-automation-field">
             <label for="cc-app-event">{{ t('communications', 'Application event *') }}</label>
             <NcSelect v-model="actionValue" :options="actionOptions"
-                      :reduce="action=>action.value" :clearable="false"
+                      :reduce="selectActionValue" :clearable="false"
                       input-id="cc-app-event" label="label"
                       :placeholder="t('communications', 'Select an event...')"
                       :aria-label-combobox="t('communications', 'Select application event')">
@@ -344,7 +362,7 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
           <div v-else class="cc-automation-field">
             <label for="cc-app-route">{{ t('communications', 'Web page or route *') }}</label>
             <NcSelect v-model="pageRouteValue" :options="routeOptions"
-                      :reduce="route=>route.value" :clearable="false" label="label"
+                      :reduce="selectRouteValue" :clearable="false" label="label"
                       input-id="cc-app-route" :disabled="routeLoading"
                       :placeholder="routeLoading ? t('communications', 'Loading pages…') : ''"
                       :aria-label-combobox="t('communications', 'Select web page')">
@@ -396,7 +414,7 @@ function flowLink(){return (window.OC?.webroot||'')+'/index.php/settings/admin/w
         <h3>{{ t('communications', 'Integration or Flow') }}</h3>
         <div class="cc-automation-field">
           <label for="cc-advanced">{{ t('communications', 'Event source *') }}</label>
-          <NcSelect v-model="advancedValue" :options="advancedSources" :reduce="source=>source.id"
+          <NcSelect v-model="advancedValue" :options="advancedSources" :reduce="selectSourceValue"
                     :clearable="true" input-id="cc-advanced" label="label" :placeholder="t('communications', 'Choose an integration...')"/>
         </div>
         <NcNoteCard v-if="selectedAdvanced" type="info">

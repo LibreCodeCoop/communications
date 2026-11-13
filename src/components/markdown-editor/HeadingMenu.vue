@@ -49,9 +49,10 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { CSSProperties } from 'vue'
 
 import { t } from '@nextcloud/l10n'
 
@@ -61,21 +62,22 @@ defineOptions({
 	name: 'HeadingMenu',
 })
 
-const emit = defineEmits(['clear-heading', 'apply-heading'])
+type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
+const emit = defineEmits<{ 'clear-heading': []; 'apply-heading': [level: HeadingLevel] }>()
 
-const headingLevels = [1, 2, 3, 4, 5, 6]
+const headingLevels: HeadingLevel[] = [1, 2, 3, 4, 5, 6]
 
-const root = ref(null)
-const toggle = ref(null)
-const menu = ref(null)
+const root = ref<HTMLElement | null>(null)
+const toggle = ref<HTMLButtonElement | null>(null)
+const menu = ref<HTMLUListElement | null>(null)
 const isOpen = ref(false)
-const menuStyle = ref({})
+const menuStyle = ref<CSSProperties>({})
 
-const headingClass = (level) => {
+const headingClass = (level: number): string[] => {
 	return ['markdown-heading-menu__option', `markdown-heading-menu__option--${level}`]
 }
 
-const headingText = (level) => {
+const headingText = (level: number): string => {
 	// TRANSLATORS Label shown in the markdown editor heading menu for each option. {level} is the heading level number.
 	return t('communications', 'Heading {level}', { level })
 }
@@ -85,7 +87,7 @@ const clearHeading = () => {
 	closeMenu()
 }
 
-const applyHeading = (level) => {
+const applyHeading = (level: HeadingLevel): void => {
 	emit('apply-heading', level)
 	closeMenu()
 }
@@ -122,11 +124,11 @@ const updateMenuPosition = () => {
 	}
 }
 
-const onDocumentPointerDown = (event) => {
+const onDocumentPointerDown = (event: PointerEvent): void => {
 	if (!isOpen.value || !root.value) {
 		return
 	}
-	if (!root.value.contains(event.target)) {
+	if (event.target instanceof Node && !root.value.contains(event.target)) {
 		closeMenu()
 	}
 }
@@ -172,7 +174,7 @@ onBeforeUnmount(() => {
 	&__menu {
 		position: fixed;
 		top: 0;
-		left: 0;
+		inset-inline-start: 0;
 		visibility: hidden;
 		z-index: 1200;
 		margin: 0;
@@ -193,7 +195,7 @@ onBeforeUnmount(() => {
 		border: 0;
 		background: transparent;
 		color: var(--color-main-text);
-		text-align: left;
+		text-align: start;
 		cursor: pointer;
 	}
 

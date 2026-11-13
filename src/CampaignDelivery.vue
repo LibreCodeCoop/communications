@@ -2,33 +2,34 @@
   SPDX-FileCopyrightText: 2026 LibreCode coop and contributors
   SPDX-License-Identifier: AGPL-3.0-or-later
 -->
-<script setup>
+<script setup lang="ts">
 import { t } from '@nextcloud/l10n'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import CampaignPresentation from './components/CampaignPresentation.vue'
+import type { ClaimedPresentation, ClaimBatchResponse } from './types/communications'
 
 const apiRoot=(window.OC?.webroot||'')+'/index.php/apps/communications'
-const current=ref(null)
-const banners=ref([])
+const current = ref<ClaimedPresentation | null>(null)
+const banners = ref<ClaimedPresentation[]>([])
 const MAX_BANNERS=5
 let busy=false
-const pendingDismissals=new Set()
-let polling=null
-let updates=null
+const pendingDismissals = new Set<number>()
+let polling: number | null = null
+let updates: BroadcastChannel | null = null
 let firstVisit=true
-let lastApp=null
-let lastPath=null
+let lastApp: string | null = null
+let lastPath: string | null = null
 
-function appContext() {
+function appContext(): string {
   const path=window.location.pathname
   const match=path.match(/\/(?:index\.php\/)?apps\/([a-z0-9_-]{2,32})(?:\/|$)/)
-  if(match)return match[1]
+  if (match?.[1]) return match[1]
   if(/\/settings\/admin(?:\/|$)/.test(path))return 'admin_settings'
   if(/\/settings(?:\/|$)/.test(path))return 'settings'
   return 'any'
 }
 
-async function post(path,data,keepalive=false) {
+async function post(path: string, data: Record<string, unknown>, keepalive = false): Promise<ClaimBatchResponse> {
   const response=await fetch(apiRoot+path,{
     method:'POST',credentials:'same-origin',keepalive,
     headers:{
@@ -41,10 +42,10 @@ async function post(path,data,keepalive=false) {
   return response.json()
 }
 
-async function impressions(items) {
+async function impressions(items: ClaimedPresentation[]): Promise<void> {
   if (!items.length)return
   await nextTick()
-  await new Promise(resolve=>requestAnimationFrame(resolve))
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
   for(const item of items) {
     try {
       await post('/api/impression',{
@@ -56,7 +57,7 @@ async function impressions(items) {
   }
 }
 
-async function claim() {
+async function claim(): Promise<void> {
   if(busy || current.value!==null || document.visibilityState==='hidden'
     || banners.value.length>=MAX_BANNERS) return
   busy=true
@@ -71,7 +72,7 @@ async function claim() {
     firstVisit=false
     lastApp=context
     lastPath=path
-    const newItems=[]
+    const newItems: ClaimedPresentation[] = []
     if(response.campaign && !current.value) {
       current.value=response.campaign
       newItems.push(response.campaign)
@@ -90,7 +91,7 @@ async function claim() {
   }
 }
 
-async function finish(item,action='dismiss') {
+async function finish(item: ClaimedPresentation | null, action: 'dismiss' | 'click' = 'dismiss'): Promise<void> {
   // A click on a second banner must not be discarded while the first one
   // is being acknowledged or another batch is refreshing.
   if(!item || pendingDismissals.has(item.deliveryId))return
@@ -109,7 +110,7 @@ async function finish(item,action='dismiss') {
   }
 }
 
-async function sponsoredOptout(item) {
+async function sponsoredOptout(item: ClaimedPresentation | null): Promise<void> {
   if(!item)return
   try {
     await post('/api/preferences',{sponsoredOptout:true})
@@ -129,7 +130,7 @@ async function sponsoredOptout(item) {
 
 function onVisible() {if(document.visibilityState==='visible')void claim()}
 function onChange() {void claim()}
-function onStorage(event) {
+function onStorage(event: StorageEvent): void {
   if(event.key==='communications-campaign-update')void claim()
 }
 

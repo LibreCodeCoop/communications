@@ -1,6 +1,6 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { t } from '@nextcloud/l10n'
 
 import { computed, ref, onMounted, onUnmounted } from 'vue'
@@ -12,17 +12,18 @@ import CampaignAdmin from './CampaignAdmin.vue'
 import { mdiInboxOutline, mdiFileDocumentEditOutline, mdiPlus } from '@mdi/js'
 
 const canEdit = document.getElementById('communications-vue')?.dataset.canEdit==='true'
-const section = ref('inbox')
-const editorView = ref('list')
+type Section = 'inbox' | 'publications'
+const section = ref<Section>('inbox')
+const editorView = ref<string>('list')
 const requestedCreate = ref(0)
-const unreadCount = ref(null)
-function initialSection() {
+const unreadCount = ref<number | null>(null)
+function initialSection(): Section {
  const url = new URL(window.location.href)
  const query = url.searchParams.get('view')
  if (url.pathname.endsWith('/board')) return 'inbox'
  return canEdit && (query==='publications'||query==='new') ? 'publications' : 'inbox'
 }
-function navigate(next, create=false) {
+function navigate(next: Section, create = false): void {
  if (next==='publications' && !canEdit) return
  if (next===section.value && !create) return
  const url = new URL(window.location.href)
@@ -39,8 +40,8 @@ function applyHistory() {
    requestedCreate.value++
  }
 }
-function onUnreadCount(total) {unreadCount.value=total}
-function onEditorView(next) {editorView.value=next}
+function onUnreadCount(total: number): void {unreadCount.value=total}
+function onEditorView(next: string): void {editorView.value=next}
 const hubTitle=computed(()=>section.value==='inbox'?t('communications', 'Inbox'):t('communications', 'Publications'))
 onMounted(()=>{applyHistory();window.addEventListener('popstate',applyHistory)})
 onUnmounted(()=>window.removeEventListener('popstate',applyHistory))

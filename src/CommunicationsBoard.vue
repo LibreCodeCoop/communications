@@ -1,23 +1,24 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { t, getLanguage } from '@nextcloud/l10n'
 
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-const emit=defineEmits(['unread-count'])
+const emit = defineEmits<{ 'unread-count': [total: number] }>()
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
-import { safeCtaLink } from './linkSafety.js'
+import { safeCtaLink } from './linkSafety.ts'
+import type { InboxAnnouncement, InboxComment, MentionOption, GatewayPreferenceChannel } from './types/communications'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import { mdiCommentTextOutline, mdiArrowLeft, mdiMagnify, mdiBellCogOutline } from '@mdi/js'
 
 const BASE = (window.OC?.webroot || '') + '/index.php/apps/communications'
-const items = ref([])
+const items = ref<InboxAnnouncement[]>([])
 const total = ref(0)
 const page = ref(1)
 const hasMore = ref(false)
@@ -35,8 +36,8 @@ const gatewaySaving=ref(false)
 const gatewayLoading=ref(false)
 const gatewayError=ref('')
 const gatewaySuccess=ref('')
-const gatewayChannels=ref([])
-const gatewayPlaceholder={
+const gatewayChannels = ref<GatewayPreferenceChannel[]>([])
+const gatewayPlaceholder: Record<string, string> = {
   sms:'+5521999999999', signal:'+5521999999999',
   telegram:'123456789', gowhatsapp:'+5521999999999',
   whatsappbusiness:'+5521999999999', xmpp:'user@example.com',
@@ -47,10 +48,10 @@ async function toggleGatewaySettings() {
   gatewayLoading.value=true
   gatewayError.value=''
   try {
-    const data=await request('/api/gateway-preferences')
+    const data = await request<{channels?: GatewayPreferenceChannel[]}>('/api/gateway-preferences')
     gatewayChannels.value=data.channels||[]
     gatewaySettingsLoaded.value=true
-  }catch(e){gatewayError.value=e.message}
+  } catch(e) {gatewayError.value = e instanceof Error ? e.message : String(e)}
   finally{gatewayLoading.value=false}
 }
 async function saveGatewaySettings() {
@@ -66,19 +67,19 @@ async function saveGatewaySettings() {
         sponsored:!!item.enabled && !!item.sponsored,
       },
     ]))
-    const data=await request('/api/gateway-preferences','POST',{channels})
+    const data = await request<{channels?: GatewayPreferenceChannel[]}>('/api/gateway-preferences','POST',{channels})
     gatewayChannels.value=data.channels||[]
     gatewaySuccess.value=t('communications', 'Preferences saved. You can withdraw consent at any time.')
-  }catch(e){gatewayError.value=e.message}
+  } catch(e) {gatewayError.value = e instanceof Error ? e.message : String(e)}
   finally{gatewaySaving.value=false}
 }
 
-const selected = ref(null)
-const comments = ref([])
+const selected = ref<InboxAnnouncement | null>(null)
+const comments = ref<InboxComment[]>([])
 const commentDraft = ref('')
-const mentionOptions = ref([])
+const mentionOptions = ref<MentionOption[]>([])
 const mentionQuery = ref('')
-let mentionSearchTimer = null
+let mentionSearchTimer: ReturnType<typeof setTimeout> | null = null
 let mentionGeneration = 0
 watch(commentDraft, value=>{
   if(mentionSearchTimer!==null)clearTimeout(mentionSearchTimer)
@@ -90,7 +91,7 @@ watch(commentDraft, value=>{
   if(!match || !id)return
   mentionSearchTimer=setTimeout(async()=>{
     try {
-      const r=await request('/api/board/'+id+'/mentions?'+new URLSearchParams({search:mentionQuery.value}))
+      const r = await request<{users?: MentionOption[]}>('/api/board/'+id+'/mentions?'+new URLSearchParams({search:mentionQuery.value}))
       if(generation!==mentionGeneration || selected.value?.id!==id)return
       mentionOptions.value=(r.users||[]).slice(0,10)
     }catch{
@@ -98,7 +99,7 @@ watch(commentDraft, value=>{
     }
   },250)
 })
-function selectMention(user) {
+function selectMention(user: MentionOption): void {
   if(!user || !/^[A-Za-z0-9_.-]{2,64}$/.test(user.id))return
   commentDraft.value=commentDraft.value.replace(/(?:^|\s)@[A-Za-z0-9_.-]{2,40}$/,
     matched=>matched[0]==='@'?'@'+user.id+' ':matched[0]+'@'+user.id+' ')
@@ -107,26 +108,27 @@ function selectMention(user) {
 
 const commentBusy = ref(false)
 const commentHasMore = ref(false)
-const commentBefore = ref(null)
+const commentBefore = ref<number | null>(null)
 let generation = 0
 
-function dateText(ts) {
+function dateText(ts: number | null | undefined): string {
   return ts ? new Date(ts * 1000).toLocaleString(getLanguage().replace('_', '-'), {
     dateStyle:'medium', timeStyle:'short',
   }) : ''
 }
-function safeLink(url) { return safeCtaLink(url) }
-async function request(path, method = 'GET', body) {
-  const opts = {method,credentials:'same-origin',headers:{Accept:'application/json'}}
+function safeLink(url: unknown): string { return safeCtaLink(url) }
+async function request<T extends object>(path: string, method: 'GET' | 'POST' | 'DELETE' = 'GET', body: Record<string, unknown> = {}): Promise<T> {
+  const opts: RequestInit = {method, credentials: 'same-origin', headers: {Accept: 'application/json'}}
   if (method!=='GET') {
-    opts.headers['Content-Type']='application/json'
-    opts.headers.requesttoken = window.OC?.requestToken || window.oc_requesttoken || ''
+    const headers = opts.headers as Record<string, string>
+    headers['Content-Type'] = 'application/json'
+    headers.requesttoken = window.OC?.requestToken || window.oc_requesttoken || ''
     opts.body=JSON.stringify(body||{})
   }
   const response=await fetch(BASE+path, opts)
   const data=await response.json().catch(()=>({}))
   if (!response.ok) throw new Error(data.error || t('communications', 'HTTP failure ')+response.status)
-  return data
+  return data as T
 }
 async function refresh() {
   const current=++generation
@@ -134,27 +136,27 @@ async function refresh() {
   error.value=''
   try {
     const q=new URLSearchParams({page:String(page.value), search:search.value.trim(),filter:filter.value})
-    const data=await request('/api/board?'+q)
+    const data = await request<{announcements?: InboxAnnouncement[]; total?: number; unreadTotal?: number; hasMore?: boolean}>('/api/board?'+q)
     if (current!==generation) return
     items.value=data.announcements || []
     total.value=data.total || 0
     unreadTotal.value=data.unreadTotal||0
     emit('unread-count',unreadTotal.value)
     hasMore.value=!!data.hasMore
-  } catch (e) { if (current===generation) error.value=e.message }
+  } catch (e) { if (current===generation) error.value = e instanceof Error ? e.message : String(e) }
   finally { if (current===generation) loading.value=false }
 }
 function doSearch() { page.value=1; void refresh() }
-function switchFilter(value) {filter.value=value;page.value=1;void refresh()}
-function changePage(delta) {
+function switchFilter(value: string): void {filter.value=value;page.value=1;void refresh()}
+function changePage(delta: number): void {
   page.value += delta
   void refresh()
   document.querySelector('.cc-board-heading')?.scrollIntoView({block:'start', behavior:'smooth'})
 }
-async function openItem(id) {
+async function openItem(id: number): Promise<void> {
   error.value=''
   try {
-    const data=await request('/api/board/'+id)
+    const data = await request<{announcement: InboxAnnouncement}>('/api/board/'+id)
     selected.value=data.announcement
     if (selected.value.inInbox && !selected.value.readAt) {
       await request('/api/board/'+id+'/read','POST',{})
@@ -168,7 +170,7 @@ async function openItem(id) {
     commentBefore.value=null
     commentHasMore.value=false
     await loadComments()
-  } catch (e) { error.value=e.message; selected.value=null }
+  } catch (e) { error.value = e instanceof Error ? e.message : String(e); selected.value=null }
 }
 function closeItem() {
   selected.value=null
@@ -178,17 +180,17 @@ function closeItem() {
   url.searchParams.delete('id')
   history.replaceState(null,'',url)
 }
-async function loadComments(more=false) {
+async function loadComments(more = false): Promise<void> {
   if (!selected.value) return
   try {
     const id=selected.value.id
     const query=more && commentBefore.value ? '?before='+commentBefore.value : ''
-    const data=await request('/api/board/'+id+'/comments'+query)
+    const data = await request<{comments: InboxComment[]; hasMore?: boolean; nextBefore?: number | null}>('/api/board/'+id+'/comments'+query)
     if (selected.value?.id!==id) return
     comments.value=more?[...comments.value,...data.comments]:data.comments
     commentHasMore.value=!!data.hasMore
-    commentBefore.value=data.nextBefore
-  } catch (e) { error.value=e.message }
+    commentBefore.value=data.nextBefore ?? null
+  } catch (e) { error.value = e instanceof Error ? e.message : String(e) }
 }
 async function sendComment() {
   if (commentBusy.value || !selected.value || !commentDraft.value.trim()) return
@@ -199,17 +201,17 @@ async function sendComment() {
     commentDraft.value=''
     await loadComments()
     selected.value.commentCount++
-  } catch (e) { error.value=e.message }
+  } catch (e) { error.value = e instanceof Error ? e.message : String(e) }
   finally { commentBusy.value=false }
 }
-async function removeComment(comment) {
+async function removeComment(comment: InboxComment): Promise<void> {
   if (!selected.value || !comment.canDelete || commentBusy.value) return
   commentBusy.value=true
   try {
     await request('/api/board/'+selected.value.id+'/comments/'+comment.id,'DELETE',{})
     comments.value=comments.value.filter(row=>row.id!==comment.id)
     selected.value.commentCount=Math.max(0,selected.value.commentCount-1)
-  } catch (e) { error.value=e.message }
+  } catch (e) { error.value = e instanceof Error ? e.message : String(e) }
   finally { commentBusy.value=false }
 }
 function onPopState() {

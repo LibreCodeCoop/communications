@@ -1,32 +1,34 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
-<script setup>import { t } from '@nextcloud/l10n'
+<script setup lang="ts">
+import { t } from '@nextcloud/l10n'
 
 import { ref, computed, onMounted, watch } from 'vue'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import type { FlowCampaign, FlowCampaignOption } from '../types/communications'
 
-const props = defineProps({ modelValue:{type:String,default:''} })
-const emit = defineEmits(['update:model-value'])
-const campaigns = ref([])
+const props = withDefaults(defineProps<{ modelValue?: string }>(), {modelValue: ''})
+const emit = defineEmits<{ 'update:model-value': [value: string] }>()
+const campaigns = ref<FlowCampaign[]>([])
 const loading = ref(true)
 const loadError = ref('')
 const selected = computed({
   get:()=>String(props.modelValue || ''),
-  set:value=>emit('update:model-value',String(value || '')),
+  set:(value: string)=>emit('update:model-value',String(value || '')),
 })
 const options = computed(()=>campaigns.value.map(c=>({
   value:String(c.id),
   label:c.name + (c.status==='active'?'':' — '+c.status),
 })))
-const reduce = option=>option.value
+const reduce = (option: FlowCampaignOption) => option.value
 onMounted(async()=>{
   try {
     const response=await fetch((window.OC?.webroot||'')+'/index.php/apps/communications/api/campaigns',{credentials:'same-origin'})
     if(!response.ok)throw new Error('HTTP '+response.status)
-    const data=await response.json()
+    const data = await response.json() as { campaigns?: FlowCampaign[] }
     campaigns.value=(data.campaigns||[]).filter(c=>c.trigger_key==='nextcloud.flow.matched' && c.status!=='archived')
-  } catch(err) {loadError.value=t('communications', 'Could not load campaigns: ')+err.message}
+  } catch(err) {loadError.value=t('communications', 'Could not load campaigns: ') + (err instanceof Error ? err.message : String(err))}
   finally {loading.value=false}
 })
 </script>

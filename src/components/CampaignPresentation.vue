@@ -2,23 +2,25 @@
   - SPDX-FileCopyrightText: 2026 LibreCode coop and LibreCode contributors
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
-<script setup>import { t } from '@nextcloud/l10n'
+<script setup lang="ts">
+import { t } from '@nextcloud/l10n'
 
 import { computed } from 'vue'
+import type { PublicationPresentation } from '../types/communications'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
-import { bannerAppearance } from '../bannerAppearance.js'
-import { safeCtaLink } from '../linkSafety.js'
+import { bannerAppearance } from '../bannerAppearance.ts'
+import { safeCtaLink } from '../linkSafety.ts'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
 
-const props = defineProps({
-  campaign: { type: Object, required: true },
-  open: { type: Boolean, default: false },
-  preview: { type: Boolean, default: false },
-})
-const emit = defineEmits(['close', 'cta', 'optout'])
+const props = withDefaults(defineProps<{
+  campaign: PublicationPresentation
+  open?: boolean
+  preview?: boolean
+}>(), {open: false, preview: false})
+const emit = defineEmits<{ close: []; cta: []; optout: [] }>()
 const sponsored = computed(() => props.campaign.category === 'sponsored')
 const theme = computed(() => props.campaign.theme || 'default')
 // Keeps live delivery identical to the editor preview, including legacy themes.
@@ -39,7 +41,7 @@ const target = computed(() => /^https?:\/\//i.test(link.value) ? '_blank' : '_se
 function close() { emit('close') }
 function click() { if (props.preview) emit('close'); else emit('cta') }
 function optout() { if (props.preview) emit('close'); else emit('optout') }
-function updateOpen(open) { if (!open) close() }
+function updateOpen(open: boolean): void { if (!open) close() }
 </script>
 
 <template>

@@ -1,19 +1,18 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { t } from '@nextcloud/l10n'
+import type { DeliveryChannel } from '../types/communications'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcPopover from '@nextcloud/vue/components/NcPopover'
 import { mdiHelpCircleOutline } from '@mdi/js'
 
-defineProps({
-  channel: { type:Object, required:true },
-})
-const emit = defineEmits(['change'])
-function change(channel, enabled) {
-  if (channel.selectable) emit('change', {id:channel.id, enabled:!!enabled})
+defineProps<{ channel: DeliveryChannel }>()
+const emit = defineEmits<{ change: [{ id: string; enabled: boolean }] }>()
+function change(channel: DeliveryChannel, enabled: boolean): void {
+  if (channel.selectable) emit('change', {id: channel.id, enabled})
 }
 </script>
 
@@ -39,7 +38,7 @@ function change(channel, enabled) {
                    popup-role="dialog" placement="bottom-end">
           <template #trigger>
             <NcButton variant="tertiary" class="cc-delivery-channel-help"
-                      :aria-label="'Detalhes sobre ' + channel.label"
+                      :aria-label="t('communications', 'Details about {channel}', {channel: channel.label})"
                       :title="t('communications', 'Why is this channel {status}?', {status: channel.status.toLowerCase()})">
               <template #icon>
                 <NcIconSvgWrapper :path="mdiHelpCircleOutline" :size="18"/>

@@ -1,11 +1,12 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 SPDX-License-Identifier: AGPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { t, getLanguage } from '@nextcloud/l10n'
 
 import { computed, onMounted, ref, watch } from 'vue'
-const props = defineProps({ createRequest: { type:Number, default:0 } })
-const emit=defineEmits(['editor-view'])
+import type { CampaignRecord, CampaignForm, CampaignCatalog, CampaignApiPayload, CampaignMetrics, GroupSelection, UserSelection, ChannelNoticeField, TranslatedPublicationField, TriggerIntent } from './types/communications'
+const props = withDefaults(defineProps<{createRequest?: number}>(), {createRequest: 0})
+const emit = defineEmits<{ 'editor-view': [view: string] }>()
 watch(() => props.createRequest, (value,previous) => { if(value!==previous) openCreate() })
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -26,7 +27,7 @@ import MarkdownEditor from './components/MarkdownEditor.vue'
 import CampaignPresentation from './components/CampaignPresentation.vue'
 import AutomationBuilder from './components/AutomationBuilder.vue'
 import DeliveryChannelOption from './components/DeliveryChannelOption.vue'
-import { bannerAppearance, BANNER_COLOR_PALETTE, BANNER_ICON_OPTIONS, DEFAULT_BANNER_COLOR } from './bannerAppearance.js'
+import { bannerAppearance, BANNER_COLOR_PALETTE, BANNER_ICON_OPTIONS, DEFAULT_BANNER_COLOR } from './bannerAppearance.ts'
 import {
   mdiEyeOutline, mdiContentCopy, mdiArchiveOutline, mdiPlayCircleOutline,
   mdiPauseCircleOutline, mdiBackupRestore, mdiChartBar,
@@ -77,14 +78,14 @@ const frequencyOptions = [
   {label:t('communications', 'Once per publication and user'),value:'once'},
   {label:t('communications', 'At most once every 24 hours'),value:'daily'},
   {label:t('communications', 'At most once every 7 days'),value:'weekly'},
-  {label:'Intervalo personalizado',value:'custom'},
+  {label:t('communications', 'Custom interval'),value:'custom'},
 ]
 const excludedMatchOptions = [
   {label:t('communications', 'Exclude members of any group (OR)'),value:'any'},
   {label:t('communications', 'Exclude only members of every group (AND)'),value:'all'},
 ]
 const groupMatchOptions = [
-  {label:'Qualquer grupo selecionado (OU)',value:'any'},
+  {label:t('communications', 'Any selected group (OR)'),value:'any'},
   {label:t('communications', 'All selected groups (AND)'),value:'all'},
 ]
 const categoryOptions = [
@@ -93,43 +94,43 @@ const categoryOptions = [
 ]
 const themeOptions = [
   {label:t('communications', 'Nextcloud default'),value:'default'},
-  {label:'Destaque institucional',value:'primary'},
+  {label:t('communications', 'Institutional highlight'),value:'primary'},
   {label:t('communications', 'Information'),value:'info'},
-  {label:'Sucesso',value:'success'},
+  {label:t('communications', 'Success'),value:'success'},
   {label:t('communications', 'Warning'),value:'warning'},
   {label:t('communications', 'Error'),value:'error'},
-  {label:'Neutro',value:'neutral'},
-  {label:'Personalizado',value:'custom'},
+  {label:t('communications', 'Neutral'),value:'neutral'},
+  {label:t('communications', 'Custom'),value:'custom'},
 ]
 // Match the native NcNoteCard variants and icons used by Nextcloud.
 const bannerTypes = [
   {value:'info',label:t('communications', 'Information'),icon:mdiInformation},
-  {value:'success',label:'Sucesso',icon:mdiCheckboxMarkedCircle},
+  {value:'success',label:t('communications', 'Success'),icon:mdiCheckboxMarkedCircle},
   {value:'warning',label:t('communications', 'Warning'),icon:mdiAlert},
   {value:'error',label:t('communications', 'Error'),icon:mdiAlertDecagram},
-  {value:'neutral',label:'Neutro',icon:mdiMinusCircleOutline},
-  {value:'custom',label:'Personalizado',icon:mdiPaletteOutline},
+  {value:'neutral',label:t('communications', 'Neutral'),icon:mdiMinusCircleOutline},
+  {value:'custom',label:t('communications', 'Custom'),icon:mdiPaletteOutline},
 ]
-const selectable = option => option.value
-const campaigns = ref([])
-const catalog = ref({ triggers: [], groups: [], automation:{intents:[],sources:[],placements:[],applications:[]} })
+const selectable = (option: {value: string}): string => option.value
+const campaigns = ref<CampaignRecord[]>([])
+const catalog = ref<CampaignCatalog>({triggers: [], groups: [], automation: {intents: [], sources: [], placements: [], applications: []}, deliveryChannels: []})
 const loading = ref(true)
 const saving = ref(false)
 const view = ref('list')
 watch(view, value => emit('editor-view', value), { immediate:true })
 const search = ref('')
 const filterStatus = ref('all')
-const editorId = ref(null)
+const editorId = ref<number | null>(null)
 const previewOpen = ref(false)
 const wizardStep = ref(1)
 const wizardSteps = [
-  { number:1, label:'Quando publicar', shortLabel:'Momento', icon:mdiApps },
+  { number:1, label:t('communications', 'When to publish'), shortLabel:t('communications', 'Timing'), icon:mdiApps },
   { number:2, label:t('communications', 'Message and audience'), shortLabel:t('communications', 'Message'), icon:mdiMessageTextOutline },
   { number:3, label:t('communications', 'Review and publish'), shortLabel:t('communications', 'Publish'), icon:mdiCheckCircleOutline },
 ]
-const nextStepLabel = computed(() => wizardStep.value === 1 ? t('communications', 'Continue: Message and audience') : 'Continuar: Revisar e publicar')
+const nextStepLabel = computed(() => wizardStep.value === 1 ? t('communications', 'Continue: Message and audience') : t('communications', 'Continue: Review and publish'))
 
-function checkWizardStep(step) {
+function checkWizardStep(step: number): boolean {
   errorMessage.value = ''
   if (step === 1 && !automationReady.value) {
     errorMessage.value = t('communications', 'Choose when to deliver the publication.')
@@ -164,7 +165,7 @@ function checkWizardStep(step) {
   }
   return true
 }
-function goToWizardStep(target) {
+function goToWizardStep(target: number): void {
   if (target < 1 || target > 3) return
   if (target > wizardStep.value) {
     for (let step=wizardStep.value; step < target; step++) {
@@ -177,7 +178,7 @@ function goToWizardStep(target) {
 function continueWizard() {
   goToWizardStep(wizardStep.value + 1)
 }
-function onIntentChange({from,to}) {
+function onIntentChange({from, to}: {from: TriggerIntent | null; to: TriggerIntent}): void {
   // A scheduled draft must not silently keep a future date when changed into
   // an event-driven campaign, which would otherwise never appear in tests.
   if (to === 'board' && from === null) {
@@ -193,32 +194,32 @@ function onIntentChange({from,to}) {
 }
 
 const feedback = ref('')
-const feedbackType = ref('info')
+const feedbackType = ref<'info' | 'success' | 'warning' | 'error'>('info')
 const errorMessage = ref('')
 const confirmArchiveOpen = ref(false)
 const confirmDeleteOpen = ref(false)
-const deleteTarget = ref(null)
+const deleteTarget = ref<CampaignRecord | null>(null)
 const deleteName = ref('')
 const deleting = ref(false)
-const archiveTarget = ref(null)
-const rowMenuOpen = ref({})
-const draggingCampaignId = ref(null)
+const archiveTarget = ref<CampaignRecord | null>(null)
+const rowMenuOpen = ref<Record<number, boolean>>({})
+const draggingCampaignId = ref<number | null>(null)
 const orderSaving = ref(false)
-const previewCampaign = ref(null)
-const editorGroupValues = ref([])
+const previewCampaign = ref<CampaignRecord | null>(null)
+const editorGroupValues = ref<string[]>([])
 const editorConfigLoading = ref(false)
-const selectedGroups = ref([])
-const selectedExcludedGroups = ref([])
-const selectedUsers = ref([])
+const selectedGroups = ref<GroupSelection[]>([])
+const selectedExcludedGroups = ref<GroupSelection[]>([])
+const selectedUsers = ref<UserSelection[]>([])
 const metricsOpen = ref(false)
 const metricsLoading = ref(false)
-const metricsData = ref(null)
-const metricsCampaign = ref(null)
-const userSearchOptions = ref([])
+const metricsData = ref<CampaignMetrics | null>(null)
+const metricsCampaign = ref<CampaignRecord | null>(null)
+const userSearchOptions = ref<UserSelection[]>([])
 const page = ref(1)
 const PAGE_SIZE = 10
 let userSearchGeneration = 0
-const form = ref(makeDefault())
+const form = ref<CampaignForm>(makeDefault())
 
 // Outbound channels, Inbox history and presentation are independent.
 const hasAdditionalNotices = computed(() =>
@@ -241,19 +242,19 @@ const inboxCopy = computed({
     form.value.board_visible = !!enabled
   },
 })
-const deliveryChannelDefinitions = [
+const deliveryChannelDefinitions: Array<{id: string; field: ChannelNoticeField; label: string; description: string}> = [
   {id:'notifications',field:'notify_users',label:t('communications', 'Nextcloud Notifications'),
     description:t('communications', 'Notification in the bell menu. Requires the Notifications app.')},
-  {id:'activity',field:'notify_activity',label:'Feed de atividades (Activity)',
+  {id:'activity',field:'notify_activity',label:t('communications', 'Activity feed'),
     description:t('communications', 'Records the publication in the Activity feed without showing a banner or dialog.')},
   {id:'email',field:'notify_email',label:'E-mail',
     description:t('communications', 'Sends the message to recipients with valid addresses.')},
 ]
 const gatewayDefinitions = [
-  {id:'gateway:sms',label:'SMS',description:'Telefone internacional, ex.: +5521999999999.'},
+  {id:'gateway:sms',label:'SMS',description:t('communications', 'International phone number, e.g. +5521999999999.')},
   {id:'gateway:signal',label:'Signal',description:t('communications', 'Signal number, e.g. +5521999999999.')},
-  {id:'gateway:telegram',label:'Telegram',description:'Identificador de chat privado com o bot.'},
-  {id:'gateway:gowhatsapp',label:'WhatsApp',description:'Telefone com WhatsApp, em formato internacional.'},
+  {id:'gateway:telegram',label:'Telegram',description:t('communications', 'Private bot chat identifier.')},
+  {id:'gateway:gowhatsapp',label:'WhatsApp',description:t('communications', 'WhatsApp number in international format.')},
   {id:'gateway:whatsappbusiness',label:'WhatsApp Business',description:t('communications', 'Subject to the provider\'s policies and approved templates.')},
   {id:'gateway:xmpp',label:'XMPP',description:t('communications', 'Recipient JID address.')},
 ]
@@ -270,7 +271,7 @@ const gatewayOptions = computed(() =>
       : selected && !ready ? t('communications', 'Selected · unavailable') : (meta?.status||t('communications', 'Checking…'))
     const help=form.value.guest_visible
       ? t('communications', 'Anonymous public banners cannot send individual messages.')
-      : (meta?.help || 'Verificando disponibilidade do provedor.')
+      : (meta?.help || t('communications', 'Checking provider availability.'))
     return {...definition,gatewayId,selected,ready,selectable,availability,status,help}
   })
 )
@@ -296,7 +297,7 @@ const deliveryChannelOptions = computed(() =>
     return {...definition, selected, ready, selectable, availability, status, help}
   })
 )
-function setNoticeChannel(field,enabled) {
+function setNoticeChannel(field: ChannelNoticeField, enabled: boolean) {
   if (form.value.guest_visible) return
   const channel=deliveryChannelDefinitions.find(item=>item.field===field)
   if (!channel) return
@@ -305,7 +306,7 @@ function setNoticeChannel(field,enabled) {
   if (enabled && !ready) return
   form.value[field] = !!enabled
 }
-function onDeliveryChannelChange({id,enabled}) {
+function onDeliveryChannelChange({id, enabled}: {id: string; enabled: boolean}) {
   if (id==='banner' || id==='modal') {
     if (enabled) {
       // First visual destination on an immediate campaign defaults to a
@@ -327,7 +328,7 @@ function onDeliveryChannelChange({id,enabled}) {
   }
   if (id.startsWith('gateway:')) {
     const gateway=id.slice(8)
-    if (!gatewayDefinitions.some(item=>item.gatewayId===gateway || item.id===id)) return
+    if (!gatewayDefinitions.some(item=>item.id===id)) return
     const selected=[...(form.value.gateway_channels||[])]
     const ready=(catalog.value.deliveryChannels||[]).some(item=>item.id===id && item.ready===true)
     if (enabled && (form.value.guest_visible || !ready)) return
@@ -354,18 +355,18 @@ const noticeEmail = computed({
 // visual destinations are mutually exclusive, enforced by presentation.
 const visualDeliveryOptions = computed(() => [
   {
-    id:'banner',label:'Banner contextual',
+    id:'banner',label:t('communications', 'Contextual banner'),
     description:t('communications', 'Non-intrusive notice on the page during the next eligible visit or event.'),
     selected:form.value.presentation==='banner',selectable:true,
-    availability:'ready',status:form.value.presentation==='banner'?'Selecionado':t('communications', 'Available'),
+    availability:'ready',status:form.value.presentation==='banner'?t('communications', 'Selected'):t('communications', 'Available'),
     help:t('communications', 'The banner appears during navigation. Selecting it disables the modal but keeps other channels.')
   },
   {
-    id:'modal',label:'Janela modal',
+    id:'modal',label:t('communications', 'Modal dialog'),
     description:t('communications', 'Dialog that requires interaction on the next eligible visit or event.'),
     selected:form.value.presentation==='modal',selectable:!form.value.guest_visible,
     availability:form.value.guest_visible?'guest':'ready',
-    status:form.value.guest_visible?t('communications', 'Not available to guests'):form.value.presentation==='modal'?'Selecionado':t('communications', 'Available'),
+    status:form.value.guest_visible?t('communications', 'Not available to guests'):form.value.presentation==='modal'?t('communications', 'Selected'):t('communications', 'Available'),
     help:t('communications', 'Modal and banner are alternatives. Selecting one disables the other; email, history, and notifications remain.')
   },
 ])
@@ -374,18 +375,18 @@ const inboxDeliveryOption = computed(() => ({
   description:t('communications', 'Keeps the publication available in Nextcloud, with optional comments.'),
   selected:inboxCopy.value,selectable:!form.value.guest_visible,
   availability:form.value.guest_visible?'guest':'ready',
-  status:form.value.guest_visible?t('communications', 'Not available to guests'):inboxCopy.value?'Selecionado':t('communications', 'Available'),
+  status:form.value.guest_visible?t('communications', 'Not available to guests'):inboxCopy.value?t('communications', 'Selected'):t('communications', 'Available'),
   help:t('communications', 'Inbox is an independent destination. If disabled, messages sent through other channels open only their authorized details.')
 }))
 
 const deliveryReview = computed(() => {
   const surfaces = []
-  if (form.value.presentation === 'banner') surfaces.push('Banner contextual')
-  if (form.value.presentation === 'modal') surfaces.push('Janela modal')
+  if (form.value.presentation === 'banner') surfaces.push(t('communications', 'Contextual banner'))
+  if (form.value.presentation === 'modal') surfaces.push(t('communications', 'Modal dialog'))
   if (inboxCopy.value) surfaces.push(t('communications', 'Inbox'))
 
   if (form.value.notify_users) surfaces.push(t('communications', 'Nextcloud Notifications'))
-  if (form.value.notify_activity) surfaces.push('Feed de atividades')
+  if (form.value.notify_activity) surfaces.push(t('communications', 'Activity feed'))
   if (form.value.notify_email) surfaces.push('E-mail')
   for(const id of (form.value.gateway_channels||[])){
     const gateway=gatewayDefinitions.find(item=>item.id==='gateway:'+id)
@@ -398,17 +399,18 @@ const selectedBannerType = computed(() => bannerTypes.some(item => item.value ==
   ? form.value.theme : 'info')
 const bannerPreviewAppearance = computed(() => bannerAppearance(form.value))
 const bannerIconOptions = BANNER_ICON_OPTIONS.map(({ value, label }) => ({ value, label }))
+const colorPickerPalette = BANNER_COLOR_PALETTE.map(({ color }) => color)
 const languageOptions = [
  {value:'pt_BR',label:t('communications', 'Portuguese (Brazil)')},
  {value:'en_US',label:t('communications', 'English (United States)')},
- {value:'es_ES',label:'Espanhol'},
+ {value:'es_ES',label:t('communications', 'Spanish')},
  {value:'fr_FR',label:t('communications', 'French')},
  {value:'de_DE',label:t('communications', 'German')},
- {value:'it_IT',label:'Italiano'},
+ {value:'it_IT',label:t('communications', 'Italian')},
  {value:'ar',label:t('communications', 'Arabic (RTL)')},
 ]
 const translationLocale = ref('en_US')
-function translatedField(field) {
+function translatedField(field: TranslatedPublicationField) {
  return computed({
   get:()=>form.value.translated_content?.[translationLocale.value]?.[field] || '',
   set:value=>{
@@ -430,7 +432,7 @@ const selectedTextColor = computed({
  set:value=>{form.value.text_color = value || ''},
 })
 const alignments = [
-  {value:'left',label:t('communications', 'Left')}, {value:'center',label:'Centralizado'}, {value:'right',label:t('communications', 'Right')},
+  {value:'left',label:t('communications', 'Left')}, {value:'center',label:t('communications', 'Center')}, {value:'right',label:t('communications', 'Right')},
 ]
 const automationReady = computed(() => {
   const draft = form.value
@@ -463,7 +465,7 @@ const contentFormattingHelp = t('communications', 'Markdown with formatting and 
 const formDirty = computed(() => JSON.stringify(serializableForm()) !== initialFormSnapshot.value)
 const editMode = computed(() => editorId.value !== null)
 
-function makeDefault() {
+function makeDefault(): CampaignForm {
   return {
     name: '', description: '', headline: '', message: '', cta_label: '', cta_url: '',
     trigger_key: '', page_route:'', page_filters:{}, audience_type: 'all', audience_group: '', audience_groups: [], audience_users: [],
@@ -479,8 +481,8 @@ function makeDefault() {
   }
 }
 
-async function api(path, { method = 'GET', body } = {}) {
-  const headers = { Accept: 'application/json' }
+async function api<T extends object = CampaignApiPayload>(path: string, {method = 'GET', body}: {method?: string; body?: unknown} = {}): Promise<T> {
+  const headers: Record<string, string> = {Accept: 'application/json'}
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json'
     headers.requesttoken = window.OC?.requestToken || window.oc_requesttoken || ''
@@ -489,8 +491,8 @@ async function api(path, { method = 'GET', body } = {}) {
     method, credentials: 'same-origin', headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  let payload
-  try { payload = await response.json() } catch { payload = {} }
+  let payload: T & {error?: string; message?: string}
+  try { payload = await response.json() as T & {error?: string; message?: string} } catch { payload = {} as T & {error?: string; message?: string} }
   if (!response.ok) throw new Error(payload.error || payload.message || t('communications', 'HTTP failure ') + response.status)
   return payload
 }
@@ -511,20 +513,21 @@ function announceChanges() {
     // Storage denied by the browser; normal 30-second fallback remains.
   }
 }
-function flash(text, type='info') {
+function errorMessageFor(error: unknown): string { return error instanceof Error ? error.message : String(error) }
+function flash(text: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
   feedback.value = text
   feedbackType.value = type
 }
-function effectiveStatus(c) {
+function effectiveStatus(c: CampaignRecord): string {
   if (c.status !== 'active') return c.status
   const now = Math.floor(Date.now() / 1000)
   if (c.starts_at !== null && c.starts_at > now) return 'scheduled'
   if (c.ends_at !== null && c.ends_at <= now) return 'ended'
   return 'active'
 }
-const labels = {
-  active: 'Ativa', draft: 'Rascunho', paused: 'Pausada', archived: 'Arquivada',
-  scheduled: 'Agendada', ended: 'Encerrada',
+const labels: Record<string, string> = {
+  active: t('communications', 'Active'), draft: t('communications', 'Draft'), paused: t('communications', 'Paused'), archived: t('communications', 'Archived'),
+  scheduled: t('communications', 'Scheduled'), ended: t('communications', 'Ended'),
 }
 const currentCampaigns = computed(() => campaigns.value.filter(c => c.status !== 'archived'))
 const stats = computed(() => [
@@ -555,22 +558,22 @@ const userChoices = computed(() => {
     return true
   })
 })
-async function searchUsers(search) {
+async function searchUsers(search: string) {
   const generation = ++userSearchGeneration
   if (search.trim().length < 2) {
     userSearchOptions.value = []
     return
   }
   try {
-    const payload = await api('/api/users?search=' + encodeURIComponent(search))
+    const payload = await api<{users?: Array<{id: string; name: string}>}>('/api/users?search=' + encodeURIComponent(search))
     if (generation === userSearchGeneration) {
       userSearchOptions.value = (payload.users || []).map(user => ({
         id:user.id, displayName:user.name, user:user.id,
       }))
     }
-  } catch (e) { flash(e.message, 'error') }
+  } catch (e) { flash(errorMessageFor(e), 'error') }
 }
-function openPreview(campaign = null) {
+function openPreview(campaign: CampaignRecord | null = null): void {
   rowMenuOpen.value = {}
   previewCampaign.value = campaign
   previewOpen.value = true
@@ -581,15 +584,15 @@ function closePreview() {
 }
 
 
-function dateDisplay(ts) {
+function dateDisplay(ts: number | null): string {
   return ts === null ? '' : new Date(ts * 1000).toLocaleDateString(getLanguage().replace('_', '-'))
 }
-function period(c) {
+function period(c: CampaignRecord): string {
   if (!c.starts_at && !c.ends_at) return t('communications', 'No deadline')
   if (c.starts_at && c.ends_at) return dateDisplay(c.starts_at) + ' – ' + dateDisplay(c.ends_at)
   return c.starts_at ? t('communications', 'Since ') + dateDisplay(c.starts_at) : t('communications', 'Until ') + dateDisplay(c.ends_at)
 }
-function groupLabel(c) {
+function groupLabel(c: CampaignRecord): string {
   if (c.audience_type === 'group') {
     const ids = c.audience_groups?.length ? c.audience_groups : (c.audience_group ? [c.audience_group] : [])
     return ids.map(id => groupOptions.value.find(g => g.value === id)?.label || id).join(', ') || t('communications', 'No group')
@@ -600,7 +603,7 @@ function groupLabel(c) {
   }
   return c.audience_type === 'admins' ? t('communications', 'Administrators only') : t('communications', 'All users')
 }
-function triggerLabel(c) {
+function triggerLabel(c: CampaignRecord): string {
   return triggerOptions.value.find(t => t.value === c.trigger_key)?.label || c.trigger_key
 }
 const summaryAction = computed(() => triggerOptions.value.find(t => t.value === form.value.trigger_key)?.label || t('communications', 'Select an action'))
@@ -612,7 +615,7 @@ const summaryWhen = computed(() => {
     const place=placementOptions.value.find(p=>p.value===form.value.placement)?.label||form.value.placement
     const filters=Object.entries(form.value.page_filters||{}).map(([name,rule]) =>
       '{'+name+'} '+({equals:'=',prefix:t('communications', 'starts with'),digits:t('communications', 'numeric')}[rule.operator]||rule.operator)+' '+(rule.value||'')).join('; ')
-    return 'Abrir '+place+(form.value.page_route?' · '+form.value.page_route:t('communications', ' · any page'))+(filters?' · '+filters:'')
+    return t('communications', 'Open ')+place+(form.value.page_route?' · '+form.value.page_route:t('communications', ' · any page'))+(filters?' · '+filters:'')
   }
   return sourceForReview.value ? sourceForReview.value.label + ' → ' + summaryAction.value : summaryAction.value
 })
@@ -649,36 +652,36 @@ async function saveEditorGroups() {
   if (editorConfigLoading.value || !catalog.value.canConfigureEditors) return
   editorConfigLoading.value=true
   try {
-    const data=await api('/api/editor-groups',{method:'POST',body:{groups:editorGroupValues.value}})
+    const data=await api<{groups: string[]}>('/api/editor-groups',{method:'POST',body:{groups:editorGroupValues.value}})
     editorGroupValues.value=data.groups
     flash(t('communications', 'Editorial groups updated.'), 'success')
-  } catch(e) { flash(e.message,'error') }
+  } catch(e) { flash(errorMessageFor(e),'error') }
   finally { editorConfigLoading.value=false }
 }
 async function refresh() {
-  const data = await api('/api/campaigns')
+  const data = await api<{campaigns: CampaignRecord[]}>('/api/campaigns')
   campaigns.value = data.campaigns || []
 }
-async function updateStatus(c, status) {
+async function updateStatus(c: CampaignRecord, status: string) {
   try {
     await api('/api/campaigns/' + c.id + '/status', { method:'POST', body:{status} })
     await refresh()
     announceChanges()
-    flash(status==='active' ? t('communications', 'Publication activated.') : 'Status atualizado.', 'success')
-  } catch (e) { flash(e.message, 'error') }
+    flash(status==='active' ? t('communications', 'Publication activated.') : t('communications', 'Status updated.'), 'success')
+  } catch (e) { flash(errorMessageFor(e), 'error') }
 }
-async function openMetrics(c) {
+async function openMetrics(c: CampaignRecord) {
   metricsCampaign.value = c
   metricsData.value = null
   metricsOpen.value = true
   metricsLoading.value = true
   try {
-    const result = await api('/api/campaigns/'+c.id+'/metrics')
+    const result = await api<{metrics: CampaignMetrics}>('/api/campaigns/'+c.id+'/metrics')
     metricsData.value = result.metrics
-  } catch (e) { flash(e.message,'error') }
+  } catch (e) { flash(errorMessageFor(e),'error') }
   finally { metricsLoading.value = false }
 }
-async function moveCampaign(c,direction,targetId=null) {
+async function moveCampaign(c: CampaignRecord, direction: string, targetId: number | null = null) {
   if (orderSaving.value || c.status==='archived') return
   orderSaving.value=true
   try {
@@ -688,17 +691,19 @@ async function moveCampaign(c,direction,targetId=null) {
     await refresh()
     announceChanges()
     flash(t('communications', 'Display order updated.'),'success')
-  } catch(e) { flash(e.message,'error') }
+  } catch(e) { flash(errorMessageFor(e),'error') }
   finally { orderSaving.value=false }
 }
-function startReorderDrag(event,c) {
+function startReorderDrag(event: DragEvent, c: CampaignRecord) {
   if (c.status==='archived' || orderSaving.value) return event.preventDefault()
   draggingCampaignId.value=c.id
-  event.dataTransfer.effectAllowed='move'
-  event.dataTransfer.setData('text/plain',String(c.id))
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(c.id))
+  }
 }
 function endReorderDrag() { draggingCampaignId.value=null }
-async function dropReorder(event,target) {
+async function dropReorder(event: DragEvent, target: CampaignRecord) {
   const from=draggingCampaignId.value
   draggingCampaignId.value=null
   if (from==null || from===target.id || target.status==='archived') return
@@ -706,16 +711,16 @@ async function dropReorder(event,target) {
   if (!moving) return
   await moveCampaign(moving,'before',target.id)
 }
-async function duplicate(c) {
+async function duplicate(c: CampaignRecord) {
   try {
-    const result = await api('/api/campaigns/' + c.id + '/duplicate', { method:'POST', body:{} })
+    const result = await api<{campaign: CampaignRecord}>('/api/campaigns/' + c.id + '/duplicate', { method:'POST', body:{} })
     await refresh()
     announceChanges()
     openEdit(result.campaign)
     flash(t('communications', 'Copy created as a draft.'), 'success')
-  } catch (e) { flash(e.message, 'error') }
+  } catch (e) { flash(errorMessageFor(e), 'error') }
 }
-function askDelete(c) {
+function askDelete(c: CampaignRecord) {
   if(c.status!=='archived')return
   deleteTarget.value=c
   deleteName.value=''
@@ -733,10 +738,10 @@ async function deletePermanently() {
     await refresh()
     announceChanges()
     flash(t('communications', 'Publication and delivery history permanently deleted.'),'success')
-  } catch(e) {flash(e.message,'error')}
+  } catch(e) {flash(errorMessageFor(e),'error')}
   finally {deleting.value=false}
 }
-function askArchive(c) { archiveTarget.value = c; confirmArchiveOpen.value = true }
+function askArchive(c: CampaignRecord) { archiveTarget.value = c; confirmArchiveOpen.value = true }
 async function archive() {
   if (!archiveTarget.value) return
   try {
@@ -744,7 +749,7 @@ async function archive() {
     await refresh()
     announceChanges()
     flash(t('communications', 'Publication archived.'), 'success')
-  } catch (e) { flash(e.message, 'error') }
+  } catch (e) { flash(errorMessageFor(e), 'error') }
   confirmArchiveOpen.value = false
   archiveTarget.value = null
 }
@@ -762,7 +767,7 @@ function openCreate() {
   wizardStep.value = 1
   view.value = 'editor'
 }
-function openEdit(c) {
+function openEdit(c: CampaignRecord) {
   const groupIds = c.audience_groups?.length ? c.audience_groups : (c.audience_group ? [c.audience_group] : [])
   selectedGroups.value = groupIds.map(id => {
     const label = groupChoices.value.find(option => option.id === id)?.displayName || id
@@ -877,7 +882,7 @@ async function save() {
   saving.value = true
   try {
     const isNew = editorId.value === null
-    const saved = await api(isNew ? '/api/campaigns' : '/api/campaigns/'+editorId.value, {
+    const saved = await api<{campaign: CampaignRecord}>(isNew ? '/api/campaigns' : '/api/campaigns/'+editorId.value, {
       method: isNew ? 'POST' : 'PUT', body:data,
     })
     await refresh()
@@ -892,17 +897,17 @@ async function save() {
       view.value = 'list'
       flash(isNew ? t('communications', 'Publication created.') : t('communications', 'Publication updated.'), 'success')
     }
-  } catch(e) { errorMessage.value = e.message } finally { saving.value = false }
+  } catch(e) { errorMessage.value = errorMessageFor(e) } finally { saving.value = false }
 }
 
 onMounted(async () => {
   try {
-    const [metadata, data] = await Promise.all([api('/api/catalog'), api('/api/campaigns')])
+    const [metadata, data] = await Promise.all([api<CampaignCatalog>('/api/catalog'), api<{campaigns: CampaignRecord[]}>('/api/campaigns')])
     catalog.value = metadata
     editorGroupValues.value = metadata.editorGroups || []
     campaigns.value = data.campaigns || []
     if (new URL(location.href).searchParams.get('view')==='new') openCreate()
-  } catch (e) { flash(e.message, 'error') }
+  } catch (e) { flash(errorMessageFor(e), 'error') }
   finally { loading.value = false }
 })
 </script>
@@ -1225,7 +1230,7 @@ onMounted(async () => {
                 <div class="cc-banner-custom-fields">
                   <div v-if="form.theme === 'custom'" class="cc-banner-color-picker">
                     <span class="cc-native-label">{{ t('communications', 'Banner color') }}</span>
-                    <NcColorPicker v-model="form.banner_color" :palette="BANNER_COLOR_PALETTE"
+                    <NcColorPicker v-model="form.banner_color" :palette="colorPickerPalette"
                                    advanced-fields container="body">
                       <NcButton class="cc-banner-color-trigger" variant="secondary"
                                 :aria-label="t('communications', 'Choose a custom banner color')">

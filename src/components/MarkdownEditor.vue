@@ -641,7 +641,7 @@ defineExpose({
 })
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 .markdown-editor {
 	border: 1px solid var(--color-border-dark);
 	border-radius: var(--border-radius);
@@ -697,7 +697,7 @@ defineExpose({
 		align-self: center;
 	}
 
-	.cm-editor {
+	:deep(.cm-editor) {
 		height: auto;
 		min-height: var(--markdown-editor-min-height, 80px);
 		max-height: var(--markdown-editor-max-height, none);
