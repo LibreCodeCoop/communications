@@ -10,6 +10,7 @@
   background-color: var(--color-main-background) !important;
   border-inline-start: 2px solid var(--color-border) !important;
 }
+
 .cc-note-custom.notecard {
   /* Use a restrained tint to preserve readable text with either NC theme. */
   --note-background: color-mix(in srgb, var(--cc-selected-color) 18%, var(--color-main-background));
@@ -17,10 +18,13 @@
   --note-theme: color-mix(in srgb, var(--cc-selected-color) 45%, var(--color-main-text) 55%);
   background-color: var(--note-background) !important;
 }
+
 .cc-note-no-icon.notecard .notecard__icon {
   display: none !important;
 }
+
 .cc-note-empty-icon { display:none !important; }
+
 .cc-banner-note-icon {
   flex: none;
   color: var(--note-theme);
