@@ -32,3 +32,6 @@ __pycache__/
 
 # Disposable CI development instances
 .ci/
+
+.stryker-tmp/
+reports/mutation/
