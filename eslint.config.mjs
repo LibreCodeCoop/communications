@@ -8,9 +8,10 @@ import tsParser from '@typescript-eslint/parser'
 export default [
   { ignores: ['node_modules/**', 'vendor/**', 'js/**', 'css/**', 'dist*/**', 'playwright-report/**', 'test-results/**'] },
   ...vue.configs['flat/essential'],
+  { files: ['**/*.ts'], languageOptions: { parser: tsParser } },
   { files: ['src/**/*.vue'], languageOptions: { parserOptions: { parser: tsParser } } },
   {
-    files: ['src/**/*.{js,vue}', 'scripts/*.mjs', 'tests/**/*.{mjs,cjs,js}', 'vite*.js', 'playwright.config.mjs'],
+    files: ['src/**/*.{js,ts,vue}', 'scripts/*.mjs', 'tests/**/*.{ts,mjs,cjs,js}', 'vite*.ts', 'vitest.config.ts', 'playwright.config.mjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       globals: { ...globals.browser, ...globals.node, OC: 'readonly' },
@@ -23,4 +24,5 @@ export default [
       'no-constant-condition': 'error',
     },
   },
+  { files: ['**/*.ts', '**/*.vue'], rules: { 'no-undef': 'off' } },
 ]

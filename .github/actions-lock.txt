@@ -7,6 +7,8 @@
 {"workflow":"lint-info-xml.yml","sha256":"3a2ed92f25ae9a233d6d64d44bd122b39dee0f153e7a1a9dc81bfb19adcec09b","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
 {"workflow":"lint-php-cs.yml","sha256":"5a9693b730f2f5196002e0d70af635bb5122ee2460096871818c508dc7553742","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
 {"workflow":"lint-php.yml","sha256":"83d968027814e65e315744d535022cd81d5c96ed38c449d96d74dda8828f4728","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
+{"workflow":"lint-stylelint.yml","sha256":"69b6182394787d69c62396b2b392c3b605500b539071cc19bea6a2d5e453ded1","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
+{"workflow":"lint-typescript.yml","sha256":"579bd73707b32d44e58ae60608e1988b8a9d36efa018662d5ef26abd0375a668","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
 {"workflow":"node-test.yml","sha256":"e63a20fd12c2744d5c3e05ee32fefc9fc67c03c8e6a15f35353bbea0e227c898","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
 {"workflow":"npm-build.yml","sha256":"fb2286462952d423b396aae7337537aa1619c7b9fb65585ac453a098e188a542","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
 {"workflow":"reuse.yml","sha256":"f563735e1a573cca3acb2975321ee760e5d52cb6ca64bfcc11a5da4ae0f9bf73","catalog_commit":"1d0d7beeb540c2729ec54a5d365710499cf2387c"}
