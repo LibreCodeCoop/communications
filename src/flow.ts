@@ -9,7 +9,7 @@ if (!window.customElements.get(tag)) {
   window.customElements.define(tag,defineCustomElement(FlowCampaignPicker,{shadowRoot:false}))
 }
 function register() {
-  const api=window.OCA?.WorkflowEngine
+  const api = window.OCA?.WorkflowEngine
   if(!api?.registerOperator)return
   api.registerOperator({
     id:'OCA\\Communications\\Service\\FlowCampaignOperation',

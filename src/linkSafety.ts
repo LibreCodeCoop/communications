@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Same allowlist as CtaUrl::isAllowed; never render unsafe saved legacy schemes.
-export function safeCtaLink(value) {
+export function safeCtaLink(value: unknown): string {
   if (typeof value !== 'string' || !value || value.length > 1900
       // eslint-disable-next-line no-control-regex
       || /[\x00-\x20\x7f"'<>\x60\\]/.test(value)) return ''

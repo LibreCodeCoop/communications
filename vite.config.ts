@@ -17,7 +17,7 @@ export default defineConfig({
     emptyOutDir: true,
     cssCodeSplit: false,
     lib: {
-      entry: 'src/main.js',
+      entry: 'src/main.ts',
       name: 'LibreCodeCommunicationsAdmin',
       formats: ['iife'],
       fileName: () => 'management.js',

@@ -26,7 +26,7 @@ export const BANNER_COLOR_PALETTE = [
   {color:'#596579',name:t('communications', 'Gray')},
 ]
 // Own labeling, native MDI vector paths, ID parity with the reference app.
-const ICONS = Object.freeze([
+const ICONS: ReadonlyArray<readonly [string, string, string]> = Object.freeze([
  ['megaphone',t('communications', 'Megaphone'),mdiBullhornOutline],
  ['bullhorn',t('communications', 'Loudspeaker'),mdiBullhornOutline],
  ['bell',t('communications', 'Bell'),mdiBellOutline],
@@ -74,7 +74,7 @@ const ICONS = Object.freeze([
  ['error',t('communications', 'Error (legacy)'),mdiAlertDecagram],
  ['shield',t('communications', 'Shield (legacy)'),mdiShieldCheckOutline],
 ])
-const ICON_PATHS = Object.freeze(Object.fromEntries(ICONS.map(([id,label,path])=>[id,path])))
+const ICON_PATHS: Readonly<Record<string, string>> = Object.freeze(Object.fromEntries(ICONS.map(([id, _label, path]) => [id, path])))
 export const BANNER_ICON_OPTIONS = [
   {value:'auto',label:t('communications', 'Icon based on message type')},
   {value:'none',label:t('communications', 'No icon')},
@@ -82,10 +82,24 @@ export const BANNER_ICON_OPTIONS = [
 ]
 const SEMANTIC_TYPES = new Set(['info','success','warning','error'])
 
-export function bannerAppearance(campaign={}) {
+export interface BannerAppearanceInput {
+  theme?: unknown
+  banner_icon?: unknown
+  banner_color?: unknown
+}
+
+export interface BannerAppearanceResult {
+  type: 'info' | 'success' | 'warning' | 'error'
+  noteClass: Record<string, boolean>
+  style: Record<string, string>
+  hideIcon: boolean
+  iconPath: string | null
+}
+
+export function bannerAppearance(campaign: BannerAppearanceInput = {}): BannerAppearanceResult {
   const theme = typeof campaign.theme==='string' ? campaign.theme : 'default'
-  const nativeType = SEMANTIC_TYPES.has(theme) ? theme : 'info'
-  const choice = BANNER_ICON_OPTIONS.some(i=>i.value===campaign.banner_icon)
+  const nativeType = (SEMANTIC_TYPES.has(theme) ? theme : 'info') as BannerAppearanceResult['type']
+  const choice = typeof campaign.banner_icon === 'string' && BANNER_ICON_OPTIONS.some(i => i.value === campaign.banner_icon)
     ? campaign.banner_icon : 'auto'
   const rawColor = typeof campaign.banner_color==='string' ? campaign.banner_color : ''
   const color = /^#[0-9a-fA-F]{3}$/.test(rawColor)
@@ -94,7 +108,7 @@ export function bannerAppearance(campaign={}) {
   const noIcon = choice==='none' || (choice==='auto' && (theme==='neutral'||theme==='custom'))
   const background = 'color-mix(in srgb, '+color+' 22%, var(--color-main-background))'
   const accent = 'color-mix(in srgb, '+color+' 45%, var(--color-main-text) 55%)'
-  const style = theme==='neutral' ? {
+  const style = (theme === 'neutral' ? {
     '--note-background':'var(--color-main-background)',
     '--note-theme':'var(--color-border-dark, var(--color-border))',
     'background-color':'var(--color-main-background) !important',
@@ -104,7 +118,7 @@ export function bannerAppearance(campaign={}) {
     '--note-background':background,
     '--note-theme':accent,
     'background-color':background+' !important',
-  } : {}
+  } : {}) as Record<string, string>
   return {
     type:nativeType,
     noteClass:{
