@@ -12,7 +12,7 @@ Administrators publish information to eligible audiences using a single editor a
 
 - App ID: `communications` (directory name must match).
 - Display name: **Communications**; Portuguese localization: **Comunicações**.
-- PHP >= 8.3 and Nextcloud **36** development version (in `appinfo/info.xml`).
+- Nextcloud **36** development version is defined in `appinfo/info.xml`. Supported PHP versions are derived from the Nextcloud compatibility matrix in CI; Composer validates the package constraints.
 - Local integration tests have passed on SQLite, PostgreSQL and MariaDB in Nextcloud 36-dev. Remote CI validation and stable-version certification remain required.
 - Optional Nextcloud apps: Notifications, Activity, Dashboard, Flow and Two-Factor Gateway. Providers must be configured separately.
 
@@ -22,7 +22,7 @@ This project was derived from the local `contextualcampaigns` proof of concept. 
 
 1. Install the app in a Nextcloud 36 test instance under `custom_apps/communications`.
 2. Enable it with `php occ app:enable communications` from Nextcloud's root as the web-server user.
-3. Open **Comunicações → Publicações** and choose **Nova publicação**.
+3. Open **Communications → Publications** and choose **New publication** (localized as **Comunicações → Publicações → Nova publicação** in Brazilian Portuguese).
 4. Choose *when* the publication is active (immediately, scheduled or an event), compose the message, choose eligible recipients, and select delivery channels. Banner and modal are mutually exclusive; other channels can be combined without requiring an Inbox copy.
 5. Review, publish and verify delivery/visibility with test recipients. The recipient's Inbox is separate from a sender's management view.
 
@@ -33,13 +33,24 @@ Event triggers are discoverable from enabled applications; whether an event has 
 ```sh
 npm ci --include=dev --include=optional
 npm run build
+npm run check-types
+npm run lint
+npm run stylelint
 npm run test:unit
+npm run test:mutation
 composer install
+composer cs:check
 composer test
 composer analyse
 ```
 
-The PHP tests and analysis require PHP 8.3+ and Composer. For full browser tests use an **isolated** Nextcloud 36 test instance with installed relevant apps, fixture users and Chrome/Chromium, then run `npm run test:e2e`. The LibreSign compatibility test is opt-in through `npm run test:e2e:libresign`; consult [testing and integration](docs/TESTING.md) for its exact constraints. Browser tests do not contact production providers.
+The Vue components and browser entrypoints use strict TypeScript. Vitest exercises front-end contracts; Stryker currently enforces an 85% mutation-score floor for the security-critical CTA link sanitizer, not the entire frontend. CSS uses Nextcloud theme variables and component styles or `.cc-` namespace isolation, checked by Stylelint and a selector-isolation test. Migration history is intentionally a single initial schema for this unreleased app.
+
+CI workflows are synchronized from the organization's [`LibreCodeCoop/.github` templates](https://github.com/LibreCodeCoop/.github/tree/main/workflow-templates), with provenance in `.github/actions-lock.txt`; the app-specific Playwright and mutation jobs remain local. Never hand-edit an organization-managed workflow.
+
+The Portuguese `l10n` catalogs are checked-in source-controlled fallbacks. This does not configure automatic Transifex registration or translation-source extraction. Translation-service setup still needs a project-level integration decision and credentials.
+
+The PHP tests and analysis require a PHP runtime compatible with the target Nextcloud server and Composer. For full browser tests use an **isolated** Nextcloud 36 test instance with installed relevant apps, fixture users and Chrome/Chromium, then run `npm run test:e2e`. The LibreSign compatibility test is opt-in through `npm run test:e2e:libresign`; consult [testing and integration](docs/TESTING.md) for its exact constraints. Browser tests do not contact production providers.
 
 ## Documentation
 

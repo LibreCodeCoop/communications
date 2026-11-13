@@ -23,3 +23,9 @@ The Nextcloud archive source is the development channel (`latest-master` for the
 ### Scoped event delivery in CI
 
 The browser compatibility scenario creates a synthetic LibreSign completion event and executes only its queued `EventChannelDeliveryJob` using the **test-only** CLI fixture in `tests/integration/fixtures/execute_queued_event_delivery.php`. This exercises the production queue worker without running Nextcloud's global `cron.php`, which may execute unrelated jobs for installed apps and exceed browser-test timeouts. The fixture refuses events outside its synthetic LibreSign recipient and requires exactly one matching queued job. The browser still verifies authorized delivery and denial to unrelated users.
+
+### Quality gates
+
+Development uses the organization-managed lint, type-check, build, Node test and REUSE workflows. Run `npm run lint`, `npm run check-types`, `npm run stylelint`, `npm run test:unit`, `composer cs:check`, `composer test`, and `composer analyse` before review. The optional `npm run test:mutation` tests the URL allowlist using Stryker's Vitest runner and blocks scores below 85%; it does **not** claim mutation coverage across other frontend modules or PHP. The separate Playwright workflow validates recipient isolation, route/schema contracts, and the generic LibreSign event contract on disposable Nextcloud instances.
+
+The consolidated schema is compared with the pre-consolidation contract in `tests/integration/schema-contract.sqlite.json`. The assertion checks full SQLite column types/defaults and portable nullability/length/index contracts in PostgreSQL and MariaDB. No migration of the old laboratory app ID is implied.
