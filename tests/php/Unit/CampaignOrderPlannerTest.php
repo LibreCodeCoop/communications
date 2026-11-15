@@ -11,15 +11,12 @@ namespace OCA\Communications\Tests\Unit;
 
 use InvalidArgumentException;
 use OCA\Communications\Service\CampaignOrderPlanner;
-use OCP\IL10N;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CampaignOrderPlannerTest extends TestCase {
 	private function planner(): CampaignOrderPlanner {
-		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnCallback(static fn (string $message): string => $message);
-		return new CampaignOrderPlanner($l10n);
+		return new CampaignOrderPlanner();
 	}
 
 	private static function campaigns(): array {

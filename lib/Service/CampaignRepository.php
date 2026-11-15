@@ -338,7 +338,17 @@ class CampaignRepository {
 	 * Keyboard buttons and drag-and-drop share this API.
 	 */
 	public function move(int $id, string $direction, ?int $targetId = null):?array {
-		$rows = $this->orderPlanner->plan($this->all(), $id, $direction, $targetId);
+		try {
+			$rows = $this->orderPlanner->plan($this->all(), $id, $direction, $targetId);
+		} catch (CampaignOrderException $error) {
+			$message = match ($error->reason) {
+				CampaignOrderException::INVALID_DIRECTION => $this->l10n->t('Invalid reordering operation.'),
+				CampaignOrderException::MISSING_TARGET => $this->l10n->t('Select the destination campaign.'),
+				CampaignOrderException::UNKNOWN_TARGET => $this->l10n->t('Destination campaign unavailable.'),
+				default => throw $error,
+			};
+			throw new InvalidArgumentException($message, 0, $error);
+		}
 		if ($rows === null) {
 			return null;
 		}

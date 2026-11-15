@@ -9,22 +9,15 @@ declare(strict_types=1);
 
 namespace OCA\Communications\Service;
 
-use InvalidArgumentException;
-use OCP\IL10N;
-
 /**
  * Computes a publication order without writing to the database.
  * Persistence remains transactional in the repository.
  */
 final class CampaignOrderPlanner {
-	public function __construct(
-		private IL10N $l10n,
-	) {
-	}
 
 	public function plan(array $campaigns, int $id, string $direction, ?int $targetId = null): ?array {
 		if (!in_array($direction, ['up','down','before','after'], true)) {
-			throw new InvalidArgumentException($this->l10n->t('Invalid reordering operation.'));
+			throw new CampaignOrderException(CampaignOrderException::INVALID_DIRECTION, 'Invalid reordering operation.');
 		}
 		$rows = array_values(array_filter($campaigns,
 			static fn (array $c):bool => $c['status'] !== 'archived'));
@@ -47,7 +40,7 @@ final class CampaignOrderPlanner {
 			[$rows[$index],$rows[$neighbor]] = [$rows[$neighbor],$rows[$index]];
 		} else {
 			if ($targetId === null || $targetId < 1) {
-				throw new InvalidArgumentException($this->l10n->t('Select the destination campaign.'));
+				throw new CampaignOrderException(CampaignOrderException::MISSING_TARGET, 'Select the destination campaign.');
 			}
 			if ($targetId === $id) {
 				return $rows;
@@ -62,7 +55,7 @@ final class CampaignOrderPlanner {
 				}
 			}
 			if ($position === null) {
-				throw new InvalidArgumentException($this->l10n->t('Destination campaign unavailable.'));
+				throw new CampaignOrderException(CampaignOrderException::UNKNOWN_TARGET, 'Destination campaign unavailable.');
 			}
 			array_splice($rows, $position + ($direction === 'after'?1:0), 0, [$current]);
 		}
