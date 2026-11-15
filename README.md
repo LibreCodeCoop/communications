@@ -31,7 +31,6 @@ If you need help with hosting, deployment, integrations, accessibility, maintena
 
 ## Explore and contribute
 
-- [Installation and first steps](docs/INSTALLATION.md)
 - [Delivery channels and recipient preferences](docs/DELIVERY_CHANNELS.md)
 - [Architecture and event integration](docs/ARCHITECTURE.md)
 - [Development and testing](docs/DEVELOPMENT.md)

@@ -5,6 +5,8 @@
 
 The application is a Nextcloud development preview. Use disposable infrastructure for integration and database tests. Nothing here certifies a production deployment.
 
+Because this unreleased application still has a changeable initial database schema, recreate disposable test databases when that schema changes. Do not test it in a database shared with the older `contextualcampaigns` proof-of-concept: their `cc_` table names overlap.
+
 ## Build and verification
 
 ```sh
@@ -35,7 +37,7 @@ All shared workflows are synchronized from the [`LibreCodeCoop/.github` catalog]
 
 `.tx/config` and `.l10nignore` prepare native source extraction for the official Nextcloud Transifex resource. The Portuguese `l10n` catalogs are retained as working fallbacks until the project is onboarded and the Nextcloud translation bot can sync replacements; creating a resource configuration alone does not register it or authorize the bot.
 
-The PHP tests and analysis require a PHP runtime compatible with the target Nextcloud server and Composer. For full browser tests use an **isolated** Nextcloud 36 test instance with installed relevant apps, fixture users and Chrome/Chromium, then run `npm run test:e2e`. The LibreSign compatibility test is opt-in through `npm run test:e2e:libresign`; consult [testing and integration](docs/TESTING.md) for its exact constraints. Browser tests do not contact production providers.
+The PHP tests and analysis require a PHP runtime compatible with the target Nextcloud server and Composer. For full browser tests use an **isolated** Nextcloud 36 test instance with installed relevant apps, fixture users and Chrome/Chromium, then run `npm run test:e2e`. The LibreSign compatibility test is opt-in through `npm run test:e2e:libresign`; consult [testing and integration](TESTING.md) for its exact constraints. Browser tests do not contact production providers.
 
 
 ## Security and current limitations
