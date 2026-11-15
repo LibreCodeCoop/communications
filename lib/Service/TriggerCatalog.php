@@ -215,7 +215,6 @@ final class TriggerCatalog {
 		return $filtered;
 	}
 
-
 	private function validateExternal(array $source): bool {
 		foreach (['id','appId','intent','label','description','actions'] as $key) {
 			if (!isset($source[$key])) {

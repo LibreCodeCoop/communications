@@ -108,10 +108,6 @@ final class NativeEventCatalog {
 	}
 
 	/**
-	 * Resolve public OCP event families to their functional Nextcloud app.
-	 * A core user event remains in "core"; never infer arbitrary actor/owner data.
-	 */
-	/**
 	 * Tracks the event class inventory (including changed webhook interfaces)
 	 * independently of the app version. Metadata only; no class instantiated.
 	 * This runs when an administrator opens the catalog, never in the hot path
@@ -153,6 +149,10 @@ final class NativeEventCatalog {
 		}
 	}
 
+	/**
+	 * Map public OCP event families to their Nextcloud app.
+	 * Do not infer the action's owner from this metadata.
+	 */
 	private function coreApp(string $class): string {
 		return match (true) {
 			str_starts_with($class, 'OCP\\Files\\') => 'files',
@@ -214,14 +214,14 @@ final class NativeEventCatalog {
 				$webhook = is_a($class, \OCP\EventDispatcher\IWebhookCompatibleEvent::class, true);
 				$description = ($phase === 'before' ? $this->l10n->t('Before the operation; does not confirm completion. ')
 					: $this->l10n->t('The timing of this event depends on the app and does not prove the operation completed. '))
-				  . $this->l10n->t('Recipient: the authenticated user of this request, not necessarily the affected user. ')
-				  . (NativeEventSubscriptions::eventIsMutationByName($class)
+					. $this->l10n->t('Recipient: the authenticated user of this request, not necessarily the affected user. ')
+					. (NativeEventSubscriptions::eventIsMutationByName($class)
 					? $this->l10n->t('To keep page requests fast, this trigger ignores GET, HEAD and OPTIONS. ') : '')
-				  . ($webhook ? $this->l10n->t('Compatible with Webhook Listeners.') : $this->l10n->t('Internal PHP event.'));
+					. ($webhook ? $this->l10n->t('Compatible with Webhook Listeners.') : $this->l10n->t('Internal PHP event.'));
 				$key = self::triggerKey($class);
 				$out[$class] = [
 					'key' => $key, 'appId' => $appId, 'class' => $class,
-					'label' => 'Evento PHP: ' . $short,
+					'label' => $this->l10n->t('PHP event: ') . $short,
 					'description' => $description,
 					'webhook' => $webhook, 'phase' => $phase,
 				];
