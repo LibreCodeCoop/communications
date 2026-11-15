@@ -1560,8 +1560,6 @@ const adminChooseAValidConditionToLabel = t(
 	'communications',
 	'Choose a valid condition to continue.',
 )
-// TRANSLATORS Short label for an option or field in the publications management screen.
-const adminForWhomLabel = t('communications', 'For whom')
 // TRANSLATORS Progress indicator shown in the publications management screen.
 const adminLoadingLabel = t('communications', 'Loading…')
 // TRANSLATORS Metrics label for browser-reported estimates of announcement impressions.

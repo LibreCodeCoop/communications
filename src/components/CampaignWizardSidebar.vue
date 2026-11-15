@@ -41,6 +41,8 @@ const adminPublicationTitleLabel = t('communications', 'Publication title')
 const adminPreviewMessageLabel = t('communications', 'Preview message')
 // TRANSLATORS Action for testing a banner or modal presentation without delivering it.
 const adminTestPresentationLabel = t('communications', 'Test presentation')
+// TRANSLATORS Label for recipients in the publication summary.
+const adminForWhomLabel = t('communications', 'For whom')
 </script>
 
 <template>
@@ -51,138 +53,206 @@ const adminTestPresentationLabel = t('communications', 'Test presentation')
 		">
 		<section class="cc-wizard-summary">
 			<h2>
-<NcIconSvgWrapper
-	:path="mdiBullhornOutline"
-	:size="19" />
-<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-{{ t('communications', 'Publication summary') }}
+				<NcIconSvgWrapper
+					:path="mdiBullhornOutline"
+					:size="19" />
+				<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
+				{{ t('communications', 'Publication summary') }}
 			</h2>
 			<dl class="cc-wizard-summary-list">
-<div>
-	<NcIconSvgWrapper
-		:path="mdiLightningBoltOutline"
-		:size="17" />
-	<!-- TRANSLATORS Section showing the selected trigger and schedule. -->
-	<dt>{{ t('communications', 'When') }}</dt>
-	<dd>{{ summaryWhen }}</dd>
-</div>
-<div>
-	<NcIconSvgWrapper
-		:path="mdiAccountGroupOutline"
-		:size="17" />
-	<dt>
-		{{ adminForWhomLabel }}
-	</dt>
-	<dd>{{ audienceReview }}</dd>
-</div>
-<div>
-	<NcIconSvgWrapper
-		:path="mdiMapMarkerOutline"
-		:size="17" />
-	<!-- TRANSLATORS Section showing placement and presentation of the publication. -->
-	<dt>{{ t('communications', 'Context') }}</dt>
-	<dd>{{ locationReview }}</dd>
-</div>
-<div>
-	<NcIconSvgWrapper
-		:path="mdiBullhornOutline"
-		:size="17" />
-	<!-- TRANSLATORS Section summarizing channels selected for sending. -->
-	<dt>{{ t('communications', 'Delivery') }}</dt>
-	<dd>{{ deliveryReview }}</dd>
-</div>
-<div>
-	<NcIconSvgWrapper :path="mdiRepeat" :size="17" />
-	<!-- TRANSLATORS Section summarizing how often messages may be shown or sent. -->
-	<dt>{{ t('communications', 'Frequency') }}</dt>
-	<dd>{{ frequencyReview }}</dd>
-</div>
-<div>
-	<NcIconSvgWrapper
-		:path="mdiCalendarRange"
-		:size="17" />
-	<dt>
-		<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-		{{
-			t(
-'communications',
-'Availability period',
-			)
-		}}
-	</dt>
-	<dd>{{ scheduleReview }}</dd>
-</div>
+				<div>
+					<NcIconSvgWrapper
+						:path="mdiLightningBoltOutline"
+						:size="17" />
+					<!-- TRANSLATORS Section showing the selected trigger and schedule. -->
+					<dt>{{ t('communications', 'When') }}</dt>
+					<dd>{{ summaryWhen }}</dd>
+				</div>
+				<div>
+					<NcIconSvgWrapper
+						:path="mdiAccountGroupOutline"
+						:size="17" />
+					<dt>
+						{{ adminForWhomLabel }}
+					</dt>
+					<dd>{{ audienceReview }}</dd>
+				</div>
+				<div>
+					<NcIconSvgWrapper
+						:path="mdiMapMarkerOutline"
+						:size="17" />
+					<!-- TRANSLATORS Section showing placement and presentation of the publication. -->
+					<dt>{{ t('communications', 'Context') }}</dt>
+					<dd>{{ locationReview }}</dd>
+				</div>
+				<div>
+					<NcIconSvgWrapper
+						:path="mdiBullhornOutline"
+						:size="17" />
+					<!-- TRANSLATORS Section summarizing channels selected for sending. -->
+					<dt>{{ t('communications', 'Delivery') }}</dt>
+					<dd>{{ deliveryReview }}</dd>
+				</div>
+				<div>
+					<NcIconSvgWrapper :path="mdiRepeat" :size="17" />
+					<!-- TRANSLATORS Section summarizing how often messages may be shown or sent. -->
+					<dt>{{ t('communications', 'Frequency') }}</dt>
+					<dd>{{ frequencyReview }}</dd>
+				</div>
+				<div>
+					<NcIconSvgWrapper
+						:path="mdiCalendarRange"
+						:size="17" />
+					<dt>
+						<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
+						{{
+							t(
+								'communications',
+								'Availability period',
+							)
+						}}
+					</dt>
+					<dd>{{ scheduleReview }}</dd>
+				</div>
 			</dl>
 		</section>
 
 		<section class="cc-wizard-preview">
 			<!-- TRANSLATORS Open a non-delivering preview of a publication. -->
 			<h2>
-<NcIconSvgWrapper :path="mdiEyeOutline" :size="19" />
-<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-{{
-	form.presentation === 'none'
-		? adminMessagePreviewTitleLabel
-		: adminPreviewTitleLabel
-}}
+				<NcIconSvgWrapper :path="mdiEyeOutline" :size="19" />
+				<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
+				{{
+					form.presentation === 'none'
+						? adminMessagePreviewTitleLabel
+						: adminPreviewTitleLabel
+				}}
 			</h2>
 			<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 			<component
-:is="
-	form.presentation === 'banner'
-		? NcNoteCard
-		: 'div'
-"
-:type="
-	form.presentation === 'banner'
-		? bannerPreviewAppearance.type
-		: undefined
-"
-:class="
-	form.presentation === 'banner'
-		? [
-'cc-wizard-preview-notecard',
-bannerPreviewAppearance.noteClass,
-			]
-		: 'cc-wizard-preview-content'
-"
-:style="
-	form.presentation === 'banner'
-		? bannerPreviewAppearance.style
-		: undefined
-"
-:role="
-	form.presentation === 'banner'
-		? 'group'
-		: undefined
-"
-:aria-label="
-	form.presentation === 'banner'
-		? t(
-'communications',
-'Banner visual preview',
-			)
-		: undefined
-"
-:data-presentation="form.presentation">
-<template
-	v-if="
-		form.presentation === 'banner'
-		&& (bannerPreviewAppearance.iconPath
-			|| bannerPreviewAppearance.hideIcon)
-	"
-	#icon>
-	<NcIconSvgWrapper
-		v-if="bannerPreviewAppearance.iconPath"
-		class="cc-banner-note-icon"
-		:path="bannerPreviewAppearance.iconPath"
-		:size="20"
-		:style="{ color: 'var(--note-theme)' }"
-		inline />
-	<span
-		v-else
-		class="cc-note-empty-icon"
-		aria-hidden="true"></span>
+				:is="
+					form.presentation === 'banner'
+						? NcNoteCard
+						: 'div'
+				"
+				:type="
+					form.presentation === 'banner'
+						? bannerPreviewAppearance.type
+						: undefined
+				"
+				:class="
+					form.presentation === 'banner'
+						? [
+								'cc-wizard-preview-notecard',
+								bannerPreviewAppearance.noteClass,
+							]
+						: 'cc-wizard-preview-content'
+				"
+				:style="
+					form.presentation === 'banner'
+						? bannerPreviewAppearance.style
+						: undefined
+				"
+				:role="
+					form.presentation === 'banner'
+						? 'group'
+						: undefined
+				"
+				:aria-label="
+					form.presentation === 'banner'
+						? t(
+								'communications',
+								'Banner visual preview',
+							)
+						: undefined
+				"
+				:data-presentation="form.presentation">
+				<template
+					v-if="
+						form.presentation === 'banner'
+						&& (bannerPreviewAppearance.iconPath
+							|| bannerPreviewAppearance.hideIcon)
+					"
+					#icon>
+					<NcIconSvgWrapper
+						v-if="bannerPreviewAppearance.iconPath"
+						class="cc-banner-note-icon"
+						:path="bannerPreviewAppearance.iconPath"
+						:size="20"
+						:style="{ color: 'var(--note-theme)' }"
+						inline />
+					<span
+						v-else
+						class="cc-note-empty-icon"
+						aria-hidden="true"></span>
+				</template>
+				<strong
+					:style="
+						form.text_align
+							? { textAlign: form.text_align }
+							: undefined
+					"
+					>{{
+						form.headline || adminPublicationTitleLabel
+					}}</strong
+				>
+				<div
+					class="cc-wizard-preview-message"
+					:style="
+						form.text_align
+							? { textAlign: form.text_align }
+							: undefined
+					">
+					<NcRichText
+						v-if="form.message"
+						:text="form.message"
+						:use-markdown="true" />
+					<p v-else>
+						<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->
+						{{
+							t(
+								'communications',
+								'Write a message in the Message and audience step to see a preview.',
+							)
+						}}
+					</p>
+				</div>
+				<span
+					v-if="form.cta_label"
+					class="cc-native-preview-link"
+					>{{ form.cta_label }}</span
+				>
+			</component>
+			<p
+				v-if="form.presentation === 'none'"
+				class="cc-native-hint">
+				<!-- TRANSLATORS Explanatory help text shown in the publications management screen. -->
+				{{
+					t(
+						'communications',
+						'Content preview. Appearance depends on the channel (email, Notifications, WhatsApp, etc.).',
+					)
+				}}
+			</p>
+			<NcButton
+				wide
+				:text="
+					form.presentation === 'none'
+						? adminPreviewMessageLabel
+						: adminTestPresentationLabel
+				"
+				:disabled="
+					!form.headline.trim() || !form.message.trim()
+				"
+				@click="emit('preview')">
+				<template #icon
+					><NcIconSvgWrapper
+						:path="mdiEyeOutline"
+						:size="18"
+				/></template>
+			</NcButton>
+		</section>
+	</aside>
 </template>
 <strong
 	:style="
