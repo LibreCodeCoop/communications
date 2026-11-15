@@ -8,15 +8,15 @@ path = [
     "package-lock.json",
     "composer.json",
     "composer.lock",
+    "vendor-bin/*/composer.json",
+    "vendor-bin/*/composer.lock",
     "*.json",
     "l10n/*.json",
     "tests/ci/*.json",
     "tests/integration/*.json",
-    "phpunit.xml.dist",
     "phpstan.neon.dist",
     "eslint.config.mjs",
     "playwright.config.mjs",
-    ".gitignore",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 LibreCode Coop and contributors"

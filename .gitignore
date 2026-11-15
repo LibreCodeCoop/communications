@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # Local environment, credentials, logs, and caches
 .env
 .env.*
@@ -10,6 +13,7 @@ node_modules/
 /css/
 /build/
 vendor/
+/vendor-bin/*/vendor/
 dist/
 dist-delivery/
 dist-flow/

@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true">
-  <testsuites><testsuite name="unit"><directory>tests/php/Unit</directory></testsuite></testsuites>
-  <source><include><directory suffix=".php">lib</directory></include></source>
+	<testsuites>
+		<testsuite name="unit">
+			<directory>tests/php/Unit</directory>
+		</testsuite>
+	</testsuites>
+	<source>
+		<include>
+			<directory suffix=".php">lib</directory>
+		</include>
+	</source>
 </phpunit>
