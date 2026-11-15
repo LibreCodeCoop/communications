@@ -50,7 +50,8 @@ foreach ($iterator as $file) {
 			$docblock = false;
 		}
 		if (trim($line) !== ''
-			&& !preg_match('/^\s*(?:\/\/|\/\*|\*)/', $line)) {
+			&& !preg_match('/^\s*(?:\/\/|\/\*|\*)/', $line)
+			&& !preg_match('/^\t+(?:&&|\|\||\?|:|=>)/', $line)) {
 			$previousIndent = strspn($line, "\t");
 		}
 	}

@@ -95,9 +95,10 @@ class BoardController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$results = $this->board->mentionCandidates($uid, $id, $search);
-		return $results === null
-	? new JSONResponse(['error' => $this->l10n->t('Publication unavailable.')], 404)
-	: new JSONResponse(['users' => $results]);
+		if ($results === null) {
+			return new JSONResponse(['error' => $this->l10n->t('Publication unavailable.')], 404);
+		}
+		return new JSONResponse(['users' => $results]);
 	}
 
 	#[NoAdminRequired]

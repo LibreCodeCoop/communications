@@ -99,7 +99,7 @@ final class WebRouteCatalog {
 			}
 			$return = $method->getReturnType();
 			$types = $return instanceof \ReflectionUnionType ? $return->getTypes()
-	: ($return instanceof \ReflectionNamedType ? [$return] : []);
+				: ($return instanceof \ReflectionNamedType ? [$return] : []);
 			// A declared TemplateResponse (possibly with RedirectResponse) is a UI.
 			foreach ($types as $type) {
 				if (is_a($type->getName(), TemplateResponse::class, true)) {
