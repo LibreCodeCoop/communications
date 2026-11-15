@@ -12,13 +12,12 @@ namespace OCA\Communications\Service;
 use OCA\Communications\BackgroundJob\BoardBroadcastJob;
 use OCA\Communications\BackgroundJob\EventChannelDeliveryJob;
 use OCA\Communications\Events\AnnouncementPublished;
+use OCA\Communications\Db\BoardPublicationMapper;
 use OCP\Activity\IManager as ActivityManager;
 use OCP\App\IAppManager;
 use OCP\BackgroundJob\IJobList;
-use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IConfig;
-use OCP\IDBConnection;
 use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -31,14 +30,12 @@ use Psr\Log\LoggerInterface;
  * No channel is enabled by default. Never fan out inside REST requests.
  */
 final class BoardPublicationService {
-	private const PUB = 'cc_board_pub';
-	private const SENT = 'cc_board_sent';
 	private const APP = 'communications';
 	private const BATCH = 100;
 
 	public function __construct(
 		private CampaignRepository $campaigns,
-		private IDBConnection $db,
+		private BoardPublicationMapper $outbox,
 		private IEventDispatcher $dispatcher,
 		private IJobList $jobs,
 		private IUserManager $users,
@@ -53,54 +50,6 @@ final class BoardPublicationService {
 		private GatewayRecipientPreferences $gatewayPreferences,
 		private EventStore $events,
 	) {
-	}
-
-	/** @return array<string, mixed>|null */
-	private function publication(int $id, int $version): ?array {
-		$qb = $this->db->getQueryBuilder();
-		$result = $qb->select('*')->from(self::PUB)
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('version', $qb->createNamedParameter($version, IQueryBuilder::PARAM_INT)))
-			->executeQuery();
-		$row = $result->fetchAssociative();
-		$result->closeCursor();
-		return $row === false ? null : $row;
-	}
-
-	private function ensurePublication(int $id, int $version): array {
-		$existing = $this->publication($id, $version);
-		if ($existing !== null) {
-			return $existing;
-		}
-		$qb = $this->db->getQueryBuilder();
-		try {
-			$qb->insert(self::PUB)->values([
-				'campaign_id' => $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT),
-				'version' => $qb->createNamedParameter($version, IQueryBuilder::PARAM_INT),
-				'created_at' => $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT),
-			])->executeStatement();
-		} catch (\OCP\DB\Exception $e) {
-			// A second worker may have inserted the same publication meanwhile.
-			if ($this->publication($id, $version) === null) {
-				throw $e;
-			}
-		}
-		return $this->publication($id, $version);
-	}
-
-	private function markPublication(int $id, int $version, string $field, int $value):void {
-		if (!in_array($field, ['event_sent','broadcast_done'], true)) {
-			throw new \InvalidArgumentException('Invalid publication field');
-		}
-		$qb = $this->db->getQueryBuilder();
-		$qb->update(self::PUB)
-			->set($field, $qb->createNamedParameter($value, IQueryBuilder::PARAM_INT))
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('version', $qb->createNamedParameter($version, IQueryBuilder::PARAM_INT)));
-		if ($field === 'event_sent') {
-			$qb->set('event_sent_at', $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT));
-		}
-		$qb->executeStatement();
 	}
 
 	/**
@@ -121,7 +70,7 @@ final class BoardPublicationService {
 			$id = (int)$campaign['id'];
 			$version = (int)$campaign['published_at'];
 			try {
-				$state = $this->ensurePublication($id, $version);
+				$state = $this->outbox->ensurePublication($id, $version);
 				if ((int)$state['event_sent'] !== 1) {
 					// Announce an inbox publication only if one exists; channel-only sends
 					// do not create a false webhook/event announcing a board entry.
@@ -133,14 +82,14 @@ final class BoardPublicationService {
 						$this->dispatcher->dispatchTyped($event);
 						$stats['events']++;
 					}
-					$this->markPublication($id, $version, 'event_sent', 1);
+					$this->outbox->markPublication($id, $version, 'event_sent', 1);
 				}
 				if ((int)$state['broadcast_done'] === 1) {
 					continue;
 				}
 				if (!$campaign['notify_users'] && !$campaign['notify_activity'] && !$campaign['notify_email']
 					&& $campaign['gateway_channels'] === []) {
-					$this->markPublication($id, $version, 'broadcast_done', 1);
+					$this->outbox->markPublication($id, $version, 'broadcast_done', 1);
 					continue;
 				}
 				$this->jobs->add(BoardBroadcastJob::class, ['id' => $id,'version' => $version,'offset' => 0]);
@@ -154,74 +103,22 @@ final class BoardPublicationService {
 		return $stats;
 	}
 
-	private function sentRow(int $id, int $version, string $uid, string $channel, int $eventId = 0): ?array {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('*')->from(self::SENT)
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('version', $qb->createNamedParameter($version, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-			->andWhere($qb->expr()->eq('channel', $qb->createNamedParameter($channel)))
-			->andWhere($qb->expr()->eq('event_id', $qb->createNamedParameter($eventId, IQueryBuilder::PARAM_INT)))
-			->executeQuery();
-		$row = $rs->fetchAssociative();
-		$rs->closeCursor();
-		return $row === false ? null : $row;
-	}
-
-	private function claim(int $id, int $version, string $uid, string $channel, int $eventId = 0):?array {
+	private function claim(int $id, int $version, string $uid, string $channel, int $eventId = 0): ?array {
 		$now = time();
-		$row = $this->sentRow($id, $version, $uid, $channel, $eventId);
+		$row = $this->outbox->sentRow($id, $version, $uid, $channel, $eventId);
 		if ($row === null) {
-			$qb = $this->db->getQueryBuilder();
-			try {
-				$qb->insert(self::SENT)->values([
-					'campaign_id' => $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT),
-					'version' => $qb->createNamedParameter($version, IQueryBuilder::PARAM_INT),
-					'event_id' => $qb->createNamedParameter($eventId, IQueryBuilder::PARAM_INT),
-					'uid' => $qb->createNamedParameter($uid),
-					'channel' => $qb->createNamedParameter($channel),
-					'status' => $qb->createNamedParameter('pending'),
-					'created_at' => $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT),
-				])->executeStatement();
-			} catch (\OCP\DB\Exception $e) {
-				if ($this->sentRow($id, $version, $uid, $channel, $eventId) === null) {
-					throw $e;
-				}
-			}
-			$row = $this->sentRow($id, $version, $uid, $channel, $eventId);
+			$this->outbox->insertDispatch($id, $version, $uid, $channel, $eventId, $now);
+			$row = $this->outbox->sentRow($id, $version, $uid, $channel, $eventId);
 		}
-		if ($row === null || in_array($row['status'], ['sent','skipped','failed','unknown'], true)
+		if ($row === null || in_array($row['status'], ['sent', 'skipped', 'failed', 'unknown'], true)
 			|| (int)$row['attempts'] >= 5 || (int)$row['claim_until'] > $now) {
 			return null;
 		}
-		// If a worker died after contacting SMTP or an external provider, retrying
-		// its expired claim could send a duplicate. Preserve unknown for review.
 		if ($row['status'] === 'claimed' && ($channel === 'email' || str_starts_with($channel, 'gateway:'))) {
-			$this->state((int)$row['id'], 'unknown', 'submission_outcome_unknown');
+			$this->outbox->stateDispatch((int)$row['id'], 'unknown', 'submission_outcome_unknown');
 			return null;
 		}
-		$qb = $this->db->getQueryBuilder();
-		$changed = $qb->update(self::SENT)
-			->set('status', $qb->createNamedParameter('claimed'))
-			->set('attempts', $qb->createNamedParameter(((int)$row['attempts']) + 1, IQueryBuilder::PARAM_INT))
-			->set('claim_until', $qb->createNamedParameter($now + 90, IQueryBuilder::PARAM_INT))
-			->where($qb->expr()->eq('id', $qb->createNamedParameter((int)$row['id'], IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->lte('claim_until', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)))
-			->executeStatement();
-		return $changed === 1 ? $row : null;
-	}
-
-	private function state(int $rowId, string $status, ?string $error = null, int $backoff = 0):void {
-		$qb = $this->db->getQueryBuilder();
-		$qb->update(self::SENT)
-			->set('status', $qb->createNamedParameter($status))
-			->set('claim_until', $qb->createNamedParameter($backoff?time() + $backoff:0, IQueryBuilder::PARAM_INT))
-			->set('last_error', $qb->createNamedParameter($error === null?null:mb_substr($error, 0, 248)));
-		if ($status === 'sent') {
-			$qb->set('sent_at', $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT));
-		}
-		$qb->where($qb->expr()->eq('id', $qb->createNamedParameter($rowId, IQueryBuilder::PARAM_INT)))
-			->executeStatement();
+		return $this->outbox->claimDispatch((int)$row['id'], (int)$row['attempts'] + 1, $now) ? $row : null;
 	}
 
 	private function deliver(array $c, IUser $user, int $version, string $channel, int $eventId = 0):void {
@@ -240,11 +137,11 @@ final class BoardPublicationService {
 				default => str_starts_with($channel, 'gateway:')
 					? $this->gateway($c, $user, substr($channel, 8)) : false,
 			};
-			$this->state((int)$row['id'], $sent?'sent':'skipped');
+			$this->outbox->stateDispatch((int)$row['id'], $sent?'sent':'skipped');
 		} catch (DeliveryOutcomeUnknownException $e) {
 			// SMTP delivery follows the same rule: an ambiguous
 			// submission never retries automatically without provider idempotency.
-			$this->state((int)$row['id'], 'unknown', 'submission_outcome_unknown');
+			$this->outbox->stateDispatch((int)$row['id'], 'unknown', 'submission_outcome_unknown');
 			$this->logger->warning('Delivery submission outcome unknown', [
 				'app' => self::APP,'campaignId' => $id,'channel' => $channel,
 				'exceptionClass' => $e::class,
@@ -253,7 +150,7 @@ final class BoardPublicationService {
 			$attempt = (int)$row['attempts'] + 1;
 			// External provider exceptions may include a phone, chat ID or message:
 			// neither persist their text nor attach them as logger exceptions.
-			$this->state((int)$row['id'], $attempt >= 5?'failed':'retry',
+			$this->outbox->stateDispatch((int)$row['id'], $attempt >= 5?'failed':'retry',
 				$e::class, min(300, 30 * $attempt));
 			$this->logger->warning('Contextual announcement channel delivery failed',
 				['app' => self::APP,'campaignId' => $id,'channel' => $channel,'exceptionClass' => $e::class]);
@@ -344,7 +241,7 @@ final class BoardPublicationService {
 		$c = $this->campaigns->find($id);
 		$offset = max(0, $offset);
 		if ($c === null || (int)$c['published_at'] !== $version || !PublicationDuePolicy::allows($c, time())) {
-			$this->markPublication($id, $version, 'broadcast_done', 1);
+			$this->outbox->markPublication($id, $version, 'broadcast_done', 1);
 			return $status;
 		}
 		$accounts = $this->users->search('', self::BATCH, $offset);
@@ -382,16 +279,9 @@ final class BoardPublicationService {
 				['id' => $id,'version' => $version,'offset' => $offset + self::BATCH]);
 			$status['queued'] = true;
 		} else {
-			$qb = $this->db->getQueryBuilder();
-			$rs = $qb->select($qb->func()->count('id'))->from(self::SENT)
-				->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-				->andWhere($qb->expr()->eq('version', $qb->createNamedParameter($version, IQueryBuilder::PARAM_INT)))
-				->andWhere($qb->expr()->in('status', $qb->createNamedParameter(['retry','claimed','pending'], IQueryBuilder::PARAM_STR_ARRAY)))
-				->executeQuery();
-			$pending = (int)$rs->fetchOne();
-			$rs->closeCursor();
+			$pending = $this->outbox->pendingCount($id, $version);
 			if ($pending === 0) {
-				$this->markPublication($id, $version, 'broadcast_done', 1);
+				$this->outbox->markPublication($id, $version, 'broadcast_done', 1);
 				$status['done'] = true;
 			}
 		}
@@ -469,16 +359,7 @@ final class BoardPublicationService {
 	 * currently claimed or retryable messages consume a send slot.
 	 */
 	private function allowedForEvent(array $campaign, string $uid, string $channel, int $now, int $eventId):bool {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('event_id', 'created_at', 'sent_at', 'status')->from(self::SENT)
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter((int)$campaign['id'], IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('version', $qb->createNamedParameter((int)$campaign['published_at'], IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-			->andWhere($qb->expr()->eq('channel', $qb->createNamedParameter($channel)))
-			->andWhere($qb->expr()->gt('event_id', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
-			->executeQuery();
-		$prior = $rs->fetchAllAssociative();
-		$rs->closeCursor();
+		$prior = $this->outbox->eventRows((int)$campaign['id'], (int)$campaign['published_at'], $uid, $channel);
 		$times = [];
 		foreach ($prior as $row) {
 			if ((int)$row['event_id'] === $eventId) {
@@ -493,14 +374,7 @@ final class BoardPublicationService {
 
 	/** Timed cron: retry only submissions known safe to repeat. Unknown is final. */
 	public function retryEventDeliveries(int $limit = 100):int {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('event_id')->from(self::SENT)->groupBy('event_id')
-			->where($qb->expr()->gt('event_id', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('status', $qb->createNamedParameter('retry')))
-			->andWhere($qb->expr()->lte('claim_until', $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT)))
-			->setMaxResults(max(1, min($limit, 500)))->executeQuery();
-		$ids = array_map('intval', $rs->fetchFirstColumn());
-		$rs->closeCursor();
+		$ids = $this->outbox->retryEventIds($limit, time());
 		foreach ($ids as $eventId) {
 			$this->jobs->add(EventChannelDeliveryJob::class, ['eventId' => $eventId]);
 		}
@@ -508,14 +382,6 @@ final class BoardPublicationService {
 	}
 
 	/** Non-personalized publication overview for admin diagnostics. */
-	public function stats(int $id):array {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('channel', 'status', $qb->func()->count('id') . ' AS total')
-			->from(self::SENT)
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->groupBy('channel', 'status')->executeQuery();
-		$rows = $rs->fetchAllAssociative();
-		$rs->closeCursor();
-		return $rows;
-	}
-}
+	public function stats(int $id): array {
+		return $this->outbox->stats($id);
+	}}
