@@ -1,0 +1,40 @@
+--- a/.github/workflows/playwright.yml
++++ b/.github/workflows/playwright.yml
+@@ -81,14 +81,17 @@
+ 
+   playwright-tests:
+     needs: [playwright-setup]
+-    timeout-minutes: 30
+-    name: Playwright tests ${{ matrix.shardIndex }} / ${{ matrix.shardTotal }}
++    timeout-minutes: 45
++    name: Nextcloud / ${{ matrix.database }} / shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+     runs-on: ubuntu-latest
+     strategy:
+       fail-fast: false
+       matrix:
+-        shardIndex: [1, 2] # adjust to your needs
+-        shardTotal: [2]
++        include:
++          - {database: sqlite, shardIndex: 1, shardTotal: 2}
++          - {database: sqlite, shardIndex: 2, shardTotal: 2}
++          - {database: pgsql, shardIndex: 1, shardTotal: 1}
++          - {database: mariadb, shardIndex: 1, shardTotal: 1}
+     outputs:
+       node-version: ${{ steps.versions.outputs.node-version }}
+       package-manager-version: ${{ steps.versions.outputs.package-manager-version }}
+@@ -128,13 +131,13 @@
+       run: npm run playwright:install-ci --if-present
+ 
+     - name: Run Playwright tests
+-      run: npm run playwright -- --shard='${{ matrix.shardIndex }}/${{ matrix.shardTotal }}'
++      run: bash tests/ci/run-playwright.sh '${{ matrix.database }}' '${{ matrix.shardIndex }}' '${{ matrix.shardTotal }}'
+ 
+     - name: Upload blob report to GitHub Actions Artifacts
+       if: ${{ !cancelled() }}
+       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+       with:
+-        name: blob-report-${{ matrix.shardIndex }}
++        name: blob-report-${{ matrix.database }}-${{ matrix.shardIndex }}
+         path: blob-report
+         retention-days: 1
+ 

@@ -1,0 +1,13 @@
+/* SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors */
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+#content.app-communications > #communications-vue {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+#communications-vue {
+  height: calc(100vh - var(--header-height, 50px));
+  min-height: 0;
+  background: var(--color-main-background);
+}

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # Local environment, credentials, logs, and caches
 .env
 .env.*
@@ -6,16 +9,15 @@
 *.sqlite
 *.db
 node_modules/
-js/management.js
-js/campaigns.js
-js/flow.js
-css/management.css
-css/campaigns.css
-css/flow.css
+/js/
+/css/
+/build/
 vendor/
+/vendor-bin/*/vendor/
 dist/
 dist-delivery/
 dist-flow/
+dist-guest/
 .cache/
 .lab/
 playwright-report/
@@ -32,3 +34,6 @@ __pycache__/
 
 # Disposable CI development instances
 .ci/
+
+.stryker-tmp/
+reports/mutation/

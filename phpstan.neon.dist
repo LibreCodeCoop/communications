@@ -1,0 +1,10 @@
+parameters:
+    level: 2
+    paths:
+        - lib
+    scanFiles:
+        - tests/stubs/NextcloudInternals.php
+    scanDirectories:
+        - vendor/nextcloud/ocp/OCP
+    excludePaths:
+        - lib/Migration

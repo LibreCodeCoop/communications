@@ -1,0 +1,76 @@
+<?php
+
+/**
+ * SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Communications\Notification;
+
+use OCA\Communications\Service\BoardService;
+use OCA\Communications\Service\PublicationLink;
+use OCP\IL10N;
+use OCP\IURLGenerator;
+use OCP\IUserManager;
+use OCP\L10N\IFactory;
+use OCP\Notification\AlreadyProcessedException;
+use OCP\Notification\INotification;
+use OCP\Notification\INotifier;
+use OCP\Notification\UnknownNotificationException;
+
+/** Nextcloud-native notification renderer: re-checks audience at every read. */
+final class BoardNotifier implements INotifier {
+	public function __construct(
+		private BoardService $board,
+		private IURLGenerator $urls,
+		private IUserManager $users,
+		private IL10N $l10n,
+		private IFactory $l10nFactory,
+	) {
+	}
+	public function getID():string {
+		return 'communications';
+	}
+	public function getName():string {
+		// TRANSLATORS Short label for an option or field in the Nextcloud notification.
+		return $this->l10n->t('Announcement board');
+	}
+
+	public function prepare(INotification $notification, string $languageCode):INotification {
+		$localized = $this->l10nFactory->get('communications', $languageCode);
+		if ($notification->getApp() !== 'communications') {
+			throw new UnknownNotificationException();
+		}
+		$subject = $notification->getSubject();
+		$type = $notification->getObjectType();
+		if ($subject === 'mention' && $type === 'cc_board_comment') {
+			$item = $this->board->notificationAllowed($notification->getUser(), (int)$notification->getObjectId());
+			if ($item === null) {
+				throw new AlreadyProcessedException();
+			}
+			$author = $this->users->getDisplayName($item['actor']) ?: $item['actor'];
+			// TRANSLATORS Continuation after the name of the user who mentioned the recipient.
+			$notification->setParsedSubject($author . $localized->t(' mentioned you on the announcement board'))
+				// TRANSLATORS Action or instruction in the Nextcloud notification.
+				->setParsedMessage($localized->t('Open the announcement to read and reply.'));
+			$id = $item['campaignId'];
+		} elseif ($subject === 'published' && $type === 'cc_board_announcement') {
+			$id = (int)$notification->getObjectId();
+			$item = $this->board->view($notification->getUser(), $id);
+			if ($item === null) {
+				throw new AlreadyProcessedException();
+			}
+			// TRANSLATORS Prefix before an announcement title in an Activity or notification entry.
+			$notification->setParsedSubject($localized->t('New announcement: ') . $item['headline'])
+				->setParsedMessage(mb_substr(trim(strip_tags($item['message'])), 0, 350));
+		} else {
+			throw new UnknownNotificationException();
+		}
+
+		return $notification
+			->setLink(PublicationLink::absolute($this->urls, $id))
+			->setIcon($this->urls->getAbsoluteURL($this->urls->imagePath('communications', 'app.svg')));
+	}
+}

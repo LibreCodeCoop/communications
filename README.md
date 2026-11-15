@@ -1,62 +1,42 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
-# Comunicações (Communications)
 
-**An experimental Nextcloud app for institutional publications, notifications, and event-driven communication.**
+# Communications
 
-Administrators publish information to eligible audiences using a single editor and independently selectable delivery channels: contextual banner **or** modal, Inbox, Nextcloud Notifications, Activity, email, and optional transports from Two-Factor Gateway. Events from installed apps are discovered through Nextcloud contracts; **no LibreSign-specific runtime adapter is included**.
+**The right message, in the right place, at the right time — inside Nextcloud.**
 
-**Status:** development / proof of concept, version `0.29.0`. Tested on Nextcloud 36 development snapshots. Nextcloud 36 is not yet a stable release as of November 2026. This app has **not** been certified for production, app-store distribution, or advertising/billing. Do not point experimental acceptance scripts at production installations.
+Communications is a **free and open-source application for Nextcloud** that helps organizations reach their people without scattering important announcements across unrelated tools. Compose a publication once, choose who should see it and when, then deliver it through the channels that fit the message.
 
-## Identity and requirements
+## Communicate where people already work
 
-- App ID: `communications` (directory name must match).
-- Display name: **Comunicações**; English description: Communications.
-- PHP >= 8.3 and Nextcloud **36** development version (in `appinfo/info.xml`).
-- SQLite is the currently verified integration environment. PostgreSQL and MariaDB compatibility needs verified CI evidence before release.
-- Optional Nextcloud apps: Notifications, Activity, Dashboard, Flow and Two-Factor Gateway. Providers must be configured separately.
+- **Contextual banners and dialogs** — show an announcement within Nextcloud, including relevant pages and applications, rather than waiting for people to check another inbox.
+- **A dedicated Inbox** — keep institutional publications accessible after the first notification, with reading and commenting features where enabled.
+- **Nextcloud-native channels** — use Notifications, Activity, and email independently or together, according to your configuration.
+- **Optional messaging channels** — connect supported providers through the separate Two-Factor Gateway app when installed, configured, and allowed by recipient preferences.
+- **Scheduled or event-driven publications** — publish immediately, within a defined period, or in response to registered Nextcloud application events.
+- **Audience and visibility controls** — target users and groups, exclude selected audiences, and define which applications or routes can display a contextual message.
+- **A single publication workspace** — write rich text, preview presentation, manage drafts and active notices, reorder publications, and follow estimated engagement metrics.
 
-This project was derived from the local `contextualcampaigns` proof of concept. **It is a new app ID**, not a drop-in upgrade. Do not install it alongside `contextualcampaigns` in the same database; both historically use `cc_` tables. Data migration and upgrade from the old laboratory identifier are not supported.
+## From everyday notices to automated communication
 
-## Basic use
+Share an operational update, a service interruption, a policy announcement, or a message relevant to a particular application workflow. Administrators and authorized editors can manage publications centrally; recipients see the messages through the selected destinations.
 
-1. Install the app in a Nextcloud 36 test instance under `custom_apps/communications`.
-2. Enable it with `php occ app:enable communications` from Nextcloud's root as the web-server user.
-3. Open **Comunicações → Publicações** and choose **Nova publicação**.
-4. Choose *when* the publication is active (immediately, scheduled or an event), compose the message, choose eligible recipients, and select delivery channels. Banner and modal are mutually exclusive; other channels can be combined without requiring an Inbox copy.
-5. Review, publish and verify delivery/visibility with test recipients. The recipient's Inbox is separate from a sender's management view.
+Communications uses Nextcloud's own account and application context. Event-driven delivery depends on the semantics of the event supplied by the originating app; an event by itself is not proof that an external business process was completed.
 
-Event triggers are discoverable from enabled applications; whether an event has a reliable *business-completion* meaning depends on the source application. An internal PHP event is not equivalent to an external webhook or proof of a document signature.
+## Free software, under your control
 
-## Development
+**No license fee. No mandatory subscription. No paid-only edition.** Communications is distributed as free software under the [GNU AGPL v3 or later](LICENSE). You can inspect, use, share, and adapt the source, subject to the license conditions. Host it on your own compatible Nextcloud infrastructure and keep control of where institutional communications are handled.
 
-```sh
-npm ci --include=dev --include=optional
-npm run build
-npm run test:unit
-composer install
-composer test
-composer analyse
-```
+If you need help with hosting, deployment, integrations, accessibility, maintenance, or training, [LibreCode Coop](https://librecode.coop/) offers **optional** professional services. You can also use the software without contracting LibreCode or any other vendor.
 
-The PHP tests and analysis require PHP 8.3+ and Composer. For full browser tests use an **isolated** Nextcloud 36 test instance with installed relevant apps, fixture users and Chrome/Chromium, then run `npm run test:e2e`. The LibreSign compatibility test is opt-in through `npm run test:e2e:libresign`; consult [testing and integration](docs/TESTING.md) for its exact constraints. Browser tests do not contact production providers.
+## Explore and contribute
 
-## Documentation
+- [Delivery channels and recipient preferences](docs/DELIVERY_CHANNELS.md)
+- [Architecture and event integration](docs/ARCHITECTURE.md)
+- [Development and testing](docs/DEVELOPMENT.md)
+- [API and integration reference](docs/API.md)
+- [Contribute to the project](CONTRIBUTING.md)
 
-- [Architecture and event model](docs/ARCHITECTURE.md)
-- [Delivery-channel contracts](docs/DELIVERY_CHANNELS.md)
-- [Two-Factor Gateway and consent](docs/TWO_FACTOR_GATEWAY.md)
-- [Local testing and verification](docs/TESTING.md)
-- [API overview](docs/API.md)
-- [Contribution guide](CONTRIBUTING.md)
-- [Security reporting](SECURITY.md)
+The project grows through code, translations, testing, design, documentation, and financial support. You can help sustain development through [GitHub Sponsors](https://github.com/sponsors/vitormattos) or contact [LibreCode Coop](mailto:contact@librecode.coop) for professional services.
 
-## Security and current limitations
-
-Authentication, server-side audience authorization, CSRF protection, opt-in preferences, idempotent delivery and restricted URL schemes are part of the application contract. **Do not confuse their presence with a complete security audit.** Event principals are authenticated Nextcloud accounts; invited external signers are not automatically mapped to accounts. The app does not deliver advertisements via a third-party ad network, provide billing, or manage user-consent policy outside the documented preferences.
-
-The application uses Nextcloud's internal router discovery API for some page-trigger options; that compatibility must be rechecked as Nextcloud evolves. Native message delivery can be delayed by cron. No end-to-end delivery guarantee is made for an unconfigured external gateway.
-
-## License
-
-`AGPL-3.0-or-later` — see [LICENSE](LICENSE). Distributed dependencies retain their upstream copyright and license notices.
+> **Development preview:** Communications is not yet released or certified for production. Current validation uses Nextcloud 36 development builds and disposable test environments. Features and integration contracts may change before the first release.

@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: Backend mutation
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: communications-php-mutation-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+jobs:
+  cta-url:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Select PHP from the Nextcloud compatibility matrix
+        id: versions
+        uses: nextcloud-libraries/nextcloud-version-matrix@71959de73c244b11ecbf4503b87c41d65b0f64ae # v1.3.4
+      - name: Configure PHP with PCOV
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2.40.0
+        with:
+          php-version: ${{ steps.versions.outputs.php-min }}
+          coverage: pcov
+          ini-values: pcov.enabled=1, pcov.directory=${{ github.workspace }}/lib
+          tools: composer:v2
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Run backend URL-sanitizer mutation contract
+        run: |
+          set -o pipefail
+          composer mutation:test 2>&1 | tee infection.log
+      - name: Preserve failure evidence
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-mutation-log
+          path: infection.log
+          if-no-files-found: ignore
+          retention-days: 7
