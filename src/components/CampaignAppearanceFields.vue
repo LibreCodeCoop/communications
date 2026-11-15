@@ -93,11 +93,13 @@ const {
 								backgroundColor: form.banner_color,
 							}"
 							aria-hidden="true"></span>
-						<span
-							>{{ form.banner_color }}
-							<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-							{{ t('communications', '— Choose color') }}</span
-						>
+						<span>
+							<!-- TRANSLATORS Short action label for opening the color selector. -->
+							{{ t('communications', 'Choose color') }}
+							<template v-if="form.banner_color"
+								>({{ form.banner_color }})</template
+							>
+						</span>
 					</NcButton>
 				</NcColorPicker>
 				<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->

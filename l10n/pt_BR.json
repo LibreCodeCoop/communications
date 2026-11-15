@@ -453,7 +453,7 @@
     "Preview message": "Pré-visualizar mensagem",
     "Preview presentation": "Visualizar apresentação",
     "Previous": "Anterior",
-    "Priority (0–100)": "Prioridade (0–100)",
+    "Priority (0 to 100)": "Prioridade (0 a 100)",
     "Priority must be between 0 and 100.": "A prioridade deve estar entre 0 e 100.",
     "Private bot chat identifier.": "Identificador de chat privado com o bot.",
     "Provide a version in the recipient's language. Empty fields use the original text.": "Escreva uma versão para o idioma do usuário. Campos vazios usam o texto original.",
@@ -686,10 +686,11 @@
     "numeric": "numérico",
     "{ready} of {total} providers configured": "{ready} de {total} provedores configurados",
     "of": "de",
+    "to": "a",
     "options: search by name to find more.": "opções: pesquise pelo nome para encontrar outras.",
     "starts with": "começa com",
     "{count} in 24 hours": "{count} em 24 horas",
-    "— Choose color": "— Escolher cor"
+    "Choose color": "Escolher cor"
   },
   "pluralForm": "nplurals=2; plural=(n != 1);"
 }

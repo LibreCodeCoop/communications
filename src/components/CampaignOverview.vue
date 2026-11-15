@@ -161,7 +161,14 @@ function period(c: CampaignRecord): string {
 	// TRANSLATORS Publication with neither a start nor an end date restriction.
 	if (!c.starts_at && !c.ends_at) return t('communications', 'No deadline')
 	if (c.starts_at && c.ends_at)
-		return dateDisplay(c.starts_at) + ' – ' + dateDisplay(c.ends_at)
+		return (
+			// TRANSLATORS Prefix of a date range; preserve the trailing space.
+			t('communications', 'From ')
+			+ dateDisplay(c.starts_at)
+			// TRANSLATORS Separator within a date range; preserve the surrounding spaces.
+			+ t('communications', ' until ')
+			+ dateDisplay(c.ends_at)
+		)
 	return c.starts_at
 		? // TRANSLATORS Prefix followed by a dynamic value in the publications management screen; preserve its trailing space.
 			t('communications', 'Since ') + dateDisplay(c.starts_at)
@@ -525,9 +532,9 @@ const adminActivateActionLabel = t('communications', 'Activate')
 				<!-- TRANSLATORS Separator between current and total page counts. -->
 				<span
 					>{{ t('communications', 'Showing') }}
-					{{ (currentPage - 1) * PAGE_SIZE + 1 }}–{{
-						Math.min(currentPage * PAGE_SIZE, visible.length)
-					}}
+					{{ (currentPage - 1) * PAGE_SIZE + 1 }}
+					{{ t('communications', 'to') }}
+					{{ Math.min(currentPage * PAGE_SIZE, visible.length) }}
 					<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 					{{ t('communications', 'of') }}
 					{{ visible.length }}</span

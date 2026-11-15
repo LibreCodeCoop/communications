@@ -291,7 +291,7 @@ const toggleLinePrefix = (view: EditorView, prefix: string) => {
 	const toLine = state.doc.lineAt(to)
 	const changes: { from: number; to: number; insert: string }[] = []
 
-	// Detect if ALL selected lines already have the prefix – if so, remove it
+	// Remove the prefix when every selected line already begins with it.
 	let allHavePrefix = true
 	for (let lineNo = fromLine.number; lineNo <= toLine.number; lineNo++) {
 		const line = state.doc.line(lineNo)
