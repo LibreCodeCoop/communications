@@ -21,13 +21,14 @@ for (const [dir, bundle, jsTarget, cssTarget] of [
 	console.log('Installed ' + jsTarget + ' and ' + cssTarget)
 }
 
-// These lightweight, dependency-free browser adapters are maintained in src/.
+// The lightweight browser adapters remain dependency-free source JS.
+// Guest stylesheet is compiled from Sass before this installation step.
 // Keep their public filenames stable: Nextcloud registers 'guest' and 'loader'
 // directly, and loader.js locates campaigns.js relative to its own URL.
 for (const [source, target] of [
 	['src/guest.js', 'js/guest.js'],
 	['src/loader.js', 'js/loader.js'],
-	['src/guest.css', 'css/guest.css'],
+	['dist-guest/guest.css', 'css/guest.css'],
 ]) {
 	if (!existsSync(source)) throw new Error('Missing source asset: ' + source)
 	copyFileSync(source, target)

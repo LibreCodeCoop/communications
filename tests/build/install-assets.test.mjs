@@ -32,9 +32,10 @@ test('installs all five JS and four CSS outputs without stale assets', () => {
 		write(`${dir}/${js}`, `compiled ${js}`)
 		write(`${dir}/${css}`, `compiled ${css}`)
 	}
-	for (const file of ['guest.js', 'loader.js', 'guest.css']) {
+	for (const file of ['guest.js', 'loader.js']) {
 		write(`src/${file}`, `source ${file}`)
 	}
+	write('dist-guest/guest.css', 'compiled guest.css')
 	write('js/stale.js', 'obsolete')
 	write('css/stale.css', 'obsolete')
 
@@ -60,7 +61,7 @@ test('installs all five JS and four CSS outputs without stale assets', () => {
 	}
 	assert.equal(
 		readFileSync(join(root, 'css/guest.css'), 'utf8'),
-		'source guest.css',
+		'compiled guest.css',
 	)
 	assert(!existsSync(join(root, 'js/stale.js')))
 	assert(!existsSync(join(root, 'css/stale.css')))

@@ -17,6 +17,7 @@ vendor/
 dist/
 dist-delivery/
 dist-flow/
+dist-guest/
 .cache/
 .lab/
 playwright-report/
