@@ -11,24 +11,23 @@ namespace OCA\Communications\Service;
 
 use InvalidArgumentException;
 use OCA\Communications\Db\BoardMapper;
-use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IConfig;
-use OCP\IDBConnection;
 use OCP\IGroupManager;
 use OCP\IUserManager;
 use OCP\Notification\IManager as NotificationManager;
+use Psr\Log\LoggerInterface;
 
 /** Bounded, persistent announcement history with server-side audience checks. */
 class BoardService {
-	public const TABLE = 'cc_board_comments';
+	public const TABLE = BoardMapper::TABLE;
 	public function __construct(
 		private CampaignRepository $campaigns,
-		private IDBConnection $db,
 		private BoardMapper $mapper,
 		private IUserManager $users,
 		private IGroupManager $groups,
 		private IConfig $config,
 		private NotificationManager $notifications,
+		private LoggerInterface $logger,
 		private \OCP\IL10N $l10n,
 	) {
 	}
@@ -122,17 +121,7 @@ class BoardService {
 			&& $this->config->getUserValue($uid, 'communications', 'sponsored_optout', '0') === '1')) {
 			return false;
 		}
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('id')->from('cc_board_sent')
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter((int)$c['id'], IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('version', $qb->createNamedParameter((int)$c['published_at'], IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-		 // The notification renderer may run synchronously while the row is claimed.
-			->andWhere($qb->expr()->in('status', $qb->createNamedParameter(['claimed','sent'], IQueryBuilder::PARAM_STR_ARRAY)))
-			->setMaxResults(1)->executeQuery();
-		$authorized = $rs->fetchOne() !== false;
-		$rs->closeCursor();
-		return $authorized;
+		return $this->mapper->hasSentReceipt((int)$c['id'], (int)$c['published_at'], $uid);
 	}
 
 	public function view(string $uid, int $id):?array {
@@ -159,39 +148,14 @@ class BoardService {
 			// Direct-only links are readable but do not create Inbox read receipts.
 			return true;
 		}
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('read_at')->from('cc_inbox_reads')
-			->where($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-			->andWhere($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->executeQuery();
-		$existing = $rs->fetchOne();
-		$rs->closeCursor();
-		if ($existing !== false) {
-			return true;
-		}
-		$qb = $this->db->getQueryBuilder();
-		$qb->insert('cc_inbox_reads')->values([
-			'uid' => $qb->createNamedParameter($uid),
-			'campaign_id' => $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT),
-			'read_at' => $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT),
-		])->executeStatement();
-		return true;
+		return $this->mapper->markRead($uid, $id, time());
 	}
 
 	public function comments(string $uid, int $id, int $before = 0): ?array {
 		if ($this->view($uid, $id) === null) {
 			return null;
 		}
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('id', 'uid', 'message', 'created_at')->from(self::TABLE)
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'));
-		if ($before > 0) {
-			$qb->andWhere($qb->expr()->lt('id', $qb->createNamedParameter($before, IQueryBuilder::PARAM_INT)));
-		}
-		$rs = $qb->orderBy('id', 'DESC')->setMaxResults(21)->executeQuery();
-		$rows = $rs->fetchAllAssociative();
-		$rs->closeCursor();
+		$rows = $this->mapper->commentPage($id, $before);
 		$more = count($rows) > 20;
 		$rows = array_slice($rows, 0, 20);
 		$items = array_map(function (array $row) use ($uid, $id):array {
@@ -256,26 +220,10 @@ class BoardService {
 			throw new InvalidArgumentException($this->l10n->t('Enter a comment of at most 4,000 characters.'));
 		}
 		$now = time();
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('id')->from(self::TABLE)
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-			->andWhere($qb->expr()->gte('created_at', $qb->createNamedParameter($now - 5, IQueryBuilder::PARAM_INT)))
-			->setMaxResults(1)->executeQuery();
-		$recent = $rs->fetchOne();
-		$rs->closeCursor();
-		if ($recent !== false) {
+		if ($this->mapper->hasRecentComment($id, $uid, $now - 5)) {
 			throw new InvalidArgumentException($this->l10n->t('Wait a few seconds before commenting again.'));
 		}
-		$insert = $this->db->getQueryBuilder();
-		$insert->insert(self::TABLE)->values([
-			'campaign_id' => $insert->createNamedParameter($id, IQueryBuilder::PARAM_INT),
-			'uid' => $insert->createNamedParameter($uid),
-			'message' => $insert->createNamedParameter($message),
-			'created_at' => $insert->createNamedParameter($now, IQueryBuilder::PARAM_INT),
-			'updated_at' => $insert->createNamedParameter($now, IQueryBuilder::PARAM_INT),
-		])->executeStatement();
-		$commentId = (int)$this->db->lastInsertId(self::TABLE);
+		$commentId = $this->mapper->insertComment($id, $uid, $message, $now);
 		$this->notifyMentions($uid, $id, $commentId, $message);
 		return ['id' => $commentId,'campaignId' => $id,'uid' => $uid,
 			'author' => $this->users->getDisplayName($uid) ?: $uid,
@@ -296,8 +244,8 @@ class BoardService {
 					->setObject('cc_board_comment', (string)$commentId)
 					->setSubject('mention', [$actor,(string)$campaignId]);
 				$this->notifications->notify($n);
-			} catch (\Throwable $ignored) {
-				// A notification failure must never cancel a stored comment.
+			} catch (\Throwable $error) {
+				$this->logger->warning('Mention notification failed', ['exceptionClass' => $error::class]);
 			}
 		}
 	}
@@ -306,31 +254,15 @@ class BoardService {
 		if ($this->view($uid, $campaignId) === null) {
 			return false;
 		}
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('uid')->from(self::TABLE)
-			->where($qb->expr()->eq('id', $qb->createNamedParameter($commentId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('campaign_id', $qb->createNamedParameter($campaignId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'))->executeQuery();
-		$author = $rs->fetchOne();
-		$rs->closeCursor();
+		$author = $this->mapper->commentAuthor($campaignId, $commentId);
 		if ($author === false || ($author !== $uid && !$this->groups->isAdmin($uid))) {
 			return false;
 		}
-		$qb = $this->db->getQueryBuilder();
-		return $qb->update(self::TABLE)
-			->set('deleted_at', $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT))
-			->where($qb->expr()->eq('id', $qb->createNamedParameter($commentId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('campaign_id', $qb->createNamedParameter($campaignId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'))->executeStatement() === 1;
+		return $this->mapper->deleteComment($campaignId, $commentId, time());
 	}
 
 	public function notificationAllowed(string $uid, int $commentId):?array {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('campaign_id', 'uid')->from(self::TABLE)
-			->where($qb->expr()->eq('id', $qb->createNamedParameter($commentId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'))->executeQuery();
-		$row = $rs->fetchAssociative();
-		$rs->closeCursor();
+		$row = $this->mapper->commentForNotification($commentId);
 		if (!$row || $this->view($uid, (int)$row['campaign_id']) === null) {
 			return null;
 		}
