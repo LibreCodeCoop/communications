@@ -5,9 +5,9 @@ import {
 	campaignRecordToForm,
 	serializeCampaignForm,
 	validateCampaignPayload,
-} from '../../src/services/campaignForm'
-import type { CampaignSavePayload } from '../../src/services/campaignForm'
-import type { CampaignForm, CampaignRecord } from '../../src/types/communications'
+} from '../../../src/services/campaignForm'
+import type { CampaignSavePayload } from '../../../src/services/campaignForm'
+import type { CampaignForm, CampaignRecord } from '../../../src/types/communications'
 
 vi.mock('@nextcloud/l10n', () => ({ t: (_app: string, message: string) => message }))
 

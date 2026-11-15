@@ -4,7 +4,7 @@
     "src/**/*.ts",
     "src/**/*.vue",
     "src/**/*.d.ts",
-    "tests/unit/**/*.ts",
+    "tests/js/unit/**/*.ts",
     "vite*.ts",
     "vitest.config.ts"
   ],

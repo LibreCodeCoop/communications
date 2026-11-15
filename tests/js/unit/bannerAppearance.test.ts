@@ -10,7 +10,7 @@ import {
 	bannerAppearance,
 	BANNER_ICON_OPTIONS,
 	DEFAULT_BANNER_COLOR,
-} from '../../src/bannerAppearance.ts'
+} from '../../../src/bannerAppearance.ts'
 
 describe('banner appearance contract', () => {
 	it('uses the canonical theme without trusting an unknown saved icon', () => {

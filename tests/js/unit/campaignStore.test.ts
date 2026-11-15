@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import type { CampaignCatalog, CampaignRecord } from '../../src/types/communications'
+import type {
+	CampaignCatalog,
+	CampaignRecord,
+} from '../../../src/types/communications'
 
 const mock = vi.hoisted(() => ({
 	fetchCampaigns: vi.fn(),
@@ -15,12 +18,12 @@ const mock = vi.hoisted(() => ({
 	persistCampaign: vi.fn(),
 	announce: vi.fn(),
 }))
-vi.mock('../../src/services/campaigns', () => mock)
-vi.mock('../../src/services/campaignUpdates', () => ({
+vi.mock('../../../src/services/campaigns', () => mock)
+vi.mock('../../../src/services/campaignUpdates', () => ({
 	announceCampaignChanged: mock.announce,
 }))
 
-import { useCampaignStore } from '../../src/stores/campaigns'
+import { useCampaignStore } from '../../../src/stores/campaigns'
 
 const record = (id: number): CampaignRecord => ({ id }) as CampaignRecord
 const catalog: CampaignCatalog = {

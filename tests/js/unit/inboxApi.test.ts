@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { GatewayPreferenceChannel } from '../../src/types/communications'
+import type { GatewayPreferenceChannel } from '../../../src/types/communications'
 
 const requestApi = vi.hoisted(() => vi.fn())
-vi.mock('../../src/services/api', () => ({ requestApi }))
+vi.mock('../../../src/services/api', () => ({ requestApi }))
 
 import {
 	addComment,
@@ -16,9 +16,9 @@ import {
 	markAnnouncementRead,
 	persistGatewayPreferences,
 	serializeGatewayPreferences,
-} from '../../src/services/inbox'
-import { lookupCampaignUsers } from '../../src/services/campaigns'
-import { fetchAppRoutes } from '../../src/services/automationRoutes'
+} from '../../../src/services/inbox'
+import { lookupCampaignUsers } from '../../../src/services/campaigns'
+import { fetchAppRoutes } from '../../../src/services/automationRoutes'
 
 const gateway = (id: string, enabled: boolean): GatewayPreferenceChannel => ({
 	id,

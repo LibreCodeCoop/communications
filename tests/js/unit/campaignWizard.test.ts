@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import {
 	intentChangePatch,
 	validateWizardStep,
-} from '../../src/services/campaignWizard'
-import type { CampaignForm } from '../../src/types/communications'
+} from '../../../src/services/campaignWizard'
+import type { CampaignForm } from '../../../src/types/communications'
 
 const form = (changes: Partial<CampaignForm> = {}): CampaignForm =>
 	({

@@ -21,7 +21,7 @@ vi.mock('@nextcloud/l10n', () => ({
 		message.replace('{status}', String(params.status)),
 }))
 
-import { requestApi } from '../../src/services/api.ts'
+import { requestApi } from '../../../src/services/api.ts'
 
 describe('generic Nextcloud API adapter', () => {
 	beforeEach(() => {

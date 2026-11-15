@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest'
-import { channelChangePatch } from '../../src/services/deliveryChannelSelection'
+import { channelChangePatch } from '../../../src/services/deliveryChannelSelection'
 import type {
 	CampaignForm,
 	CatalogDeliveryChannel,
-} from '../../src/types/communications'
+} from '../../../src/types/communications'
 
 const base = (changes: Partial<CampaignForm> = {}): CampaignForm =>
 	({

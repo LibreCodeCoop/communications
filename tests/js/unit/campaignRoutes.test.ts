@@ -1,9 +1,11 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it, vi } from 'vitest'
-vi.mock('../../src/services/automationRoutes', () => ({ fetchAppRoutes: vi.fn() }))
-import { useAppRoutes } from '../../src/composables/useAppRoutes'
-import type { PageRouteOption } from '../../src/types/communications'
+vi.mock('../../../src/services/automationRoutes', () => ({
+	fetchAppRoutes: vi.fn(),
+}))
+import { useAppRoutes } from '../../../src/composables/useAppRoutes'
+import type { PageRouteOption } from '../../../src/types/communications'
 
 function deferred<T>() {
 	let resolve!: (value: T) => void

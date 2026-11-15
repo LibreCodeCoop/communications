@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, beforeEach, expect } from 'vitest'
-import { safeCtaLink } from '../../src/linkSafety.ts'
+import { safeCtaLink } from '../../../src/linkSafety.ts'
 
 describe('saved message links cannot execute scripts or leave the allowlist', () => {
 	beforeEach(() => {

@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it, vi } from 'vitest'
-vi.mock('../../src/services/campaigns', () => ({ lookupCampaignUsers: vi.fn() }))
-import { useCampaignUserLookup } from '../../src/composables/useCampaignUserLookup'
-import type { UserSelection } from '../../src/types/communications'
+vi.mock('../../../src/services/campaigns', () => ({ lookupCampaignUsers: vi.fn() }))
+import { useCampaignUserLookup } from '../../../src/composables/useCampaignUserLookup'
+import type { UserSelection } from '../../../src/types/communications'
 
 function deferred<T>() {
 	let resolve!: (value: T) => void

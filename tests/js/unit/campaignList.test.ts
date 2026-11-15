@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import {
 	effectiveCampaignStatus,
 	selectCampaigns,
-} from '../../src/services/campaignList'
-import type { CampaignRecord } from '../../src/types/communications'
+} from '../../../src/services/campaignList'
+import type { CampaignRecord } from '../../../src/types/communications'
 
 function row(id: number, changes: Partial<CampaignRecord> = {}): CampaignRecord {
 	return {

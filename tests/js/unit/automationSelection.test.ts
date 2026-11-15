@@ -5,11 +5,11 @@ import {
 	limitAppOptions,
 	searchAutomationApps,
 	updateRouteFilter,
-} from '../../src/services/automationSelection'
+} from '../../../src/services/automationSelection'
 import type {
 	NativeApplication,
 	PageRouteFilters,
-} from '../../src/types/communications'
+} from '../../../src/types/communications'
 
 const app = (
 	id: string,
