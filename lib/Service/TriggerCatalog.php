@@ -43,6 +43,14 @@ final class TriggerCatalog {
 	}
 
 	public function sources(): array {
+		return $this->enabledUniqueSources(array_merge(
+			$this->builtInSources(),
+			$this->nativeSources(),
+			$this->registeredSources(),
+		));
+	}
+
+	private function builtInSources(): array {
 		$sources = [
 			[
 				'id' => 'files', 'appId' => 'files', 'intent' => 'action',
@@ -131,9 +139,11 @@ final class TriggerCatalog {
 				],
 			];
 		}
+		return $sources;
+	}
 
-		// Generic typed events are indexed only when an admin opens the catalog.
-		// These actions target the authenticated principal, never an inferred signer.
+	private function nativeSources(): array {
+		$sources = [];
 		$nativeByApp = [];
 		foreach ($this->nativeEvents->all() as $native) {
 			$app = $native['appId'];
@@ -162,9 +172,11 @@ final class TriggerCatalog {
 				$sources[] = $source;
 			}
 		}
+		return $sources;
+	}
 
-		// Optional extension point for native apps that publish an explicit
-		// recipient/semantic contract; basic event discovery needs no adapter.
+	private function registeredSources(): array {
+		$sources = [];
 		$event = new RegisterTriggerCapabilitiesEvent();
 		$this->dispatcher->dispatchTyped($event);
 		foreach ($event->getSources() as $external) {
@@ -173,7 +185,10 @@ final class TriggerCatalog {
 			}
 			$sources[] = $external;
 		}
+		return $sources;
+	}
 
+	private function enabledUniqueSources(array $sources): array {
 		$known = [];
 		$filtered = [];
 		foreach ($sources as $source) {
@@ -199,6 +214,7 @@ final class TriggerCatalog {
 		}
 		return $filtered;
 	}
+
 
 	private function validateExternal(array $source): bool {
 		foreach (['id','appId','intent','label','description','actions'] as $key) {
