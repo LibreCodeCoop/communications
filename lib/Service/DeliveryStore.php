@@ -38,9 +38,15 @@ class DeliveryStore {
 		// The browser reports its page, never a URL containing queries, hashes or
 		// private file paths. Validate against a navigable app before using it.
 		$pagePath = $this->webRoutes->safePagePath($app, $pagePath);
+		$this->recordPageVisit($uid, $app, $newVisit, $pagePath);
+		$this->recordImmediatePresentation($uid, $app, $pagePath);
+		$this->recordScheduledPresentation($uid, $app);
+		$this->prepareDeliveries($uid, $app, $pagePath);
+	}
+
+	/** Only record a campaign-scoped event, never the visitor's full path. */
+	private function recordPageVisit(string $uid, string $app, bool $newVisit, string $pagePath): void {
 		if ($newVisit && $pagePath !== '') {
-			// Page occurrences are scoped to a specific campaign, never broadcast to
-			// every app page. Store only the campaign ID, NOT the actual visitor path.
 			foreach ($this->campaigns->activeForTrigger('nextcloud.page.opened') as $campaign) {
 				if ($campaign['presentation'] !== 'none'
 					&& $this->campaigns->isEligible($campaign, $uid, time())
@@ -49,10 +55,10 @@ class DeliveryStore {
 				}
 			}
 		}
-		// An immediate publication may also use a banner or a modal.
-		// Its outbound channels are queued at activation, while the browser
-		// presentation becomes eligible on the next visit. Do not produce
-		// ephemeral UI occurrences for a channel-only/inbox-only publication.
+	}
+
+	/** Outbound channels are queued on activation; browser views are separate. */
+	private function recordImmediatePresentation(string $uid, string $app, string $pagePath): void {
 		foreach ($this->campaigns->activeForTrigger('nextcloud.board.published') as $campaign) {
 			if (!in_array($campaign['presentation'], ['banner','modal'], true)
 				|| !$this->campaigns->isEligible($campaign, $uid, time())
@@ -64,6 +70,9 @@ class DeliveryStore {
 			$this->events->record($uid, 'nextcloud.board.published',
 				'campaign_' . $campaign['id'], $key);
 		}
+	}
+
+	private function recordScheduledPresentation(string $uid, string $app): void {
 		foreach ($this->campaigns->activeForTrigger('nextcloud.time.window') as $campaign) {
 			if ($campaign['presentation'] !== 'none'
 				&& $this->campaigns->isEligible($campaign, $uid, time()) && $this->matchesPlace($campaign, $app)) {
@@ -71,7 +80,10 @@ class DeliveryStore {
 				$this->events->record($uid, 'nextcloud.time.window', $app, $key);
 			}
 		}
+	}
 
+	/** Build deliveries from the bounded, recipient-scoped event history. */
+	private function prepareDeliveries(string $uid, string $app, string $pagePath): void {
 		$byTrigger = [];
 		// Scan the recent event log in batches. No file paths or document content
 		// are stored in the event or returned to the browser.
@@ -99,12 +111,12 @@ class DeliveryStore {
 				if (!$this->matchesPlace($campaign, $app, $pagePath)) {
 					continue;
 				}
-				if (in_array($trigger, ['nextcloud.page.opened','nextcloud.board.published'], true)
-					&& $event['context_app'] !== 'campaign_' . $campaign['id']) {
-					continue;
-				}
-				if (in_array($trigger, ['nextcloud.flow.matched','external.webhook'], true)
-					&& $event['context_app'] !== 'campaign_' . $campaign['id']) {
+				if (in_array($trigger, [
+					'nextcloud.page.opened',
+					'nextcloud.board.published',
+					'nextcloud.flow.matched',
+					'external.webhook',
+				], true) && $event['context_app'] !== 'campaign_' . $campaign['id']) {
 					continue;
 				}
 				$this->mapper->ensureDelivery($event['id'], $campaign['id'], $uid);
