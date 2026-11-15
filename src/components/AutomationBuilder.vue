@@ -6,43 +6,32 @@ import { useAppRoutes } from '../composables/useAppRoutes'
 import {
 	limitAppOptions,
 	searchAutomationApps,
-	updateRouteFilter,
 } from '../services/automationSelection'
-import { generateUrl } from '@nextcloud/router'
 import type {
 	AutomationCatalog,
 	NativeIntent,
-	NativeSource,
-	NativeAction,
 	NativeApplication,
 	TriggerIntent,
 	TriggerMode,
 	PageRouteFilters,
-	PageRouteOption,
 } from '../types/communications'
 
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
-import NcPopover from '@nextcloud/vue/components/NcPopover'
 import NcRadioGroup from '@nextcloud/vue/components/NcRadioGroup'
 import NcRadioGroupButton from '@nextcloud/vue/components/NcRadioGroupButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
+import AutomationApplicationSelect from './AutomationApplicationSelect.vue'
+import AutomationRouteConfiguration from './AutomationRouteConfiguration.vue'
+import AutomationAdvancedSetup from './AutomationAdvancedSetup.vue'
 import {
 	mdiApps,
 	mdiCalendarMonthOutline,
 	mdiSourceBranch,
-	mdiFolderOutline,
-	mdiShareVariantOutline,
-	mdiAccountOutline,
-	mdiCommentTextOutline,
 	mdiPuzzleOutline,
 	mdiCheckCircleOutline,
-	mdiOpenInNew,
-	mdiWeb,
-	mdiHelpCircleOutline,
 	mdiBullhornOutline,
 } from '@mdi/js'
 
@@ -88,25 +77,18 @@ const {
 	failed: routeFailed,
 	select: loadRoutes,
 } = useAppRoutes()
-const routeError = computed(() =>
-	routeFailed.value
-		? // TRANSLATORS Validation or failure message shown in the automation trigger builder.
-			t('communications', 'Could not retrieve pages for this app.')
-		: '',
+// TRANSLATORS Error when an application's Nextcloud page routes cannot be retrieved.
+const routeFailureLabel = t(
+	'communications',
+	'Could not retrieve pages for this app.',
 )
+const routeError = computed(() => (routeFailed.value ? routeFailureLabel : ''))
 
 const intentIcons: Record<TriggerIntent, string> = {
 	app: mdiApps,
 	schedule: mdiCalendarMonthOutline,
 	advanced: mdiSourceBranch,
 	board: mdiBullhornOutline,
-}
-const sourceIcons: Record<string, string> = {
-	files: mdiFolderOutline,
-	files_sharing: mdiShareVariantOutline,
-	core: mdiAccountOutline,
-	comments: mdiCommentTextOutline,
-	dashboard: mdiWeb,
 }
 const sources = computed(() => props.catalog.sources || [])
 const applications = computed(() => props.catalog.applications || [])
@@ -162,61 +144,24 @@ const modeValue = computed({
 	get: () => selectedMode.value,
 	set: (mode: TriggerMode) => selectMode(mode),
 })
-// Do not use an empty value for NcSelect: it is interpreted as "no selection"
-// and the placeholder overlaps the selected label on some Nextcloud themes.
-const ANY_PAGE = '__any_page__'
-const pageRouteValue = computed({
-	get: () => props.pageRoute || ANY_PAGE,
-	set: (route: string) => {
-		emit('update:pageRoute', !route || route === ANY_PAGE ? '' : route)
-		emit('update:pageFilters', {})
-	},
-})
-const routeOptions = computed(() => [
-	{
-		value: ANY_PAGE,
-		// TRANSLATORS Short label for an option or field in the automation trigger builder.
-		label: t('communications', 'Any page in this app'),
-		// TRANSLATORS Short label for an option or field in the automation trigger builder.
-		description: t('communications', 'All recognized interface pages'),
-	},
-	...routes.value,
-])
-const routeVariables = computed(() => [
-	...new Set(
-		[...props.pageRoute.matchAll(/\{([A-Za-z][A-Za-z0-9_]*)\}/g)].map(
-			(match) => match[1],
-		),
-	),
-])
-function changeRouteFilter(
-	name: string,
-	field: 'operator' | 'value',
-	value: string,
-): void {
-	emit(
-		'update:pageFilters',
-		updateRouteFilter(props.pageFilters, name, field, value),
-	)
-}
 watch([() => props.modelValue, () => props.placement], (next, previous) => {
 	if (previous[0] !== next[0] || previous[1] !== next[1])
 		emit('update:pageFilters', {})
 })
+// TRANSLATORS Label for all eligible pages of the selected Nextcloud application.
+const anyApplicationPageLabel = t('communications', 'Any application page')
 const selectedRouteLabel = computed(() =>
 	props.pageRoute === ''
-		? // TRANSLATORS Short label for an option or field in the automation trigger builder.
-			t('communications', 'Any application page')
+		? anyApplicationPageLabel
 		: routes.value.find((route) => route.value === props.pageRoute)?.label
 			|| props.pageRoute,
 )
+// TRANSLATORS Placeholder for the publication ID before a webhook-enabled publication is saved.
+const unsavedCampaignIdLabel = t('communications', '<campaign ID after saving>')
 const webhookExample = computed(() =>
 	JSON.stringify(
 		{
-			campaignId:
-				props.campaignId
-				// TRANSLATORS Short label for an option or field in the automation trigger builder.
-				|| t('communications', '<campaign ID after saving>'),
+			campaignId: props.campaignId || unsavedCampaignIdLabel,
 			uid: 'nextcloud_user',
 			eventId: 'unique-event-001',
 		},
@@ -224,79 +169,124 @@ const webhookExample = computed(() =>
 		2,
 	),
 )
+// TRANSLATORS Summary of a publication available immediately upon activation.
+const onActivationLabel = t('communications', 'Available on activation')
+// TRANSLATORS Summary of a scheduled publication available on the next eligible visit.
+const availabilityPeriodLabel = t(
+	'communications',
+	'During the chosen period, on the next eligible visit',
+)
+// TRANSLATORS Prompt to choose an application as the event source.
+const chooseAppLabel = t('communications', 'Choose an app')
+// TRANSLATORS Prompt to choose an event produced by an application.
+const selectEventLabel = t('communications', 'Select an application event')
+// TRANSLATORS Description of how direct publication delivery reaches recipients.
+const activationExplanation = t(
+	'communications',
+	'On activation, outbound channels are queued; content appears in Inbox if selected, and banners or dialogs appear on the next eligible visit.',
+)
+// TRANSLATORS Description of the availability period of scheduled publications.
+const scheduleExplanation = t(
+	'communications',
+	'The publication becomes eligible only within its availability period; it appears when the user returns to Nextcloud.',
+)
+// TRANSLATORS Description of an HMAC webhook that delivers a publication to one user.
+const webhookExplanation = t(
+	'communications',
+	'The HMAC event specifies campaignId and uid. Only this campaign and the specified user can receive the presentation, subject to audience and frequency limits.',
+)
+// TRANSLATORS Description of the Nextcloud Flow evaluation for a publication event.
+const flowExplanation = t(
+	'communications',
+	'Flow checks the configured conditions before recording the occurrence for that user.',
+)
+// TRANSLATORS Description of a trigger for a specific Nextcloud interface route.
+const specificRouteExplanation = t(
+	'communications',
+	'Only when the authenticated user opens this interface route. Variable URL parameters are not stored.',
+)
+// TRANSLATORS Prefix before the selected app name for a trigger on any of its pages.
+const anyRoutePrefix = t('communications', 'When opening any interface page in ')
+// TRANSLATORS Suffix after the selected app name; calls and other apps' pages do not trigger it.
+const anyRouteSuffix = t(
+	'communications',
+	". API calls, downloads, and other apps' pages do not trigger this campaign.",
+)
+// TRANSLATORS Help when the user has not selected an application event.
+const chooseTrustedEventLabel = t(
+	'communications',
+	'Choose a trusted event emitted by the application.',
+)
+// TRANSLATORS Accessibility label for grouping the publication trigger source choices.
+const triggerSourceLabel = t('communications', 'Trigger source')
+// TRANSLATORS Heading asking when a publication becomes available.
+const automationHeading = t(
+	'communications',
+	'When should the publication become available?',
+)
+// TRANSLATORS Label for choosing between event triggers and page visits.
+const modeQuestionLabel = t('communications', 'What should happen?')
+// TRANSLATORS Choice for a trigger based on an application event.
+const eventModeLabel = t('communications', 'An application event')
+// TRANSLATORS Choice for a trigger based on an application page visit.
+const pageModeLabel = t('communications', 'Page visit')
+// TRANSLATORS Explanation of an app that only provides page-visit triggers.
+const pagesOnlyLabel = t('communications', 'This app provides interface pages.')
+// TRANSLATORS Explanation of an app that only provides typed event triggers.
+const eventsOnlyLabel = t(
+	'communications',
+	'This app provides integrated events but has no navigation page.',
+)
+// TRANSLATORS Label for choosing a specific typed application event.
+const applicationEventLabel = t('communications', 'Application event *')
+// TRANSLATORS Placeholder while choosing an application event.
+const selectEventPlaceholder = t('communications', 'Select an event...')
+// TRANSLATORS Accessibility label for the event selection combobox.
+const eventSelectorAriaLabel = t('communications', 'Select application event')
+// TRANSLATORS Help when no event is needed and publication occurs on activation.
+const boardModeHelp = t(
+	'communications',
+	'Without a technical trigger, the publication becomes available in Inbox when activated. Recipients and notifications are configured in the next step.',
+)
+// TRANSLATORS Help for publication visibility during a scheduled period.
+const scheduledModeHelp = t(
+	'communications',
+	"The message will be available during the selected period and appear on the user's next visit.",
+)
+
 const summary = computed(() => {
-	if (selectedIntent.value === 'board')
-		// TRANSLATORS Short label for an option or field in the automation trigger builder.
-		return t('communications', 'Available on activation')
-	if (selectedIntent.value === 'schedule')
-		// TRANSLATORS Descriptive message shown in the automation trigger builder.
-		return t(
-			'communications',
-			'During the chosen period, on the next eligible visit',
-		)
-	if (selectedIntent.value === 'advanced' && selectedAdvanced.value)
+	if (selectedIntent.value === 'board') return onActivationLabel
+	if (selectedIntent.value === 'schedule') return availabilityPeriodLabel
+	if (selectedIntent.value === 'advanced' && selectedAdvanced.value) {
 		return (
 			selectedAdvanced.value.label
 			+ ' → '
-			+ selectedAdvanced.value.actions[0].label
+			+ (selectedAdvanced.value.actions[0]?.label || '')
 		)
-	// TRANSLATORS Action or instruction in the automation trigger builder.
-	if (!selectedApp.value) return t('communications', 'Choose an app')
+	}
+	if (!selectedApp.value) return chooseAppLabel
 	if (selectedMode.value === 'visit')
 		return selectedApp.value.label + ' → ' + selectedRouteLabel.value
 	return selectedAction.value
 		? selectedApp.value.label + ' → ' + selectedAction.value.label
-		: // TRANSLATORS Action or instruction in the automation trigger builder.
-			t('communications', 'Select an application event')
+		: selectEventLabel
 })
 const explanation = computed(() => {
-	if (selectedIntent.value === 'board')
-		// TRANSLATORS Explanatory help text shown in the automation trigger builder.
-		return t(
-			'communications',
-			'On activation, outbound channels are queued; content appears in Inbox if selected, and banners or dialogs appear on the next eligible visit.',
-		)
-	if (selectedIntent.value === 'schedule')
-		// TRANSLATORS Explanatory help text shown in the automation trigger builder.
-		return t(
-			'communications',
-			'The publication becomes eligible only within its availability period; it appears when the user returns to Nextcloud.',
-		)
+	if (selectedIntent.value === 'board') return activationExplanation
+	if (selectedIntent.value === 'schedule') return scheduleExplanation
 	if (
 		selectedIntent.value === 'advanced'
 		&& selectedAdvancedId.value === 'webhook'
 	)
-		// TRANSLATORS Explanatory help text shown in the automation trigger builder.
-		return t(
-			'communications',
-			'The HMAC event specifies campaignId and uid. Only this campaign and the specified user can receive the presentation, subject to audience and frequency limits.',
-		)
+		return webhookExplanation
 	if (selectedIntent.value === 'advanced' && selectedAdvancedId.value === 'flow')
-		// TRANSLATORS Descriptive message shown in the automation trigger builder.
-		return t(
-			'communications',
-			'Flow checks the configured conditions before recording the occurrence for that user.',
-		)
-	if (selectedMode.value === 'visit' && selectedApp.value)
+		return flowExplanation
+	if (selectedMode.value === 'visit' && selectedApp.value) {
 		return props.pageRoute
-			? // TRANSLATORS Explanatory help text shown in the automation trigger builder.
-				t(
-					'communications',
-					'Only when the authenticated user opens this interface route. Variable URL parameters are not stored.',
-				)
-			: // TRANSLATORS Prefix followed by a dynamic value in the automation trigger builder; preserve its trailing space.
-				t('communications', 'When opening any interface page in ')
-					+ selectedApp.value.label
-					// TRANSLATORS Suffix after a selected app name; other apps' requests never trigger this campaign.
-					+ t(
-						'communications',
-						". API calls, downloads, and other apps' pages do not trigger this campaign.",
-					)
-	return (
-		selectedAction.value?.description
-		// TRANSLATORS Action or instruction in the automation trigger builder.
-		|| t('communications', 'Choose a trusted event emitted by the application.')
-	)
+			? specificRouteExplanation
+			: anyRoutePrefix + selectedApp.value.label + anyRouteSuffix
+	}
+	return selectedAction.value?.description || chooseTrustedEventLabel
 })
 const canSelectEvent = computed(() => !!selectedApp.value?.canEvents)
 const canSelectPage = computed(() => !!selectedApp.value?.canPages)
@@ -404,55 +394,19 @@ watch(
 	},
 	{ immediate: true },
 )
-function sourceIcon(id: string): string {
-	return sourceIcons[id] || mdiPuzzleOutline
-}
-const routeOperatorOptions = [
-	// TRANSLATORS Route filter operator accepting any value for the URL variable.
-	{ value: 'any', label: t('communications', 'Any value') },
-	// TRANSLATORS Route filter operator requiring an exact URL-variable value.
-	{ value: 'equals', label: t('communications', 'Equals') },
-	// TRANSLATORS Route filter operator matching a URL-variable prefix.
-	{ value: 'prefix', label: t('communications', 'Starts with') },
-	// TRANSLATORS Route filter operator accepting only digits in a URL variable.
-	{ value: 'digits', label: t('communications', 'Numbers only') },
-]
-const selectRouteOperatorValue = (option: { value: string }): string => option.value
-const setRouteOperator = (variable: string, value: string | null): void =>
-	changeRouteFilter(variable, 'operator', value || 'any')
-const setRouteValue = (variable: string, value: string | number): void =>
-	changeRouteFilter(variable, 'value', String(value))
-const selectApplicationValue = (app: NativeApplication): string => app.id
 const selectActionValue = (action: { value: string }): string => action.value
-const selectRouteValue = (route: PageRouteOption): string => route.value
-const selectSourceValue = (source: NativeSource): string => source.id
-function routeVariableLabel(variable: string): string {
-	// TRANSLATORS {variable} is the name of a variable in the selected URL route.
-	return t('communications', 'Value for {variable}', { variable })
-}
-function routeExampleLabel(value: string): string {
-	// TRANSLATORS {value} is an example URL parameter, such as recent or 123.
-	return t('communications', 'Example: {value}', { value })
-}
-function flowLink(): string {
-	return generateUrl('/settings/admin/workflow')
-}
 </script>
 
 <template>
 	<div class="cc-automation" data-testid="automation-builder">
 		<h2 class="cc-automation-title">
-			<!-- TRANSLATORS Question presented to the user in the automation trigger builder. -->
-			{{
-				t('communications', 'When should the publication become available?')
-			}}
+			{{ automationHeading }}
 		</h2>
 
-		<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 		<div
 			class="cc-automation-intents"
 			role="group"
-			:aria-label="t('communications', 'Trigger source')">
+			:aria-label="triggerSourceLabel">
 			<NcButton
 				v-for="intent in intents"
 				:key="intent.id"
@@ -475,180 +429,34 @@ function flowLink(): string {
 
 		<div v-if="selectedIntent" class="cc-automation-setup">
 			<div v-if="selectedIntent === 'app'" class="cc-automation-configuration">
-				<div class="cc-automation-field">
-					<div class="cc-field-label">
-						<label for="cc-app-source"
-							><!-- TRANSLATORS Action or instruction in the automation trigger builder. -->{{
-								t('communications', 'Choose an application *')
-							}}</label
-						>
-						<NcPopover
-							popup-role="dialog"
-							:triggers="['click', 'focus', 'hover']"
-							placement="bottom-start"
-							class="cc-app-help-popover">
-							<template #trigger>
-								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-								<NcButton
-									variant="tertiary"
-									:aria-label="
-										t(
-											'communications',
-											'Help: selecting applications',
-										)
-									"
-									:title="
-										t(
-											'communications',
-											'Help about applications',
-										)
-									">
-									<template #icon
-										><NcIconSvgWrapper
-											:path="mdiHelpCircleOutline"
-											:size="20"
-									/></template>
-								</NcButton>
-							</template>
-							<p class="cc-help-content">
-								<!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->
-								{{
-									t(
-										'communications',
-										'Only enabled apps with integrated events or browsable pages are shown. Pages are discovered automatically. Business events require a trusted adapter.',
-									)
-								}}
-							</p>
-						</NcPopover>
-					</div>
-					<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-					<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-					<NcSelect
-						v-model="appValue"
-						:options="appOptions"
-						:reduce="selectApplicationValue"
-						:filterable="false"
-						:clearable="true"
-						input-id="cc-app-source"
-						label="label"
-						:placeholder="
-							t('communications', 'Search installed apps...')
-						"
-						:aria-label-combobox="
-							t('communications', 'Select application')
-						"
-						@search="appSearch = $event">
-						<template #option="option">
-							<div class="cc-automation-option">
-								<img
-									v-if="option.icon"
-									:src="option.icon"
-									alt=""
-									class="cc-app-icon" />
-								<NcIconSvgWrapper
-									v-else
-									:path="sourceIcon(option.id)"
-									:size="20" />
-								<span>
-									<strong>{{ option.label }}</strong>
-									<small>
-										<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-										<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-										<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-										{{
-											option.canEvents && option.canPages
-												? t(
-														'communications',
-														'Events and pages',
-													)
-												: option.canEvents
-													? t(
-															'communications',
-															'Events available',
-														)
-													: t(
-															'communications',
-															'Pages available',
-														)
-										}}
-									</small>
-								</span>
-							</div>
-						</template>
-						<template #selected-option="option">
-							<span class="cc-automation-selected">
-								<img
-									v-if="option.icon"
-									:src="option.icon"
-									alt=""
-									class="cc-app-icon" />
-								<NcIconSvgWrapper
-									v-else
-									:path="sourceIcon(option.id)"
-									:size="18" />
-								{{ option.label }}
-							</span>
-						</template>
-					</NcSelect>
-					<p v-if="applications.length > 12" class="cc-native-hint">
-						{{ applications.length }}
-						<!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->
-						{{
-							t(
-								'communications',
-								'options: search by name to find more.',
-							)
-						}}
-					</p>
-				</div>
-
+				<AutomationApplicationSelect
+					v-model="appValue"
+					:options="appOptions"
+					:total="applications.length"
+					@search="appSearch = $event" />
 				<template v-if="selectedApp">
 					<div
 						v-if="canSelectEvent && canSelectPage"
 						class="cc-automation-mode">
-						<!-- TRANSLATORS Question presented to the user in the automation trigger builder. -->
-						<NcRadioGroup
-							v-model="modeValue"
-							:label="t('communications', 'What should happen?')">
+						<NcRadioGroup v-model="modeValue" :label="modeQuestionLabel">
 							<div class="cc-automation-mode-options">
-								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 								<NcRadioGroupButton
 									value="event"
-									:label="
-										t('communications', 'An application event')
-									" />
-								<!-- TRANSLATORS Trigger type activated by visiting an eligible application page. -->
+									:label="eventModeLabel" />
+
 								<NcRadioGroupButton
 									value="visit"
-									:label="t('communications', 'Page visit')" />
+									:label="pageModeLabel" />
 							</div>
 						</NcRadioGroup>
 					</div>
 					<div v-else class="cc-native-hint cc-automation-only-mode">
-						<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-						<!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->
-						{{
-							canSelectPage
-								? t(
-										'communications',
-										'This app provides interface pages.',
-									)
-								: t(
-										'communications',
-										'This app provides integrated events but has no navigation page.',
-									)
-						}}
+						{{ canSelectPage ? pagesOnlyLabel : eventsOnlyLabel }}
 					</div>
 
 					<div v-if="selectedMode === 'event'" class="cc-automation-field">
-						<label for="cc-app-event"
-							><!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
-								t('communications', 'Application event *')
-							}}</label
-						>
-						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
+						<label for="cc-app-event">{{ applicationEventLabel }}</label>
+
 						<NcSelect
 							v-model="actionValue"
 							:options="actionOptions"
@@ -656,10 +464,8 @@ function flowLink(): string {
 							:clearable="false"
 							input-id="cc-app-event"
 							label="label"
-							:placeholder="t('communications', 'Select an event...')"
-							:aria-label-combobox="
-								t('communications', 'Select application event')
-							">
+							:placeholder="selectEventPlaceholder"
+							:aria-label-combobox="eventSelectorAriaLabel">
 							<template #option="option">
 								<div class="cc-automation-option">
 									<NcIconSvgWrapper
@@ -679,273 +485,38 @@ function flowLink(): string {
 						</p>
 					</div>
 
-					<div v-else class="cc-automation-field">
-						<label for="cc-app-route"
-							><!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
-								t('communications', 'Web page or route *')
-							}}</label
-						>
-						<!-- TRANSLATORS Progress indicator shown in the automation trigger builder. -->
-						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-						<NcSelect
-							v-model="pageRouteValue"
-							:options="routeOptions"
-							:reduce="selectRouteValue"
-							:clearable="false"
-							label="label"
-							input-id="cc-app-route"
-							:disabled="routeLoading"
-							:placeholder="
-								routeLoading
-									? t('communications', 'Loading pages…')
-									: ''
-							"
-							:aria-label-combobox="
-								t('communications', 'Select web page')
-							">
-							<template #option="option">
-								<div class="cc-automation-option">
-									<NcIconSvgWrapper :path="mdiWeb" :size="18" />
-									<span
-										><strong>{{ option.label }}</strong
-										><small>{{
-											option.description
-										}}</small></span
-									>
-								</div>
-							</template>
-						</NcSelect>
-						<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-						<div
-							v-if="pageRoute && routeVariables.length"
-							class="cc-route-filters"
-							role="group"
-							:aria-label="
-								t('communications', 'Route variable restrictions')
-							">
-							<h4>
-								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-								{{
-									t(
-										'communications',
-										'Filters for this route (optional)',
-									)
-								}}
-							</h4>
-							<p class="cc-native-hint">
-								<!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->
-								{{
-									t(
-										'communications',
-										'Restricts only path variable values; no concrete URL is stored. Use safe comparisons instead of arbitrary regular expressions.',
-									)
-								}}
-							</p>
-							<div
-								v-for="variable in routeVariables"
-								:key="variable"
-								class="cc-route-filter">
-								<!-- TRANSLATORS Name of a parameter in the selected URL route. -->
-								<label :for="'cc-route-operator-' + variable"
-									>{{ t('communications', 'Variable') }}
-									{{ '{' + variable + '}' }}</label
-								>
-								<NcSelect
-									:input-id="'cc-route-operator-' + variable"
-									class="cc-route-filter-select"
-									:model-value="
-										pageFilters[variable]?.operator || 'any'
-									"
-									:options="routeOperatorOptions"
-									:reduce="selectRouteOperatorValue"
-									:clearable="false"
-									@update:model-value="
-										setRouteOperator(variable, $event)
-									" />
-								<template
-									v-if="
-										['equals', 'prefix'].includes(
-											pageFilters[variable]?.operator,
-										)
-									">
-									<!-- TRANSLATORS Label preceding the name of the route variable being filtered. -->
-									<label :for="'cc-route-value-' + variable"
-										>{{ t('communications', 'Value for') }}
-										{{ variable }}</label
-									>
-									<NcTextField
-										:id="'cc-route-value-' + variable"
-										:maxlength="96"
-										class="cc-route-filter-value"
-										:model-value="
-											pageFilters[variable]?.value || ''
-										"
-										:label="routeVariableLabel(variable)"
-										:placeholder="
-											routeExampleLabel(
-												variable === 'view'
-													? 'recent'
-													: '123',
-											)
-										"
-										@update:model-value="
-											setRouteValue(variable, $event)
-										" />
-								</template>
-							</div>
-						</div>
-						<p v-if="routeLoading" class="cc-native-hint">
-							<!-- TRANSLATORS Progress indicator shown in the automation trigger builder. -->
-							{{
-								t(
-									'communications',
-									'Checking the native Nextcloud router...',
-								)
-							}}
-						</p>
-						<NcNoteCard v-if="routeError" type="error">{{
-							routeError
-						}}</NcNoteCard>
-						<p class="cc-native-hint">
-							<!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->
-							{{
-								t(
-									'communications',
-									'Only GET web routes recognized by Nextcloud. API endpoints, OCS routes, files, and private parameters are excluded.',
-								)
-							}}
-						</p>
-					</div>
+					<AutomationRouteConfiguration
+						v-else
+						:model-value="pageRoute"
+						:page-filters="pageFilters"
+						:routes="routes"
+						:loading="routeLoading"
+						:error="routeError"
+						@update:model-value="emit('update:pageRoute', $event)"
+						@update:page-filters="emit('update:pageFilters', $event)" />
 				</template>
 			</div>
 
 			<div
 				v-else-if="selectedIntent === 'board'"
 				class="cc-automation-configuration">
-				<NcNoteCard type="info"
-					><!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->{{
-						t(
-							'communications',
-							'Without a technical trigger, the publication becomes available in Inbox when activated. Recipients and notifications are configured in the next step.',
-						)
-					}}</NcNoteCard
-				>
+				<NcNoteCard type="info">{{ boardModeHelp }}</NcNoteCard>
 			</div>
 
 			<div
 				v-else-if="selectedIntent === 'schedule'"
 				class="cc-automation-configuration">
-				<!-- TRANSLATORS Explanation of when an announcement appears during a publication window. -->
 				<p class="cc-native-hint">
-					{{
-						t(
-							'communications',
-							"The message will be available during the selected period and appear on the user's next visit.",
-						)
-					}}
+					{{ scheduledModeHelp }}
 				</p>
 			</div>
 
-			<div v-else class="cc-automation-configuration">
-				<h3>
-					<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
-						t('communications', 'Integration or Flow')
-					}}
-				</h3>
-				<div class="cc-automation-field">
-					<label for="cc-advanced"
-						><!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
-							t('communications', 'Event source *')
-						}}</label
-					>
-					<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-					<NcSelect
-						v-model="advancedValue"
-						:options="advancedSources"
-						:reduce="selectSourceValue"
-						:clearable="true"
-						input-id="cc-advanced"
-						label="label"
-						:placeholder="
-							t('communications', 'Choose an integration...')
-						" />
-				</div>
-				<NcNoteCard v-if="selectedAdvanced" type="info">
-					<p>{{ selectedAdvanced.setup }}</p>
-					<div
-						v-if="selectedAdvanced.id === 'webhook'"
-						class="cc-automation-webhook">
-						<p v-if="!campaignId">
-							<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-							{{
-								t(
-									'communications',
-									'Save the campaign first to get its identifier and configure the integration.',
-								)
-							}}
-						</p>
-						<p v-else>
-							<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-							{{ t('communications', 'Use the identifier') }}
-							{{ campaignId }}
-							<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
-							{{ t('communications', 'in the field') }}
-							<code>campaignId</code
-							><!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->{{
-								t(
-									'communications',
-									'. The integration does not send the campaign to an entire group.',
-								)
-							}}
-						</p>
-						<pre>{{ webhookExample }}</pre>
-					</div>
-					<div
-						v-if="selectedAdvanced.id === 'flow'"
-						class="cc-automation-flow">
-						<!-- TRANSLATORS Instruction to configure a Flow rule for the saved publication. -->
-						<p v-if="campaignId">
-							{{
-								t(
-									'communications',
-									"Select this campaign by name in Flow's “Trigger contextual campaign” operation.",
-								)
-							}}
-						</p>
-						<p v-else>
-							<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-							{{
-								t(
-									'communications',
-									'Save the campaign before linking it to the Flow rule.',
-								)
-							}}
-						</p>
-						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
-						<NcButton
-							:text="t('communications', 'Open Nextcloud Flow')"
-							:href="flowLink()"
-							target="_blank">
-							<template #icon
-								><NcIconSvgWrapper :path="mdiOpenInNew" :size="18"
-							/></template>
-						</NcButton>
-					</div>
-				</NcNoteCard>
-				<NcNoteCard v-else type="info"
-					><!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->{{
-						t(
-							'communications',
-							'Flow evaluates internal conditions. An HMAC webhook records an event only for the user specified in',
-						)
-					}}
-					<code>uid</code
-					><!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->{{
-						t('communications', '; it never broadcasts to all users.')
-					}}</NcNoteCard
-				>
-			</div>
-
+			<AutomationAdvancedSetup
+				v-else
+				v-model="advancedValue"
+				:sources="advancedSources"
+				:campaign-id="campaignId"
+				:webhook-example="webhookExample" />
 			<div
 				v-if="modelValue && selectedIntent && selectedIntent !== 'schedule'"
 				class="cc-automation-result"
@@ -963,150 +534,16 @@ function flowLink(): string {
 </template>
 
 <style lang="scss" scoped>
-.cc-native-hint {
-	color: var(--color-text-maxcontrast);
-	font-size: 12px;
-	margin: 3px 0 0;
-}
-
 .cc-automation {
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
-	min-width: 0;
-}
-
-.cc-automation-intents {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 10px;
-}
-
-.cc-automation-flow {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	align-items: center;
-	padding-top: 10px;
-}
-
-.cc-automation-flow p {
-	width: 100%;
-}
-
-@media (max-width: 640px) {
-	.cc-automation-intents,
-	.cc-automation-sources {
-		grid-template-columns: 1fr;
-	}
-}
-
-.cc-automation {
 	gap: 0;
+	min-width: 0;
 }
 
 .cc-automation-title {
-	margin: 0 0 3px !important;
-	font-size: 19px !important;
-}
-
-.cc-automation-intents {
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 9px;
-}
-
-.cc-automation-setup {
-	margin-top: 18px;
-	padding-top: 15px;
-	border-top: 1px solid var(--color-border);
-	display: flex;
-	flex-direction: column;
-	gap: 15px;
-}
-
-.cc-automation-option {
-	display: flex;
-	align-items: center;
-	gap: 9px;
-	min-width: 0;
-}
-
-.cc-automation-option > span:last-child {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	min-width: 0;
-}
-
-.cc-automation-option strong {
-	font-size: 13px;
-	font-weight: 650;
-}
-
-.cc-automation-option small {
-	font-size: 11px;
-	color: var(--color-text-maxcontrast);
-	white-space: normal;
-}
-
-.cc-automation-selected {
-	display: flex;
-	gap: 6px;
-	align-items: center;
-	font-size: 13px;
-}
-
-.cc-automation-action-field .cc-native-hint {
-	margin-top: 6px;
-}
-
-.cc-automation-result {
-	padding: 10px 12px;
-	border-radius: 8px;
-	border: 1px solid var(--color-border);
-	background: var(--color-background-hover);
-}
-
-.cc-automation-result-label {
-	display: flex;
-	gap: 8px;
-	align-items: center;
-	min-width: 0;
-}
-
-.cc-automation-result-label strong {
-	font-size: 13px;
-	overflow-wrap: anywhere;
-}
-
-.cc-automation-result p {
-	margin: 3px 0 0 26px;
-	font-size: 12px;
-	color: var(--color-text-maxcontrast);
-}
-
-.cc-automation-result p.cc-automation-error {
-	color: var(--color-error);
-}
-
-.cc-automation-flow {
-	padding-top: 8px;
-}
-
-.cc-automation-flow p {
-	margin: 0;
-}
-
-@media (max-width: 800px) {
-	.cc-automation-intents {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
-
-@media (max-width: 490px) {
-	.cc-automation-intents {
-		grid-template-columns: 1fr 1fr;
-	}
+	margin: 0 0 3px;
+	font-size: 19px;
 }
 
 .cc-automation-intents {
@@ -1174,28 +611,25 @@ function flowLink(): string {
 }
 
 .cc-automation-setup {
-	margin-top: 16px;
+	display: flex;
+	flex-direction: column;
 	gap: 14px;
+	margin-top: 16px;
+	padding-top: 14px;
+	border-top: 1px solid var(--color-border);
 }
 
-.cc-automation-configuration {
+.cc-automation-configuration,
+.cc-automation-field {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 	max-width: 760px;
-}
-
-.cc-automation-configuration h3 {
-	font-size: 15px;
-	font-weight: 650;
-	margin: 0;
+	min-width: 0;
 }
 
 .cc-automation-field {
-	display: flex;
-	flex-direction: column;
 	gap: 6px;
-	min-width: 0;
 }
 
 .cc-automation-field label {
@@ -1203,63 +637,40 @@ function flowLink(): string {
 	font-weight: 650;
 }
 
-.cc-automation-field :is(:deep(.v-select), .vue-select) {
+.cc-automation-field :deep(.v-select) {
 	width: 100%;
 	max-width: none;
 }
 
-.cc-automation-field .cc-native-hint {
-	margin: 2px 0;
-}
-
-.cc-route-filters {
-	display: grid;
-	gap: 10px;
-	padding: 12px;
-	border: 1px solid var(--color-border);
-	border-radius: 10px;
-	background: var(--color-main-background);
-}
-
-.cc-route-filters h4 {
-	font-size: 13px;
-	margin: 0;
-}
-
-.cc-route-filter {
-	display: grid;
-	grid-template-columns: minmax(100px, 1fr) minmax(170px, 1fr);
-	gap: 7px 12px;
+.cc-automation-option {
+	display: flex;
 	align-items: center;
-}
-
-.cc-route-filter label {
-	font-size: 12px;
-}
-
-.cc-route-filter-select,
-.cc-route-filter-value {
+	gap: 9px;
 	min-width: 0;
-	width: 100%;
-	min-height: 38px;
-	padding: 7px 10px;
-	color: var(--color-main-text);
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	font: inherit;
+}
+
+.cc-automation-option > span {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.cc-automation-option strong {
 	font-size: 13px;
+	font-weight: 650;
 }
 
-.cc-route-filter :is(select, input):focus-visible {
-	outline: 2px solid var(--color-primary-element);
-	outline-offset: 2px;
+.cc-automation-option small,
+.cc-native-hint,
+.cc-automation-only-mode {
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+	white-space: normal;
 }
 
-@media (max-width: 600px) {
-	.cc-route-filter {
-		grid-template-columns: 1fr;
-	}
+.cc-native-hint {
+	margin: 3px 0 0;
 }
 
 .cc-automation-mode {
@@ -1277,120 +688,47 @@ function flowLink(): string {
 	min-width: 175px;
 }
 
-.cc-automation-only-mode {
-	color: var(--color-text-maxcontrast);
-}
-
 .cc-automation-result {
 	margin-top: 3px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--color-border);
+	background: var(--color-background-hover);
+}
+
+.cc-automation-result-label {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	min-width: 0;
+}
+
+.cc-automation-result-label strong {
+	font-size: 13px;
+	overflow-wrap: anywhere;
+}
+
+.cc-automation-result p {
+	margin: 3px 0 0 26px;
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
 }
 
 @media (max-width: 800px) {
 	.cc-automation-intents {
 		grid-template-columns: 1fr;
 	}
-}
 
-@media (max-width: 800px) {
 	.cc-automation-intent-card {
 		min-height: 68px !important;
 	}
-}
 
-@media (max-width: 800px) {
 	.cc-automation-mode-options {
 		flex-direction: column;
 	}
-}
 
-@media (max-width: 800px) {
 	.cc-automation-mode-options > * {
 		min-width: 0;
 	}
-}
-
-.cc-automation-webhook {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	margin-top: 12px;
-	min-width: 0;
-}
-
-.cc-automation-webhook p {
-	margin: 0;
-}
-
-.cc-automation-webhook pre {
-	white-space: pre-wrap;
-	overflow-wrap: anywhere;
-	font-size: 12px;
-	line-height: 1.4;
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	padding: 12px;
-	border-radius: 8px;
-	max-width: 100%;
-}
-
-.cc-automation-setup {
-	margin-top: 16px;
-	padding-top: 14px;
-}
-
-.cc-field-label {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-}
-
-.cc-app-help-popover {
-	display: inline-flex;
-	align-items: center;
-}
-
-.cc-app-help-popover button {
-	min-width: 32px;
-	min-height: 32px;
-}
-
-.cc-help-content {
-	max-width: 340px;
-	padding: 14px 16px;
-	margin: 0;
-	font-size: 13px;
-	line-height: 1.5;
-}
-
-.cc-automation-option img.cc-app-icon,
-.cc-automation-selected img.cc-app-icon {
-	width: 20px;
-	height: 20px;
-	flex: none;
-	object-fit: contain;
-}
-
-.cc-automation-selected img.cc-app-icon {
-	width: 18px;
-	height: 18px;
-}
-
-.cc-banner-type-label .cc-native-hint {
-	margin: 4px 0 0;
-}
-
-.cc-unified-channel-group .cc-native-hint {
-	font-size: 12px;
-	margin: 0;
-	line-height: 1.45;
-}
-
-.cc-gateway-provider-details[open] > p.cc-native-hint {
-	margin: 12px 0 4px;
-}
-
-.cc-delivery-section > .cc-native-hint {
-	max-width: 790px;
-	line-height: 1.5;
 }
 </style>
