@@ -1,3 +1,5 @@
-<!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
-SPDX-License-Identifier: AGPL-3.0-or-later -->
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="#00806b" d="M3 9v6h4l5 5V4L7 9H3Zm12-1v8a5 5 0 0 0 0-8Z"/></svg>
+<!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" aria-hidden="true">
+  <path fill="#fff" d="M3 9v6h4l5 5V4L7 9H3Zm12-1v8a5 5 0 0 0 0-8Z"/>
+</svg>

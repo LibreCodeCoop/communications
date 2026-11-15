@@ -1,5 +1,8 @@
 {
   "translations": {
+    "Example: {value}": "Ex.: {value}",
+    "HTTP failure {status}": "Falha HTTP {status}",
+    "Value for {variable}": "Valor para {variable}",
     " (copy)": " (cópia)",
     " (maximum ": " (máximo ",
     " AND ": " E ",

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 OC.L10N.register('communications', {
+  "Example: {value}": "Ex.: {value}",
+  "HTTP failure {status}": "Falha HTTP {status}",
+  "Value for {variable}": "Valor para {variable}",
   " (copy)": " (cópia)",
   " (maximum ": " (máximo ",
   " AND ": " E ",

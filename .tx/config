@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[main]
+host = https://www.transifex.com
+lang_map = hu_HU: hu, nb_NO: nb, sk_SK: sk, th_TH: th, ja_JP: ja, bg_BG: bg, cs_CZ: cs, fi_FI: fi
+
+[o:nextcloud:p:nextcloud:r:communications]
+file_filter = translationfiles/<lang>/communications.po
+source_file = translationfiles/templates/communications.pot
+source_lang = en
+type = PO
