@@ -55,16 +55,6 @@ final class BoardPublicationService {
 	) {
 	}
 
-	private function due(array $c, int $now): bool {
-		return $c['status'] === 'active'
-			&& in_array($c['trigger_key'], ['nextcloud.board.published','nextcloud.time.window'], true)
-			&& ($c['board_visible'] || $c['notify_users'] || $c['notify_activity']
-			|| $c['notify_email'] || $c['gateway_channels'] !== [])
-			&& $c['published_at'] > 0
-			&& ($c['starts_at'] === null || $c['starts_at'] <= $now)
-			&& ($c['ends_at'] === null || $c['ends_at'] > $now);
-	}
-
 	/** @return array<string, mixed>|null */
 	private function publication(int $id, int $version): ?array {
 		$qb = $this->db->getQueryBuilder();
@@ -122,7 +112,7 @@ final class BoardPublicationService {
 		$stats = ['events' => 0,'enqueued' => 0,'errors' => 0];
 		$now = time();
 		foreach ($this->campaigns->all() as $campaign) {
-			if (!$this->due($campaign, $now)) {
+			if (!PublicationDuePolicy::allows($campaign, $now)) {
 				continue;
 			}
 			if ($limit * 2 <= $stats['events'] + $stats['enqueued']) {
@@ -353,7 +343,7 @@ final class BoardPublicationService {
 		$status = ['processed' => 0,'queued' => false,'done' => false];
 		$c = $this->campaigns->find($id);
 		$offset = max(0, $offset);
-		if ($c === null || (int)$c['published_at'] !== $version || !$this->due($c, time())) {
+		if ($c === null || (int)$c['published_at'] !== $version || !PublicationDuePolicy::allows($c, time())) {
 			$this->markPublication($id, $version, 'broadcast_done', 1);
 			return $status;
 		}

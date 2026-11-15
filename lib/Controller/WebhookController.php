@@ -12,6 +12,7 @@ namespace OCA\Communications\Controller;
 use JsonException;
 use OCA\Communications\Service\CampaignRepository;
 use OCA\Communications\Service\EventStore;
+use OCA\Communications\Service\WebhookSignatureVerifier;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -33,6 +34,7 @@ class WebhookController extends Controller {
 		private EventStore $events,
 		private CampaignRepository $campaigns,
 		private LoggerInterface $logger,
+		private WebhookSignatureVerifier $signatureVerifier,
 		private \OCP\IL10N $l10n,
 	) {
 		parent::__construct('communications', $request);
@@ -52,12 +54,7 @@ class WebhookController extends Controller {
 		}
 		$timestamp = $this->request->getHeader('X-CC-Timestamp');
 		$provided = $this->request->getHeader('X-CC-Signature');
-		if (!ctype_digit($timestamp) || abs(time() - (int)$timestamp) > 300
-			|| !preg_match('/^sha256=[a-f0-9]{64}$/', $provided)) {
-			return new JSONResponse(['error' => $this->l10n->t('Invalid signature.')], 401);
-		}
-		$expected = 'sha256=' . hash_hmac('sha256', $timestamp . '.' . $raw, $secret);
-		if (!hash_equals($expected, $provided)) {
+		if (!$this->signatureVerifier->valid($secret, $raw, $timestamp, $provided, time())) {
 			return new JSONResponse(['error' => $this->l10n->t('Invalid signature.')], 401);
 		}
 		try {
@@ -85,13 +82,13 @@ class WebhookController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Campaign does not exist, is inactive, or is not configured for webhooks.')], 422);
 		}
 		try {
-			// One event belongs to exactly one campaign and one UID. Never broadcast
-			// one external event to unrelated campaigns that listen to the same trigger.
 			$event = $this->events->record($uid, 'external.webhook', 'campaign_' . $campaignId,
 				'webhook:' . $campaignId . ':' . $externalEventId);
 			return new JSONResponse(['accepted' => true, 'eventId' => $event['event_uuid']], 202);
-		} catch (\Throwable $e) {
-			$this->logger->error('Contextual campaigns incoming webhook failure', ['exception' => $e]);
+		} catch (\InvalidArgumentException) {
+			return new JSONResponse(['error' => $this->l10n->t('Invalid recipient or event.')], 422);
+		} catch (\OCP\DB\Exception|\RuntimeException $error) {
+			$this->logger->error('Webhook event storage failed', ['exceptionClass' => $error::class]);
 			return new JSONResponse(['error' => $this->l10n->t('Could not record event.')], 500);
 		}
 	}

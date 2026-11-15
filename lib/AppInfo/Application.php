@@ -36,22 +36,11 @@ class Application extends App implements IBootstrap {
 	}
 
 	public function register(IRegistrationContext $context): void {
-		// Native Dashboard and Notifications integration. Providers are lazy and
-		// validate group eligibility whenever they expose an announcement.
 		$context->registerDashboardWidget(\OCA\Communications\Dashboard\BoardWidget::class);
 		$context->registerNotifierService(\OCA\Communications\Notification\BoardNotifier::class);
 		$context->registerEventListener(UserLoggedInEvent::class, LoginListener::class);
 		$context->registerEventListener(NodeCreatedEvent::class, FileCreatedListener::class);
-		// Nextcloud registers bootstrap listeners for ALL requests, including DAV,
-		// before an individual app may be booted. Dynamic listeners belong HERE,
-		// not in boot(), or non-UI events can be missed.
-		$compiled = $this->getContainer()->get(\OCP\IAppConfig::class)
-			->getValueString('communications', 'native_active_event_subscriptions_v1', '[]');
-		// Mutating events do not subscribe during safe HTTP GET/HEAD/OPTIONS.
-		// This preserves fast page views even when a File-created campaign is active.
-		foreach (NativeEventSubscriptions::bootstrapClasses($compiled, (string)($_SERVER['REQUEST_METHOD'] ?? '')) as $class) {
-			$context->registerEventListener($class, NativeEventListener::class, -100);
-		}
+		$this->registerNativeListeners($context);
 		$context->registerEventListener(RegisterOperationsEvent::class, RegisterFlowListener::class);
 		$context->registerEventListener(LoadSettingsScriptsEvent::class, RegisterFlowListener::class);
 		foreach ([
@@ -66,15 +55,21 @@ class Application extends App implements IBootstrap {
 		}
 	}
 
+	private function registerNativeListeners(IRegistrationContext $context): void {
+		// Bootstrap listeners also receive DAV and non-UI events.
+		$compiled = $this->getContainer()->get(\OCP\IAppConfig::class)
+			->getValueString('communications', 'native_active_event_subscriptions_v1', '[]');
+		foreach (NativeEventSubscriptions::bootstrapClasses($compiled, (string)($_SERVER['REQUEST_METHOD'] ?? '')) as $class) {
+			$context->registerEventListener($class, NativeEventListener::class, -100);
+		}
+	}
+
 	public function boot(IBootContext $context): void {
-		// CLI jobs have no browser path or navigation context.
 		if (PHP_SAPI === 'cli') {
 			return;
 		}
 		$server = $context->getServerContainer();
 		$user = $server->get(IUserSession::class)->getUser();
-		// Guest banners use a deliberately small and public-only script, not the
-		// authenticated campaign engine. Only enable on browser-visible public pages.
 		$path = $server->get(IRequest::class)->getPathInfo();
 		if ($user === null && (preg_match('~^/(?:index\.php/)?login/?$~', $path)
 			|| preg_match('~^/(?:index\.php/)?(?:s|f)/[A-Za-z0-9_-]{8,120}/?$~', $path))) {
@@ -83,8 +78,6 @@ class Application extends App implements IBootstrap {
 			Util::addStyle('communications', 'guest');
 		}
 		if ($user !== null && !str_contains($path, '/apps/communications')) {
-			// Most pages have no eligible campaign: load the small preflight script
-			// and lazily inject the Vue renderer only after an actual claim.
 			Util::addTranslations('communications');
 			Util::addScript('communications', 'loader');
 		}
