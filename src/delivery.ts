@@ -4,13 +4,13 @@ import { createApp } from 'vue'
 import CampaignDelivery from './CampaignDelivery.vue'
 
 function mount() {
-  const root = document.createElement('div')
-  root.id = 'communications-delivery'
-  document.body.appendChild(root)
-  createApp(CampaignDelivery).mount(root)
+	const root = document.createElement('div')
+	root.id = 'communications-delivery'
+	document.body.appendChild(root)
+	createApp(CampaignDelivery).mount(root)
 }
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', mount, { once: true })
+	document.addEventListener('DOMContentLoaded', mount, { once: true })
 } else {
-  mount()
+	mount()
 }

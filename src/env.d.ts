@@ -5,25 +5,25 @@
 import type { ClaimedPresentation } from './types/communications'
 
 export interface WorkflowOperatorRegistration {
-  id: string
-  operation: string
-  color: string
-  element: string
+	id: string
+	operation: string
+	color: string
+	element: string
 }
 
 declare global {
-  interface Window {
-    oc_requesttoken?: string
-    __contextualCampaignInitial?: ClaimedPresentation
-    OC?: {
-      webroot?: string
-      requestToken?: string
-      getLocale?: () => string
-    }
-    OCA?: {
-      WorkflowEngine?: {
-        registerOperator?: (operator: WorkflowOperatorRegistration) => void
-      }
-    }
-  }
+	interface Window {
+		oc_requesttoken?: string
+		__contextualCampaignInitial?: ClaimedPresentation
+		OC?: {
+			webroot?: string
+			requestToken?: string
+			getLocale?: () => string
+		}
+		OCA?: {
+			WorkflowEngine?: {
+				registerOperator?: (operator: WorkflowOperatorRegistration) => void
+			}
+		}
+	}
 }

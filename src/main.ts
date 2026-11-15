@@ -3,5 +3,5 @@
 import { createApp } from 'vue'
 import AppHub from './AppHub.vue'
 import './management.css'
-const root=document.getElementById('communications-vue')
+const root = document.getElementById('communications-vue')
 if (root) createApp(AppHub).mount(root)
