@@ -2,11 +2,29 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 # Communications
 
-**An experimental Nextcloud app for institutional publications, notifications, and event-driven communication.**
+**Free and open-source communications for organizations using Nextcloud.** Deliver institutional notices and event-driven messages through your own infrastructure, with control over recipients, visibility, privacy, and delivery channels.
 
-Administrators publish information to eligible audiences using a single editor and independently selectable delivery channels: contextual banner **or** modal, Inbox, Nextcloud Notifications, Activity, email, and optional transports from Two-Factor Gateway. Events from installed apps are discovered through Nextcloud contracts; **no LibreSign-specific runtime adapter is included**.
+Communications helps teams publish an announcement once and choose how it reaches people: an Inbox in Nextcloud, contextual banners or modal dialogs, Nextcloud Notifications, Activity, email, and optional messaging providers exposed by Two-Factor Gateway. Schedule publications or connect them to trusted events from installed applications. Each channel has its own eligibility and consent rules.
 
-**Status:** development / proof of concept, version `0.29.0`. Tested on Nextcloud 36 development snapshots. Nextcloud 36 is not yet a stable release as of November 2026. This app has **not** been certified for production, app-store distribution, or advertising/billing. Do not point experimental acceptance scripts at production installations.
+## Free to use, with optional professional services
+
+**The software is free.** You may study, install, operate, share, and modify the source under the [AGPL-3.0-or-later](LICENSE), without paying a license fee or purchasing support. The license obligations still apply to distribution and network use. You provide your own compatible Nextcloud infrastructure or arrange hosting separately.
+
+**Professional help is optional, not a condition of use.** [LibreCode Coop](https://librecode.coop/) offers services for organizations that need help with:
+
+- Installation, managed infrastructure, operations, updates, and maintenance.
+- Support agreements for organizations, deployment guidance, and incident response.
+- Custom functionality and user-interface adaptations for institutional workflows.
+- Integration with other applications, messaging systems, and existing business processes.
+- Training and technical consulting for an organization's own administrators and developers.
+
+For a service proposal, contact **[contact@librecode.coop](mailto:contact@librecode.coop)**. Choosing a service provider does not change the open-source license or create a paid-only edition.
+
+## Help sustain development
+
+Communications is maintained as free software. Development, security review, documentation, translation, testing, and compatibility work all require continued effort. You can support that work by contributing code and tests, reviewing issues, improving documentation and translations, sponsoring development, or contracting professional services. **The project needs ongoing community and financial support to remain sustainable; paying is not required to use it.**
+
+**Development status:** experimental and not yet released. Its version is defined in `appinfo/info.xml`. Testing targets Nextcloud 36 development snapshots; the app is not certified for production or App Store distribution. Do not treat experimental functionality as a production service-level guarantee.
 
 ## Identity and requirements
 
@@ -38,7 +56,7 @@ npm run lint
 npm run stylelint
 npm run test:unit
 npm run test:mutation
-composer install
+composer install # installs isolated PHPUnit, PHPStan, PHP-CS-Fixer and Infection toolchains in vendor-bin/
 composer cs:check
 composer test
 composer analyse
@@ -78,4 +96,4 @@ The application uses Nextcloud's internal router discovery API for some page-tri
 
 ## License
 
-`AGPL-3.0-or-later` — see [LICENSE](LICENSE). Distributed dependencies retain their upstream copyright and license notices.
+Communications is free software under `AGPL-3.0-or-later` — see [LICENSE](LICENSE). The software may be used without paying license fees; professional support, hosting, integration, or customization are independent and optional services. Distributed dependencies retain their upstream copyright and license notices.

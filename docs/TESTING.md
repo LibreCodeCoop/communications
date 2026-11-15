@@ -16,6 +16,8 @@ The test discovers the LibreSign aggregate-completion event in the standard UI, 
 
 Acceptance evidence must include the tested Nextcloud and LibreSign revisions, database, exact commands and exit codes. A test that passed once in a development snapshot does not certify the eventual stable Nextcloud 36 release. PostgreSQL and MariaDB must be installed and tested separately; do not infer compatibility from SQLite migrations alone.
 
+PHP development tools are installed in separate `vendor-bin/` Composer environments (PHPUnit, PHPStan, coding standard, and Infection) by the `bamarni/composer-bin-plugin` post-install hook. The main `vendor/` contains only shared API/type dependencies and the plugin. CI workflows which need tools must not suppress that installation hook; runtime-only `--no-dev` installs skip the toolchains.
+
 ## CI source integrity
 
 The Nextcloud archive source is the development channel (`latest-master` for the current manifest requirement). The bootstrap reads the supported version from `appinfo/info.xml` and refuses any other version. When upstream master advances beyond the compatible version in the manifest, replace the archive source with a verified supported release artifact; the test will fail closed rather than silently testing the wrong version. The LibreSign test pins a specific reviewed upstream commit and compiles its frontend assets; it is never used as an app-specific production adapter.
