@@ -16,7 +16,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 if (!interface_exists(IL10N::class)) {
-	require_once __DIR__ . '/../../../vendor/nextcloud/ocp/OCP/IL10N.php';
+	$nextcloudInterface = dirname(__DIR__, 5) . '/lib/public/IL10N.php';
+	$composerInterface = __DIR__ . '/../../../vendor/nextcloud/ocp/OCP/IL10N.php';
+	require_once is_file($nextcloudInterface) ? $nextcloudInterface : $composerInterface;
 }
 
 final class CampaignInputFieldsTest extends TestCase {

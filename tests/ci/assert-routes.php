@@ -13,7 +13,7 @@ $_SERVER['SCRIPT_FILENAME'] = '/var/www/html/occ';
 chdir('/var/www/html');
 require '/var/www/html/lib/base.php';
 
-use OCP\AppFramework\Http\Attribute\FrontpageRoute;
+use OCP\AppFramework\Http\Attribute\Route as RouteAttribute;
 
 $router = \OC::$server->get(\OC\Route\Router::class);
 $router->loadRoutes('communications');
@@ -25,10 +25,13 @@ foreach (glob(__DIR__ . '/../../lib/Controller/*Controller.php') ?: [] as $file)
 	$reflection = new ReflectionClass($class);
 	$controllerName = strtolower(substr($controller, 0, -strlen('Controller')));
 	foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-		foreach ($method->getAttributes(FrontpageRoute::class) as $attribute) {
+		foreach ($method->getAttributes(RouteAttribute::class, ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
 			$route = $attribute->newInstance();
-			$name = 'communications.' . $controllerName . '.' . strtolower($method->getName());
-			$path = '/apps/communications' . $route->getUrl();
+			$isApi = $route->getType() === RouteAttribute::TYPE_API;
+			$prefix = $isApi ? 'ocs.' : '';
+			$name = strtolower($prefix . 'communications.' . $controllerName . '.' . $method->getName() . ($route->getPostfix() ?? ''));
+			$root = $isApi ? ($route->getRoot() ?? '/apps/communications') : '/apps/communications';
+			$path = ($isApi ? '/ocsapp' : '') . rtrim($root, '/') . '/' . ltrim($route->getUrl(), '/');
 			$verb = strtoupper($route->getVerb());
 			if (isset($expected[$name]) && $expected[$name]['path'] !== $path) {
 				throw new RuntimeException('Ambiguous route declarations for ' . $name);
@@ -51,7 +54,8 @@ foreach ($expected as $name => $declaration) {
 	}
 }
 foreach ($registered as $name => $route) {
-	if (str_starts_with($name, 'communications.') && !isset($expected[$name])) {
+	if ((str_starts_with($name, 'communications.') || str_starts_with($name, 'ocs.communications.'))
+		&& !isset($expected[$name])) {
 		$failures[] = 'Unexpected route outside controller attributes: ' . $name;
 	}
 }
