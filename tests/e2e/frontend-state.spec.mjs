@@ -36,6 +36,13 @@ test('publication editor keeps local state when navigating between Inbox and Pub
 		.click()
 	const nameField = page.getByLabel('Internal name *')
 	await nameField.fill('Unsaved draft survives tab navigation')
+	// Extracted content, audience, delivery and preview boundaries stay mounted.
+	await expect(page.getByLabel('Displayed title *')).toBeVisible()
+	await expect(page.getByRole('heading', { name: 'Recipients' })).toBeVisible()
+	await expect(
+		page.getByRole('heading', { name: 'Delivery methods' }),
+	).toBeVisible()
+	await expect(page.locator('.cc-wizard-sidebar')).toBeVisible()
 
 	// No publication is persisted; navigation must preserve the typed draft and its wizard.
 	await page.locator('.cc-hub-tabs').getByRole('button', { name: 'Inbox' }).click()
