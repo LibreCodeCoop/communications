@@ -4,5 +4,6 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import AppHub from './AppHub.vue'
 import './management.scss'
+import './styles/_campaign-admin.scss'
 const root = document.getElementById('communications-vue')
 if (root) createApp(AppHub).use(createPinia()).mount(root)

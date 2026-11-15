@@ -42,6 +42,30 @@ describe('global stylesheet isolation', () => {
 		})
 	}
 
+	it('scopes the extracted editor stylesheet to the Communications mount', () => {
+		const css = compileString(
+			readFileSync('src/styles/_campaign-admin.scss', 'utf8'),
+		).css
+		const stylesheet = postcss.parse(css)
+		const leaks: string[] = []
+		stylesheet.walkRules((rule) => {
+			if (
+				rule.parent?.type === 'atrule'
+				&& 'name' in rule.parent
+				&& /keyframes/i.test(String(rule.parent.name))
+			)
+				return
+			for (const selector of rule.selectors) {
+				if (!selector.trim().startsWith('#communications-vue'))
+					leaks.push(selector)
+			}
+		})
+		expect(
+			leaks,
+			'Every editor rule must be restricted to its Nextcloud app mount',
+		).toEqual([])
+	})
+
 	it('keeps all application component styles scoped to their Vue owners', () => {
 		const componentPaths = (function collectVue(directory: string): string[] {
 			return readdirSync(directory, { withFileTypes: true }).flatMap(
