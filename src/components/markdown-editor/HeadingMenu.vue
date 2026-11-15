@@ -5,7 +5,8 @@
 <template>
 	<div ref="root" class="markdown-heading-menu">
 		<!-- TRANSLATORS Aria label for the markdown editor toolbar button that opens the menu for choosing paragraph or heading styles. -->
-		<button ref="toggle"
+		<button
+			ref="toggle"
 			type="button"
 			class="markdown-heading-menu__toggle"
 			:aria-expanded="isOpen ? 'true' : 'false'"
@@ -13,34 +14,42 @@
 			:aria-label="t('communications', 'Heading style')"
 			@click.stop="toggleMenu"
 			@keydown.escape.prevent="closeMenu">
-			<NcIconSvgWrapper :path="isOpen ? mdiChevronUp : mdiChevronDown" :size="18" />
+			<NcIconSvgWrapper
+				:path="isOpen ? mdiChevronUp : mdiChevronDown"
+				:size="18" />
 			<span>H</span>
 		</button>
 
-		<ul v-if="isOpen"
+		<ul
+			v-if="isOpen"
 			ref="menu"
 			class="markdown-heading-menu__menu"
 			role="menu"
 			:style="menuStyle"
 			@keydown.escape.prevent="closeMenu">
 			<li role="none">
-				<button type="button"
+				<button
+					type="button"
 					role="menuitem"
 					class="markdown-heading-menu__item"
 					@click="clearHeading">
-					<span class="markdown-heading-menu__option markdown-heading-menu__option--p">
+					<span
+						class="markdown-heading-menu__option markdown-heading-menu__option--p">
 						<!-- TRANSLATORS Menu option in the markdown editor that removes heading formatting and returns the text to normal paragraph style. -->
 						{{ t('communications', 'Paragraph') }}
 					</span>
 				</button>
 			</li>
 			<li v-for="level in headingLevels" :key="level" role="none">
-				<button type="button"
+				<button
+					type="button"
 					role="menuitem"
 					class="markdown-heading-menu__item"
 					@click="applyHeading(level)">
 					<span :class="headingClass(level)">
-						<span class="markdown-heading-menu__prefix">H{{ level }} </span>
+						<span class="markdown-heading-menu__prefix"
+							>H{{ level }}
+						</span>
 						<span>{{ headingText(level) }}</span>
 					</span>
 				</button>
@@ -63,7 +72,10 @@ defineOptions({
 })
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
-const emit = defineEmits<{ 'clear-heading': []; 'apply-heading': [level: HeadingLevel] }>()
+const emit = defineEmits<{
+	'clear-heading': []
+	'apply-heading': [level: HeadingLevel]
+}>()
 
 const headingLevels: HeadingLevel[] = [1, 2, 3, 4, 5, 6]
 
@@ -74,7 +86,10 @@ const isOpen = ref(false)
 const menuStyle = ref<CSSProperties>({})
 
 const headingClass = (level: number): string[] => {
-	return ['markdown-heading-menu__option', `markdown-heading-menu__option--${level}`]
+	return [
+		'markdown-heading-menu__option',
+		`markdown-heading-menu__option--${level}`,
+	]
 }
 
 const headingText = (level: number): string => {
@@ -114,7 +129,10 @@ const updateMenuPosition = () => {
 	const menuRect = menu.value.getBoundingClientRect()
 	const viewportWidth = window.innerWidth
 	const top = toggleRect.bottom + 6
-	const left = Math.min(Math.max(8, toggleRect.left), Math.max(8, viewportWidth - menuRect.width - 8))
+	const left = Math.min(
+		Math.max(8, toggleRect.left),
+		Math.max(8, viewportWidth - menuRect.width - 8),
+	)
 
 	menuStyle.value = {
 		position: 'fixed',

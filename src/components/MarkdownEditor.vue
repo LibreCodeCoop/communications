@@ -3,18 +3,28 @@
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 <template>
-	<div class="markdown-editor" :style="{ '--markdown-editor-min-height': minHeight, '--markdown-editor-max-height': maxHeight }">
+	<div
+		class="markdown-editor"
+		:style="{
+			'--markdown-editor-min-height': minHeight,
+			'--markdown-editor-max-height': maxHeight,
+		}">
 		<div v-if="label || description" class="markdown-editor__header">
 			<div class="markdown-editor__heading">
 				<label v-if="label" :for="editorId" class="markdown-editor__label">
 					{{ label }}
 				</label>
-				<p v-if="description" :id="descriptionId" class="markdown-editor__description">
+				<p
+					v-if="description"
+					:id="descriptionId"
+					class="markdown-editor__description">
 					{{ description }}
 				</p>
 			</div>
 		</div>
-		<div class="markdown-editor__toolbar" :aria-label="markdownFormattingShortcutsLabel">
+		<div
+			class="markdown-editor__toolbar"
+			:aria-label="markdownFormattingShortcutsLabel">
 			<!-- Group 1: headings -->
 			<HeadingMenu
 				class="markdown-editor__headings-menu"
@@ -22,14 +32,13 @@
 				@apply-heading="applyHeading" />
 			<span class="markdown-editor__toolbar-separator" aria-hidden="true" />
 			<!-- Group 2: inline emphasis -->
-			<NcButton variant="tertiary"
-				:aria-label="boldLabel"
-				@click="applyBold">
+			<NcButton variant="tertiary" :aria-label="boldLabel" @click="applyBold">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiFormatBold" :size="18" />
 				</template>
 			</NcButton>
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="italicLabel"
 				@click="applyItalic">
 				<template #icon>
@@ -38,21 +47,24 @@
 			</NcButton>
 			<span class="markdown-editor__toolbar-separator" aria-hidden="true" />
 			<!-- Group 3: block elements -->
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="unorderedListLabel"
 				@click="applyUnorderedList">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiFormatListBulleted" :size="18" />
 				</template>
 			</NcButton>
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="orderedListLabel"
 				@click="applyOrderedList">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiFormatListNumbered" :size="18" />
 				</template>
 			</NcButton>
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="blockquoteLabel"
 				@click="applyBlockquote">
 				<template #icon>
@@ -61,30 +73,31 @@
 			</NcButton>
 			<span class="markdown-editor__toolbar-separator" aria-hidden="true" />
 			<!-- Group 4: code and link -->
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="inlineCodeLabel"
 				@click="applyCode">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiCodeTags" :size="18" />
 				</template>
 			</NcButton>
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="codeBlockLabel"
 				@click="applyCodeBlock">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiCodeBraces" :size="18" />
 				</template>
 			</NcButton>
-			<NcButton variant="tertiary"
-				:aria-label="linkLabel"
-				@click="applyLink">
+			<NcButton variant="tertiary" :aria-label="linkLabel" @click="applyLink">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiLink" :size="18" />
 				</template>
 			</NcButton>
 			<span class="markdown-editor__toolbar-separator" aria-hidden="true" />
 			<!-- Group 5: separators -->
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="horizontalRuleLabel"
 				@click="applyHorizontalRule">
 				<template #icon>
@@ -93,7 +106,8 @@
 			</NcButton>
 			<span class="markdown-editor__toolbar-separator" aria-hidden="true" />
 			<!-- Group 6: history -->
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="undoLabel"
 				:disabled="!canUndo"
 				@click="undoAction">
@@ -101,7 +115,8 @@
 					<NcIconSvgWrapper :path="mdiUndo" :size="18" />
 				</template>
 			</NcButton>
-			<NcButton variant="tertiary"
+			<NcButton
+				variant="tertiary"
 				:aria-label="redoLabel"
 				:disabled="!canRedo"
 				@click="redoAction">
@@ -134,7 +149,15 @@ import { EditorView, lineNumbers, keymap } from '@codemirror/view'
 import type { ViewUpdate } from '@codemirror/view'
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { indentUnit, bracketMatching } from '@codemirror/language'
-import { defaultKeymap, indentWithTab, history, undo, redo, undoDepth, redoDepth } from '@codemirror/commands'
+import {
+	defaultKeymap,
+	indentWithTab,
+	history,
+	undo,
+	redo,
+	undoDepth,
+	redoDepth,
+} from '@codemirror/commands'
 import type { EditorState } from '@codemirror/state'
 import { material } from '@uiw/codemirror-theme-material'
 import {
@@ -158,26 +181,32 @@ import HeadingMenu from './markdown-editor/HeadingMenu.vue'
 defineOptions({
 	name: 'MarkdownEditor',
 })
-const props = withDefaults(defineProps<{
-	modelValue?: string
-	label?: string
-	description?: string
-	placeholder?: string
-	minHeight?: string
-	maxHeight?: string
-}>(), {
-	modelValue: '',
-	label: '',
-	description: '',
-	placeholder: '',
-	minHeight: '80px',
-	maxHeight: 'none',
-})
+const props = withDefaults(
+	defineProps<{
+		modelValue?: string
+		label?: string
+		description?: string
+		placeholder?: string
+		minHeight?: string
+		maxHeight?: string
+	}>(),
+	{
+		modelValue: '',
+		label: '',
+		description: '',
+		placeholder: '',
+		minHeight: '80px',
+		maxHeight: 'none',
+	},
+)
 const emit = defineEmits<{
 	(event: 'update:modelValue', value: string): void
 }>()
 // TRANSLATORS Accessible label for markdown toolbar containing formatting shortcut actions.
-const markdownFormattingShortcutsLabel = t('communications', 'Markdown formatting tools')
+const markdownFormattingShortcutsLabel = t(
+	'communications',
+	'Markdown formatting tools',
+)
 // TRANSLATORS Toolbar button label applying bold markdown formatting.
 const boldLabel = t('communications', 'Bold')
 // TRANSLATORS Toolbar button label applying italic markdown formatting.
@@ -201,7 +230,11 @@ const undoLabel = t('communications', 'Undo')
 // TRANSLATORS Toolbar button label for redo action in markdown editor.
 const redoLabel = t('communications', 'Redo')
 
-const toggleSurroundSelection = (view: EditorView, prefix: string, suffix: string = prefix) => {
+const toggleSurroundSelection = (
+	view: EditorView,
+	prefix: string,
+	suffix: string = prefix,
+) => {
 	const mainSelection = view.state.selection.main
 	const documentLength = view.state.doc.length
 	const markerStart = mainSelection.from - prefix.length
@@ -212,7 +245,10 @@ const toggleSurroundSelection = (view: EditorView, prefix: string, suffix: strin
 		const rightMarker = view.state.sliceDoc(mainSelection.to, markerEnd)
 
 		if (leftMarker === prefix && rightMarker === suffix) {
-			const selectedText = view.state.sliceDoc(mainSelection.from, mainSelection.to)
+			const selectedText = view.state.sliceDoc(
+				mainSelection.from,
+				mainSelection.to,
+			)
 
 			view.dispatch({
 				changes: {
@@ -268,7 +304,11 @@ const toggleLinePrefix = (view: EditorView, prefix: string) => {
 	for (let lineNo = fromLine.number; lineNo <= toLine.number; lineNo++) {
 		const line = state.doc.line(lineNo)
 		if (allHavePrefix) {
-			changes.push({ from: line.from, to: line.from + prefix.length, insert: '' })
+			changes.push({
+				from: line.from,
+				to: line.from + prefix.length,
+				insert: '',
+			})
 		} else {
 			changes.push({ from: line.from, to: line.from, insert: prefix })
 		}
@@ -302,7 +342,11 @@ const applyOrderedListToLines = (view: EditorView) => {
 		if (allHavePrefix) {
 			const match = line.text.match(orderedListRe)
 			if (match) {
-				changes.push({ from: line.from, to: line.from + match[0].length, insert: '' })
+				changes.push({
+					from: line.from,
+					to: line.from + match[0].length,
+					insert: '',
+				})
 			}
 		} else {
 			changes.push({ from: line.from, to: line.from, insert: `${counter}. ` })
@@ -325,12 +369,20 @@ const applyHeadingToLine = (view: EditorView, level: 1 | 2 | 3 | 4 | 5 | 6) => {
 		if (match[1].length === level) {
 			// Same level → remove heading
 			view.dispatch({
-				changes: { from: line.from, to: line.from + match[0].length, insert: '' },
+				changes: {
+					from: line.from,
+					to: line.from + match[0].length,
+					insert: '',
+				},
 			})
 		} else {
 			// Different level → replace
 			view.dispatch({
-				changes: { from: line.from, to: line.from + match[0].length, insert: prefix },
+				changes: {
+					from: line.from,
+					to: line.from + match[0].length,
+					insert: prefix,
+				},
 			})
 		}
 	} else {
@@ -353,7 +405,11 @@ const clearHeadingFromLine = (view: EditorView) => {
 		const line = state.doc.line(lineNo)
 		const match = line.text.match(headingRe)
 		if (match) {
-			changes.push({ from: line.from, to: line.from + match[0].length, insert: '' })
+			changes.push({
+				from: line.from,
+				to: line.from + match[0].length,
+				insert: '',
+			})
 		}
 	}
 
@@ -366,7 +422,8 @@ const clearHeadingFromLine = (view: EditorView) => {
 
 const insertMarkdownLink = (view: EditorView) => {
 	const mainSelection = view.state.selection.main
-	const selectedText = view.state.sliceDoc(mainSelection.from, mainSelection.to) || 'text'
+	const selectedText =
+		view.state.sliceDoc(mainSelection.from, mainSelection.to) || 'text'
 	const outputText = `[${selectedText}](https://)`
 
 	view.dispatch({
@@ -432,7 +489,9 @@ const insertHorizontalRule = (view: EditorView) => {
 	return true
 }
 
-const codeMirror = ref<{ view?: EditorView | { value: EditorView } | unknown } | null>(null)
+const codeMirror = ref<{
+	view?: EditorView | { value: EditorView } | unknown
+} | null>(null)
 const editorId = `markdown-editor-${Math.random().toString(36).substr(2, 9)}`
 const descriptionId = `${editorId}-description`
 const internalValue = ref(props.modelValue)
@@ -477,11 +536,14 @@ const extensions = computed(() => {
 	]
 })
 
-watch(() => props.modelValue, (newValue) => {
-	if (newValue !== internalValue.value) {
-		internalValue.value = newValue
-	}
-})
+watch(
+	() => props.modelValue,
+	(newValue) => {
+		if (newValue !== internalValue.value) {
+			internalValue.value = newValue
+		}
+	},
+)
 
 watch(internalValue, (newValue) => {
 	if (newValue !== props.modelValue) {
@@ -490,11 +552,13 @@ watch(internalValue, (newValue) => {
 })
 
 function isEditorView(view: unknown): view is EditorView {
-	return !!view
+	return (
+		!!view
 		&& typeof view === 'object'
 		&& 'state' in view
 		&& 'dispatch' in view
 		&& 'focus' in view
+	)
 }
 
 function getCurrentView() {
@@ -503,8 +567,14 @@ function getCurrentView() {
 		return null
 	}
 
-	if (codeMirrorRef.view && typeof codeMirrorRef.view === 'object' && 'value' in codeMirrorRef.view) {
-		return isEditorView(codeMirrorRef.view.value) ? codeMirrorRef.view.value : null
+	if (
+		codeMirrorRef.view
+		&& typeof codeMirrorRef.view === 'object'
+		&& 'value' in codeMirrorRef.view
+	) {
+		return isEditorView(codeMirrorRef.view.value)
+			? codeMirrorRef.view.value
+			: null
 	}
 
 	return isEditorView(codeMirrorRef.view) ? codeMirrorRef.view : null
@@ -523,7 +593,10 @@ function onEditorUpdate(viewUpdate: ViewUpdate) {
 	syncHistoryState(viewUpdate.state)
 }
 
-function withEditor(callback: (view: EditorView) => void, { focus = true }: { focus?: boolean } = {}) {
+function withEditor(
+	callback: (view: EditorView) => void,
+	{ focus = true }: { focus?: boolean } = {},
+) {
 	const view = getCurrentView()
 	if (!view) {
 		return
@@ -587,14 +660,20 @@ function applyLink() {
 }
 
 function undoAction() {
-	withEditor((view) => {
-		undo(view)
-	}, { focus: false })
+	withEditor(
+		(view) => {
+			undo(view)
+		},
+		{ focus: false },
+	)
 }
 function redoAction() {
-	withEditor((view) => {
-		redo(view)
-	}, { focus: false })
+	withEditor(
+		(view) => {
+			redo(view)
+		},
+		{ focus: false },
+	)
 }
 
 defineExpose({

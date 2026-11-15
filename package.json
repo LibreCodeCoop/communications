@@ -9,7 +9,7 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:libresign": "playwright test tests/e2e/libresign-event.spec.mjs",
-    "lint": "eslint src tests scripts vite*.ts vitest.config.ts playwright.config.mjs",
+    "lint": "eslint src tests scripts vite*.ts vitest.config.ts playwright.config.mjs && npm run format:vue",
     "audit": "npm audit --audit-level=high",
     "test": "npm run test:unit",
     "test:coverage": "vitest run --coverage",
@@ -20,7 +20,9 @@
     "stylelint": "stylelint \"src/**/*.{css,vue}\"",
     "test:mutation": "stryker run",
     "playwright": "playwright test",
-    "playwright:install-ci": "playwright install --with-deps chromium"
+    "playwright:install-ci": "playwright install --with-deps chromium",
+    "format:vue": "prettier --check \"src/**/*.vue\"",
+    "format:vue:fix": "prettier --write \"src/**/*.vue\""
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@nextcloud/prettier-config": "1.2.0",
     "@nextcloud/stylelint-config": "3.2.1",
     "@playwright/test": "1.65.0",
     "@stryker-mutator/core": "10.1.1",
@@ -51,6 +54,7 @@
     "eslint": "10.14.0",
     "eslint-plugin-vue": "10.12.1",
     "globals": "17.14.0",
+    "prettier": "3.9.10",
     "sass": "1.108.1",
     "stylelint": "17.16.0",
     "typescript": "6.0.3",
