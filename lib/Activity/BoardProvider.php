@@ -31,8 +31,8 @@ final class BoardProvider implements IProvider {
 	public function parse($language, IEvent $event, ?IEvent $previousEvent = null):IEvent {
 		$localized = $this->l10nFactory->get('communications', (string)$language);
 		if ($event->getApp() !== 'communications'
-	  || $event->getSubject() !== 'board_published'
-	  || $event->getObjectType() !== 'cc_board_announcement') {
+			|| $event->getSubject() !== 'board_published'
+			|| $event->getObjectType() !== 'cc_board_announcement') {
 			throw new UnknownActivityException();
 		}
 		try {

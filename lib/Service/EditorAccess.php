@@ -33,8 +33,8 @@ class EditorAccess {
 			return [];
 		}
 		return array_values(array_filter($value, fn ($id):bool
-		 => is_string($id) && preg_match('/^[A-Za-z0-9_.:@-]{1,64}$/D', $id) === 1
-		 && $this->groups->get($id) !== null));
+			=> is_string($id) && preg_match('/^[A-Za-z0-9_.:@-]{1,64}$/D', $id) === 1
+			&& $this->groups->get($id) !== null));
 	}
 	public function canEdit(?string $uid):bool {
 		if ($uid === null) {
@@ -61,7 +61,7 @@ class EditorAccess {
 		$selected = [];
 		foreach ($items as $id) {
 			if (!is_string($id) || !preg_match('/^[A-Za-z0-9_.:@-]{1,64}$/D', $id)
-	   || $this->groups->get($id) === null) {
+				|| $this->groups->get($id) === null) {
 				throw new InvalidArgumentException($this->l10n->t('Editorial group not found.'));
 			}
 			$selected[$id] = $id;

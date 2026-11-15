@@ -37,7 +37,7 @@ class EventStore {
 		// internal event ID. The worker revalidates campaign, audience and version.
 		foreach ($this->campaigns->activeForTrigger($event['trigger_key']) as $campaign) {
 			if ($campaign['board_visible'] || $campaign['notify_users'] || $campaign['notify_activity']
-	   || $campaign['notify_email'] || $campaign['gateway_channels'] !== []) {
+				|| $campaign['notify_email'] || $campaign['gateway_channels'] !== []) {
 				$this->jobs->add(EventChannelDeliveryJob::class, ['eventId' => (int)$event['id']]);
 				return;
 			}
@@ -71,8 +71,8 @@ class EventStore {
 		}
 		// Hash the caller's external ID to avoid persisting untrusted identifiers.
 		$dedupeKey = $idempotencyKey === null
-		 ? bin2hex(random_bytes(32))
-		 : hash('sha256', $uid . "\0" . $trigger . "\0" . $idempotencyKey);
+			? bin2hex(random_bytes(32))
+			: hash('sha256', $uid . "\0" . $trigger . "\0" . $idempotencyKey);
 		$existing = $this->byDedupeKey($dedupeKey);
 		if ($existing !== null) {
 			// A webhook replay may recover a job submission that had failed.

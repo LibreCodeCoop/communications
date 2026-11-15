@@ -23,7 +23,7 @@ final class EventChannelDeliveryJob extends QueuedJob {
 	}
 	protected function run($argument):void {
 		if (!is_array($argument) || !is_int($argument['eventId'] ?? null)
-	  || $argument['eventId'] <= 0) {
+			|| $argument['eventId'] <= 0) {
 			return;
 		}
 		$this->publisher->dispatchEvent($argument['eventId']);

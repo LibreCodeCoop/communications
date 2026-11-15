@@ -12,7 +12,9 @@ namespace OCA\Communications\Event;
 use OCP\EventDispatcher\Event;
 
 /**
- * Integration providers should register capabilities here only if their server-side adapter actually emits those events into EventStore. The catalog is metadata; it never executes arbitrary dynamic callbacks.
+ * Integration providers should register capabilities here only if their server-side adapter
+ * actually emits those events into EventStore. The catalog is metadata; it never executes
+ * arbitrary dynamic callbacks.
  */
 class RegisterTriggerCapabilitiesEvent extends Event {
 	private array $sources = [];
