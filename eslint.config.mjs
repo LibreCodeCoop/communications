@@ -8,6 +8,7 @@ import tsParser from '@typescript-eslint/parser'
 export default [
 	{
 		ignores: [
+			// Dependencies and generated files are not source code.
 			'node_modules/**',
 			'vendor/**',
 			'js/**',
@@ -20,6 +21,7 @@ export default [
 	...vue.configs['flat/essential'],
 	{
 		files: [
+			// TypeScript source and tests.
 			'**/*.ts',
 		],
 		languageOptions: {
@@ -28,6 +30,7 @@ export default [
 	},
 	{
 		files: [
+			// Vue single-file components.
 			'src/**/*.vue',
 		],
 		languageOptions: {
@@ -59,11 +62,12 @@ export default [
 			'no-undef': 'error',
 			'no-unreachable': 'error',
 			'no-constant-condition': 'error',
-			'complexity': ['warn', 15],
+			complexity: ['warn', 15],
 		},
 	},
 	{
 		files: [
+			// TypeScript and Vue identifiers are checked by their own parsers.
 			'**/*.ts',
 			'**/*.vue',
 		],

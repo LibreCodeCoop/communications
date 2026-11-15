@@ -8,7 +8,6 @@ export default defineConfig({
 	base: './',
 	define: {
 		appName: JSON.stringify('communications'),
-		appVersion: JSON.stringify('0.29.0'),
 		'process.env.NODE_ENV': JSON.stringify('production'),
 		'process.env': '{}',
 	},

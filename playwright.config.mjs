@@ -3,23 +3,27 @@
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
-  testDir: './tests/e2e',
-  testIgnore: process.env.NC_CI_DB && process.env.NC_CI_DB !== 'sqlite' ? ['**/libresign-event.spec.mjs'] : [],
-  timeout: 180_000,
-  expect: { timeout: 15_000 },
-  retries: process.env.CI ? 1 : 0,
-  workers: 1,
-  reporter: process.env.CI ? [['list'], ['blob']] : 'list',
-  tag: process.env.NC_CI_DB ? `@db-${process.env.NC_CI_DB}` : undefined,
-  use: {
-    baseURL: process.env.NC_BASE_URL || 'http://127.0.0.1:18884',
-    browserName: 'chromium',
-    headless: true,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    launchOptions: {
-      ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
-        ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}),
-    },
-  },
+	testDir: './tests/e2e',
+	testIgnore:
+		process.env.NC_CI_DB && process.env.NC_CI_DB !== 'sqlite'
+			? ['**/libresign-event.spec.mjs']
+			: [],
+	timeout: 180_000,
+	expect: { timeout: 15_000 },
+	retries: process.env.CI ? 1 : 0,
+	workers: 1,
+	reporter: process.env.CI ? [['list'], ['blob']] : 'list',
+	tag: process.env.NC_CI_DB ? `@db-${process.env.NC_CI_DB}` : undefined,
+	use: {
+		baseURL: process.env.NC_BASE_URL || 'http://127.0.0.1:18884',
+		browserName: 'chromium',
+		headless: true,
+		trace: 'retain-on-failure',
+		screenshot: 'only-on-failure',
+		launchOptions: {
+			...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+				? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+				: {}),
+		},
+	},
 })
