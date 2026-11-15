@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Communications\Service;
 
 use InvalidArgumentException;
+use OCA\Communications\Db\BoardMapper;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IConfig;
 use OCP\IDBConnection;
@@ -23,6 +24,7 @@ class BoardService {
 	public function __construct(
 		private CampaignRepository $campaigns,
 		private IDBConnection $db,
+		private BoardMapper $mapper,
 		private IUserManager $users,
 		private IGroupManager $groups,
 		private IConfig $config,
@@ -49,80 +51,6 @@ class BoardService {
 			&& $this->config->getUserValue($uid, 'communications', 'sponsored_optout', '0') === '1');
 	}
 
-	/** Recorded event-triggered Inbox receipt, indexed by campaign and epoch. */
-	private function eventInboxReceipts(string $uid):array {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('campaign_id', 'version')->from('cc_board_sent')->groupBy('campaign_id', 'version')
-			->where($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-			->andWhere($qb->expr()->eq('channel', $qb->createNamedParameter('inbox')))
-			->andWhere($qb->expr()->in('status', $qb->createNamedParameter(['claimed','sent'], IQueryBuilder::PARAM_STR_ARRAY)))
-			->executeQuery();
-		$keys = [];
-		foreach ($rs->fetchAllAssociative() as $row) {
-			$keys[(int)$row['campaign_id'] . ':' . (int)$row['version']] = true;
-		}
-		$rs->closeCursor();
-		return $keys;
-	}
-
-	/** Keyset pagination of true impressions, preserving the oldest receipts. */
-	private function deliveredAt(string $uid):array {
-		$map = [];
-		$before = null;
-		do {
-			$qb = $this->db->getQueryBuilder();
-			$qb->select('id', 'campaign_id', 'impression_at')->from('cc_deliveries')
-				->where($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-				->andWhere($qb->expr()->isNotNull('impression_at'))
-				->orderBy('id', 'DESC')->setMaxResults(500);
-			if ($before !== null) {
-				$qb->andWhere($qb->expr()->lt('id', $qb->createNamedParameter($before, IQueryBuilder::PARAM_INT)));
-			}
-			$rs = $qb->executeQuery();
-			$rows = $rs->fetchAllAssociative();
-			$rs->closeCursor();
-			foreach ($rows as $row) {
-				$before = (int)$row['id'];
-				$id = (int)$row['campaign_id'];
-				$map[$id] = max($map[$id] ?? 0, (int)$row['impression_at']);
-			}
-		} while (count($rows) === 500);
-		return $map;
-	}
-
-	/** Keyset pagination of user reading state, no first-2000 truncation. */
-	private function readAt(string $uid):array {
-		$map = [];
-		$after = null;
-		do {
-			$qb = $this->db->getQueryBuilder();
-			$qb->select('campaign_id', 'read_at')->from('cc_inbox_reads')
-				->where($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-				->orderBy('campaign_id', 'ASC')->setMaxResults(500);
-			if ($after !== null) {
-				$qb->andWhere($qb->expr()->gt('campaign_id', $qb->createNamedParameter($after, IQueryBuilder::PARAM_INT)));
-			}
-			$rs = $qb->executeQuery();
-			$rows = $rs->fetchAllAssociative();
-			$rs->closeCursor();
-			foreach ($rows as $row) {
-				$after = (int)$row['campaign_id'];
-				$map[$after] = (int)$row['read_at'];
-			}
-		} while (count($rows) === 500);
-		return $map;
-	}
-
-	private function countComments(int $id): int {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select($qb->func()->count('id'))->from(self::TABLE)
-			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'))->executeQuery();
-		$n = (int)$rs->fetchOne();
-		$rs->closeCursor();
-		return $n;
-	}
-
 	private function payload(array $c, string $uid, ?int $deliveredAt = null, ?int $readAt = null):array {
 		$c = CampaignRepository::localize($c, $this->config->getUserValue($uid, 'core', 'lang', ''));
 		return [
@@ -134,7 +62,7 @@ class BoardService {
 			'startsAt' => $c['starts_at'],
 			'endsAt' => $c['ends_at'], 'inInbox' => $c['board_visible'],
 			'commentsEnabled' => $c['board_visible'] && $c['comments_enabled'],
-			'commentCount' => $this->countComments((int)$c['id']),
+			'commentCount' => $this->mapper->countComments((int)$c['id']),
 			'textAlign' => $c['text_align'], 'textColor' => $c['text_color'],
 			'author' => $this->users->getDisplayName($c['created_by']) ?: $c['created_by'],
 			'category' => $c['category'],
@@ -145,9 +73,9 @@ class BoardService {
 	public function list(string $uid, int $page = 1, string $search = '', string $filter = 'all'):array {
 		$page = max(1, min(100000, $page));
 		$search = mb_strtolower(mb_substr(trim($search), 0, 80));
-		$receipts = $this->deliveredAt($uid);
-		$eventInbox = $this->eventInboxReceipts($uid);
-		$reads = $this->readAt($uid);
+		$receipts = $this->mapper->deliveredAt($uid);
+		$eventInbox = $this->mapper->eventInboxReceipts($uid);
+		$reads = $this->mapper->readAt($uid);
 		$found = [];
 		$unreadTotal = 0;
 		foreach ($this->campaigns->scan() as $c) {
@@ -212,12 +140,12 @@ class BoardService {
 		if (!$c) {
 			return null;
 		}
-		$receipts = $this->deliveredAt($uid);
-		if (!$this->eligible($c, $uid, $this->eventInboxReceipts($uid))
+		$receipts = $this->mapper->deliveredAt($uid);
+		if (!$this->eligible($c, $uid, $this->mapper->eventInboxReceipts($uid))
 			&& !$this->outboundFor($uid, $c)) {
 			return null;
 		}
-		$reads = $this->readAt($uid);
+		$reads = $this->mapper->readAt($uid);
 		return $this->payload($c, $uid, $receipts[$id] ?? null, $reads[$id] ?? null);
 	}
 
