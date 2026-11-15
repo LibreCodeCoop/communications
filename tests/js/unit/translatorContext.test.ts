@@ -25,7 +25,7 @@ test('short status, visual-theme and icon choices explain their UI context', () 
 			'const search',
 		),
 		...withoutHints(
-			'src/CampaignAdmin.vue',
+			'src/composables/useCampaignEditorOptions.ts',
 			'const themeOptions = [',
 			'const selectable',
 		),

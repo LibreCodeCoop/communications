@@ -12,6 +12,7 @@ import {
 	fetchCampaigns,
 	moveCampaign,
 	persistCampaign,
+	persistEditorGroups,
 	purgeCampaign,
 } from '../services/campaigns'
 import { announceCampaignChanged } from '../services/campaignUpdates'
@@ -40,6 +41,13 @@ export const useCampaignStore = defineStore('campaigns', () => {
 		} finally {
 			loading.value = false
 		}
+	}
+
+	/** Persist editorial permissions and keep the shared catalog current. */
+	async function updateEditorGroups(groups: string[]): Promise<string[]> {
+		const saved = await persistEditorGroups(groups)
+		catalog.value = { ...catalog.value, editorGroups: saved }
+		return saved
 	}
 
 	async function mutate<T>(action: () => Promise<T>): Promise<T> {
@@ -88,6 +96,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
 		catalog,
 		loading,
 		load,
+		updateEditorGroups,
 		refresh,
 		updateStatus,
 		reorder,

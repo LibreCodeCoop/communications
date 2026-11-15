@@ -3,12 +3,61 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { t } from '@nextcloud/l10n'
+import { DEFAULT_BANNER_COLOR } from '../bannerAppearance'
 import type {
 	CampaignForm,
 	CampaignRecord,
 	GroupSelection,
 	UserSelection,
 } from '../types/communications'
+
+export function makeDefaultCampaignForm(): CampaignForm {
+	return {
+		name: '',
+		description: '',
+		headline: '',
+		message: '',
+		cta_label: '',
+		cta_url: '',
+		trigger_key: '',
+		page_route: '',
+		page_filters: {},
+		audience_type: 'all',
+		audience_groups: [],
+		audience_users: [],
+		presentation: 'banner',
+		status: 'draft',
+		priority: 10,
+		placement: 'any',
+		app_target_mode: 'area',
+		app_target_apps: [],
+		frequency: 'event',
+		min_interval_minutes: 0,
+		max_total: 0,
+		max_per_day: 0,
+		category: 'institutional',
+		theme: 'info',
+		banner_color: DEFAULT_BANNER_COLOR,
+		banner_icon: 'auto',
+		board_visible: false,
+		guest_visible: false,
+		comments_enabled: true,
+		dismissible: true,
+		notify_users: false,
+		notify_activity: false,
+		notify_email: false,
+		gateway_channels: [],
+		text_align: 'left',
+		text_color: '',
+		manual_order: 0,
+		translated_content: {},
+		group_match: 'any',
+		excluded_match: 'any',
+		excluded_groups: [],
+		starts_at: null,
+		ends_at: null,
+	}
+}
 
 export type CampaignSavePayload = Omit<CampaignForm, 'starts_at' | 'ends_at'> & {
 	starts_at: number | null

@@ -16,6 +16,7 @@ const mock = vi.hoisted(() => ({
 	archiveCampaign: vi.fn(),
 	purgeCampaign: vi.fn(),
 	persistCampaign: vi.fn(),
+	persistEditorGroups: vi.fn(),
 	announce: vi.fn(),
 }))
 vi.mock('../../../src/services/campaigns', () => mock)
@@ -122,5 +123,20 @@ describe('campaign management store', () => {
 		expect((await store.save(payload, null)).id).toBe(8)
 		expect(mock.persistCampaign).toHaveBeenCalledWith(payload, null)
 		expect(mock.announce).toHaveBeenCalledTimes(3)
+	})
+	it('updates editor permissions in the catalog only after persistence succeeds', async () => {
+		const store = useCampaignStore()
+		await store.load()
+		mock.persistEditorGroups.mockResolvedValue(['reviewers'])
+		await expect(store.updateEditorGroups(['reviewers'])).resolves.toEqual([
+			'reviewers',
+		])
+		expect(mock.persistEditorGroups).toHaveBeenCalledWith(['reviewers'])
+		expect(store.catalog.editorGroups).toEqual(['reviewers'])
+		expect(mock.announce).not.toHaveBeenCalled()
+
+		mock.persistEditorGroups.mockRejectedValue(new Error('403'))
+		await expect(store.updateEditorGroups(['admins'])).rejects.toThrow('403')
+		expect(store.catalog.editorGroups).toEqual(['reviewers'])
 	})
 })
