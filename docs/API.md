@@ -1,217 +1,155 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 SPDX-License-Identifier: AGPL-3.0-or-later -->
-# API local — Contextual Campaigns 0.11.0
+# Communications API (experimental)
 
-**Contrato experimental; não estabilizado para integrações externas.** Instância isolada com Nextcloud 36 master. Todas as URLs são relativas a `/index.php/apps/contextualcampaigns`.
+This document describes the **Communications** Nextcloud app (`communications`), version 0.29.0, on Nextcloud 36 development builds. This API is not a stable integration contract. All URLs below are relative to `/index.php/apps/communications`. Test integrations against an isolated instance.
 
-## Autenticação e público
+## Authentication and access control
 
-- Rotas administrativas requerem usuário **administrador** com sessão autenticada Nextcloud.
-- Rotas de entrega requerem sessão de usuário Nextcloud; as escritas exigem token CSRF (`requesttoken`) do próprio usuário.
-- Rotas não aceitam que o navegador forneça o UID. O backend deriva o destinatário a partir da sessão.
-- Única rota pública: `POST /api/hooks/event`, protegida por HMAC SHA-256 sobre o corpo original.
-- Não incluir credenciais de API, segredo HMAC ou identificadores de documentos dentro de campanhas.
+- Publication management and catalog endpoints require a Nextcloud session with editorial permission: an administrator or a member of a configured editor group.
+- Only administrators can read or change editorial group delegation.
+- Inbox, delivery, gateway-preference and ordinary user-preference endpoints operate on the authenticated user's session. Callers cannot supply a different account UID to impersonate a recipient. Mutating session endpoints require the normal Nextcloud CSRF request token.
+- `GET /api/public-banners` exposes only the restricted anonymous banner projection; `POST /api/hooks/event` is the only unauthenticated write endpoint and requires an HMAC signature. Neither grants anonymous access to private publications.
+- Do not place API secrets, external document identifiers or recipient credentials in publication content.
 
-## Catálogo orientado à intenção
+## Discovery and editor permissions
 
-`GET /api/catalog` retorna `automation.intents` (**3 opções**), `automation.sources` (adaptadores confiáveis de eventos), `automation.applications` (união de origens de eventos com aplicativos que possuem interface navegável) e `automation.placements` (locais de exibição). A lista `triggers` permanece por compatibilidade com campanhas anteriores; não deve ser usada como seletor único de centenas de eventos.
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/catalog` | Available triggers, automation intents, sources, applications, placements, delivery channels and editorial settings |
+| GET | `/api/routes?app=files` | Server-filtered navigable GET route patterns for an available app |
+| GET | `/api/users?search=...` | Restricted user suggestions for publication audiences |
+| GET | `/api/editor-groups` | Current editor delegation; administrator only |
+| POST | `/api/editor-groups` | Replace delegated editor groups; administrator only |
 
-Exemplo de parte da resposta:
+`/api/catalog` returns `automation.intents`, `automation.sources`, `automation.applications`, `automation.placements`, `deliveryChannels`, `groups`, `statuses` and `presentations`. The `triggers` array is retained for older clients; use the intent/source catalog for new editor flows. Event sources can come from installed apps without a Communications-specific adapter. Display labels depend on the Nextcloud locale; integrate using stable IDs, not localized text.
 
-```json
-{
-  "automation": {
-    "intents": [{"id":"app","label":"Em um aplicativo","description":"Ação realizada ou visita a uma página do aplicativo"}],
-    "sources": [{"id":"files","appId":"files","intent":"action","label":"Arquivos",
-      "actions":[{"key":"nextcloud.files.created","label":"Arquivo criado","description":"Depois que alguém enviar ou criar um arquivo"}]}],
-    "applications": [{"id":"files","label":"Arquivos","canEvents":true,"canPages":true,
-      "actions":[{"key":"nextcloud.files.created","label":"Arquivo criado","description":"Depois que alguém enviar ou criar um arquivo"}]},
-      {"id":"dashboard","label":"Dashboard","canEvents":false,"canPages":true,"actions":[]}],
-    "placements": [{"value":"any","label":"Qualquer página compatível"},{"value":"files","label":"Arquivos (Files)"}]
-  }
-}
-```
+A page trigger (`trigger_key=nextcloud.page.opened`) requires a concrete navigable `placement` and, optionally, an exact `page_route` pattern returned by `/api/routes`. An empty `page_route` matches any supported page in that app, not every page in Nextcloud. The route discovery is heuristic and uses Nextcloud internals: an API endpoint or a concrete user-specific URL is not a valid route-pattern substitute.
 
-Para listar as páginas de um aplicativo, o administrador consulta:
+## Publication management
 
-```text
-GET /index.php/apps/contextualcampaigns/api/routes?app=files
-```
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/campaigns` | List publications visible to an editor |
+| GET | `/api/campaigns/{id}` | Get a publication |
+| POST | `/api/campaigns` | Create a publication (HTTP 201) |
+| PUT | `/api/campaigns/{id}` | Update a publication |
+| POST | `/api/campaigns/{id}/status` | Set `active`, `paused`, `draft` or `archived` |
+| POST | `/api/campaigns/{id}/duplicate` | Copy a publication as a draft (HTTP 201) |
+| POST | `/api/campaigns/{id}/move` | Change manual order using `direction` and optional `target_id` |
+| DELETE | `/api/campaigns/{id}` | Archive without deleting the record |
+| POST | `/api/campaigns/{id}/purge` | Permanently remove an archived publication after matching `confirmName` |
+| GET | `/api/campaigns/{id}/metrics` | Aggregated, explicitly **unaudited** delivery counters |
 
-Exemplo de resposta (padrões de rota, não URLs reais dos usuários):
-
-```json
-{
-  "app": "files",
-  "routes": [
-    {"value": "/apps/files/", "label": "Página principal", "description": "/apps/files/"},
-    {"value": "/apps/files/{view}", "label": "Página /{view}", "description": "/apps/files/{view}"},
-    {"value": "/apps/files/{view}/{fileid}", "label": "Página /{view}/{fileid}", "description": "/apps/files/{view}/{fileid}"}
-  ]
-}
-```
-
-O retorno pode variar conforme os aplicativos e a versão do Nextcloud. Não inclui `/apps/files/api/v1/stats` nem endpoints OCS. **Não use este catálogo como substituto de um teste de renderização HTML; a classificação por rotas é heurística.**
-
-Fontes com mais eventos são agrupadas por aplicativo. Para aparecer como **origem de evento**, basta oferecer classe PHP de evento descoberta automaticamente ou um adaptador semântico opcional; para aparecer como **origem de visita**, precisa ter uma página reconhecida na navegação da instância. O Dashboard pode, portanto, aparecer sem adaptador de eventos. Provedores de eventos registram metadados via `RegisterTriggerCapabilitiesEvent` e ocorrências confiáveis via `EventStore::record()`. Consulte [AUTOMATION.md](AUTOMATION.md).
-
-O painel oferece busca por nome, descrição, palavras-chave e ações, limitada a 12 sugestões por vez. `placement` é validado contra a navegação disponível; `page_route`, quando informado, deve corresponder exatamente a um padrão de rota web GET disponibilizado pelo servidor. A descoberta das rotas é heurística e usa uma interface interna do Nextcloud, portanto precisa ser revalidada nas atualizações do servidor.
-
-## Administração
-
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/api/catalog` | Catálogo de opções, fontes de eventos, aplicativos navegáveis e locais disponíveis |
-| GET | `/api/routes?app=files` | Rotas web GET selecionáveis do aplicativo, filtradas no servidor |
-| GET | `/api/users?search=...` | Pesquisa limitada a administradores |
-| GET | `/api/campaigns` | Listar campanhas, incluindo arquivadas, até 500 |
-| GET | `/api/campaigns/{id}` | Ler campanha |
-| POST | `/api/campaigns` | Criar campanha (201) |
-| PUT | `/api/campaigns/{id}` | Atualizar campos (200) |
-| POST | `/api/campaigns/{id}/status` | Ativar, pausar, rascunho, arquivar |
-| POST | `/api/campaigns/{id}/duplicate` | Duplicar em rascunho (201) |
-| DELETE | `/api/campaigns/{id}` | Arquivar sem excluir o registro |
-| GET | `/api/campaigns/{id}/metrics` | Contadores agregados, não auditados |
-
-### Campanha de exemplo
+Example `POST /api/campaigns` body, using a recipient that exists in the test instance:
 
 ```json
 {
-  "name": "Orientações após compartilhar",
-  "description": "Campanha interna de orientação.",
-  "headline": "Compartilhamento realizado",
-  "message": "**Sua nuvem, suas regras.**\n\n- Verifique os destinatários.\n- Revise as permissões.",
-  "cta_label": "Abrir arquivos",
-  "cta_url": "/index.php/apps/files/files",
-  "trigger_key": "nextcloud.share.created",
-  "audience_type": "group",
-  "audience_groups": ["team-a", "team-b"],
-  "audience_users": [],
-  "group_match": "any",
-  "excluded_groups": ["no-promotions"],
-  "placement": "files",
-  "page_route": "",
-  "presentation": "banner",
+  "name": "Security update",
+  "headline": "Review the updated access policy",
+  "message": "Check your sharing permissions.",
+  "trigger_key": "nextcloud.board.published",
   "status": "draft",
-  "priority": 25,
-  "starts_at": null,
-  "ends_at": null,
-  "frequency": "weekly",
-  "min_interval_minutes": 0,
-  "max_per_day": 1,
-  "max_total": 4,
+  "presentation": "none",
+  "board_visible": true,
+  "audience_type": "users",
+  "audience_users": ["example_user"],
+  "placement": "any",
+  "frequency": "once",
   "category": "institutional",
-  "theme": "default"
+  "notify_users": false,
+  "notify_activity": false,
+  "notify_email": false,
+  "gateway_channels": [],
+  "priority": 10,
+  "starts_at": null,
+  "ends_at": null
 }
 ```
 
-Os campos `audience_groups` e `audience_users` são arrays de identificadores. Na modalidade `group`, o critério `group_match=any` representa OU e `all` representa E. `excluded_groups` tem prioridade sobre as inclusões. `audience_group` singular permanece aceito como compatibilidade legado.
+`name`, `headline`, `message`, `trigger_key`, `status`, `presentation` and `audience_type` are required. The service validates target accounts/groups, registered triggers, publication status, timing and channel combinations. Invalid payloads return HTTP 422. If `audience_type=group`, supply `audience_groups`; `group_match` supports `any` or `all`, and `excluded_groups` takes precedence over inclusions. For a scheduled `nextcloud.time.window` trigger, `starts_at` is required.
 
-`trigger_key` é um dos identificadores do catálogo. `placement` é `any`, `settings` ou o ID de um aplicativo navegável como `files` e `dashboard`. Para `trigger_key=nextcloud.page.opened`, **`placement` identifica o aplicativo visitado** e `page_route` opcional especifica um padrão retornado por `/api/routes?app=<id>`, por exemplo `/apps/files/{view}`. `page_route=""` significa qualquer página desse aplicativo, não qualquer página do Nextcloud; URLs concretas, caminhos de API e rotas externas não são aceitos. Para os demais gatilhos, `page_route` fica vazio. `frequency`: `event`, `once`, `daily`, `weekly`, `custom`. Quando `custom`, `min_interval_minutes` informa o limite inferior. `max_per_day` conta exposições nas últimas 24 horas, não no dia civil. `max_total=0` e `max_per_day=0` significam ilimitado, exceto conteúdo patrocinado, que recebe limite conservador de duas exposições/24h se não configurado.
+`presentation` accepts `banner`, `modal`, `none` and the legacy `board` value. `board_visible` independently controls the Inbox copy. `notify_users`, `notify_activity`, `notify_email` and `gateway_channels` choose optional additional delivery channels; at least one destination is required. A `presentation=none` publication with no Inbox and no outbound channel is invalid. See [Delivery channels](DELIVERY_CHANNELS.md).
 
-`category`: `institutional` ou `sponsored`. Conteúdo patrocinado é identificado visualmente e admite preferência de ocultação por usuário. `theme`: `default`, `primary` ou `warning`.
+`frequency` accepts `event`, `once`, `daily`, `weekly` and `custom`. `min_interval_minutes`, `max_per_day` and `max_total` constrain repeated deliveries. Sponsored publications have a conservative default daily ceiling when the maximum is omitted. `starts_at` and `ends_at` are Unix timestamps (or null), checked on the server; the end must be after the start. The API allows safe internal paths, HTTP(S), `mailto:` and `tel:` for CTA links, with label and URL provided together.
 
-`starts_at`/`ends_at` são timestamps Unix ou null; as datas são avaliadas no servidor. `published_at` é calculado e mantido pelo backend: só eventos posteriores à ativação entram na entrega.
+For localization, `translated_content` is a mapping from supported locale identifiers (for example `pt_BR`) to translated `headline`, `message` and `cta_label`. Do not confuse publication-localized content with the app's Nextcloud translation catalogs.
 
-**Validações:** títulos e mensagem obrigatórios, HTTPS ou rota interna no CTA, grupo/usuário existente, enumerações e limites restritos, intervalo temporal válido. Campos inválidos respondem HTTP 422.
+## Recipient delivery and Inbox
 
-## Entrega e reconhecimento
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/pending?page=files&path=...` | Diagnostic listing without taking a delivery reservation |
+| POST | `/api/claim` | Reserve one eligible contextual delivery for the current tab |
+| POST | `/api/claim-batch` | Reserve up to five eligible contextual deliveries (`limit`, maximum 5) |
+| POST | `/api/impression` | Record presentation of a reserved delivery |
+| POST | `/api/ack` | Acknowledge or dismiss a reserved delivery |
+| POST | `/api/click` | Record CTA interaction with a reserved delivery |
+| GET | `/api/preferences` | Current user's `sponsoredOptout` setting |
+| POST | `/api/preferences` | Set `sponsoredOptout` |
+| GET | `/api/board` | Paginated recipient Inbox; supports `page`, `search` and `filter=unread` |
+| GET | `/api/board/{id}` | Authorized details of an Inbox or eligible outbound publication |
+| POST | `/api/board/{id}/read` | Mark an Inbox item as read |
+| GET | `/api/board/{id}/comments` | Visible comments for that item |
+| POST | `/api/board/{id}/comments` | Add a comment |
+| DELETE | `/api/board/{id}/comments/{commentId}` | Delete an authorized comment |
+| GET | `/api/board/{id}/mentions?search=...` | Authorized mention suggestions |
+| GET | `/api/public-banners` | Restricted, read-only anonymous banner feed |
 
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/api/claim` | Reservar uma entrega para a aba atual |
-| POST | `/api/impression` | Informar montagem visual de uma entrega reservada |
-| POST | `/api/ack` | Informar dispensa/fechamento |
-| POST | `/api/click` | Informar clique no CTA |
-| GET | `/api/pending?page=files&path=/index.php/apps/files/recent` | Consulta diagnóstica sem reservar; caminhos web restritos são validados |
-| GET | `/api/preferences` | Ler preferência de publicidade |
-| POST | `/api/preferences` | Atualizar preferência |
-
-**Reserva:**
+Example claim input:
 
 ```json
 {"page": "files", "path": "/index.php/apps/files/recent", "newVisit": true}
 ```
 
-`path` é o caminho de navegação do navegador, **sem query string nem fragmento**. Para campanhas `nextcloud.page.opened`, somente visitas a rotas web válidas podem criar uma ocorrência. A API de `claim` recebe o caminho do cliente; portanto, o evento de visita **não constitui prova auditável de navegação humana**, e não pode ser usado isoladamente para faturamento ou antifraude.
+The server identifies the recipient from the authenticated session. The claim response contains `campaign`, which is null if no delivery is available. For a claimed item, use the returned `deliveryId` and `claimToken` in `/api/impression`, `/api/ack` or `/api/click`:
 
-**Resposta:**
+```json
+{"deliveryId": 456, "claimToken": "returned-reservation-token"}
+```
+
+A reservation is not transferable to another user or publication. Invalid transitions return HTTP 409. The `path` parameter is a client-provided navigation path without a query string or fragment; it is not independently auditable proof of human navigation. Similarly, an impression records browser feedback, **not** confirmed human attention or billable reach.
+
+## Recipient gateway preferences
+
+`GET /api/gateway-preferences` lists available providers and the current user's saved channel destinations and consent. `POST /api/gateway-preferences` replaces that user's entire set of channel preferences. It expects a keyed `channels` object, for example:
 
 ```json
 {
-  "campaign": {
-    "campaignId": 123,
-    "deliveryId": 456,
-    "eventId": "be3a5a40-4185-52d3-13ce-8045131e8e12",
-    "claimToken": "<token temporário>",
-    "title": "Comunicado",
-    "message": "Conteúdo formatado em Markdown.",
-    "presentation": "banner",
-    "ctaLabel": "Saiba mais",
-    "ctaUrl": "/index.php/apps/files/files",
-    "category": "institutional",
-    "theme": "default",
-    "priority": 10
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "destination": "123456789",
+      "sponsored": false
+    }
   }
 }
 ```
 
-Quando não houver nada elegível, retorna `{"campaign":null}`.
+Only supported configured channels can actually send messages. Omitting or disabling a channel removes its stored destination. Consent for sponsored content is separate. See [Two-Factor Gateway and consent](TWO_FACTOR_GATEWAY.md).
 
-A reserva dura **90 segundos** e não pode ser usada por outro usuário ou outra campanha. Reservas de eventos distintos da mesma campanha para o mesmo usuário também são coordenadas. Um frontend deve apresentar o item recebido, enviar `/api/impression` e, no fechamento ou clique, `/api/ack` ou `/api/click`:
+## HMAC-authenticated incoming webhook
 
-```json
-{"deliveryId": 456, "claimToken": "<token temporário>"}
-```
+`POST /api/hooks/event` accepts one event for **one campaign and one existing Nextcloud UID**. It is not a general broadcast endpoint.
 
-Se a pessoa passar mais de 90 segundos lendo um conteúdo já marcado como apresentado, a dispensa e o clique ainda são aceitos usando o token original, desde que o registro continue com aquele token. O reconhecimento incorreto retorna HTTP 409. Respostas repetidas de impressão e dispensa são idempotentes. Conteúdos em `/api/pending` ainda não contam como impressões.
+- Configure the sensitive `communications` app setting `webhook_secret` on the server with at least 32 characters. Without it, requests receive HTTP 503.
+- Send raw JSON (at most 8192 bytes) and headers `X-CC-Timestamp: <Unix-seconds>` and `X-CC-Signature: sha256=<lowercase-hex-HMAC>`.
+- Compute the signature over the exact byte string `timestamp + "." + raw_request_body`, using HMAC-SHA256 and the secret.
+- Timestamps must fall within 300 seconds of server time.
+- Require `campaignId` (a positive integer, referencing an active `external.webhook` publication), `uid` (one existing account) and `eventId` (a nonempty external identifier).
 
-**Importante:** `/api/impression` é uma informação fornecida pelo navegador; não demonstra que houve atenção, leitura humana ou veiculação faturável. Não use essas contagens para cobrança até implementar detecção de visibilidade, controle contra fraude e auditoria independente.
-
-Preferência para ocultar publicidade patrocinada:
-
-```json
-{"sponsoredOptout": true}
-```
-
-Retorno de `GET /api/preferences`: `{"sponsoredOptout":true|false}`.
-
-## Webhook público autenticado
-
-`POST /api/hooks/event`.
-
-- `Content-Type: application/json`
-- `X-CC-Timestamp: <segundos Unix>`
-- `X-CC-Signature: sha256=<HMAC-SHA256 em hexadecimal>`
-- A string assinada é `timestamp + "." + corpo_json_bruto`.
-- Tolerância máxima de relógio: 300 segundos.
-- O segredo `webhook_secret` deve ter pelo menos 32 caracteres e ser configurado no servidor em chave sensível de aplicativo; nunca transportá-lo no navegador.
-- O JSON exige **`campaignId`**, **`uid`** e **`eventId`**. `campaignId` identifica uma campanha ativa configurada para `external.webhook`. `uid` identifica **uma única conta do Nextcloud**; a integração não pode indicar um grupo ou todos os usuários em uma chamada. Não inclui conteúdo de arquivo. O público-alvo e os limites de frequência continuam sendo validados pelo servidor.
-- O `eventId` externo é deduplicado **por campanha e usuário**. Identificador repetido para o mesmo `campaignId`/`uid` retorna a mesma ocorrência; a mesma chamada não dispara outras campanhas.
-- HTTP 202 aceito, 401 assinatura inválida, 422 usuário/evento inválido, 503 webhook sem segredo configurado.
-
-Exemplo de payload:
+Example body:
 
 ```json
-{"campaignId":42,"uid":"example_user","eventId":"integration-2026-11-07-001"}
+{"campaignId": 42, "uid": "example_user", "eventId": "external-event-2026-001"}
 ```
 
-Este endpoint registra uma ocorrência `external.webhook` **exclusivamente** para a campanha e o UID informados. Uma chamada não aciona todas as campanhas com gatilho de webhook, nem envia a todos os usuários. A campanha precisa estar ativa; a apresentação ocorrerá apenas na próxima visita elegível do destinatário. O webhook **não autentica a identidade empresarial do emissor além do segredo HMAC comum**. Produção multi-inquilino precisa de credenciais por integração, autorização por escopo, revogação, rotação de chaves e rate limiting. Uma integração futura com LibreSign deve usar um evento confiável de assinatura concluída e não depender de mudanças de URL ou DOM.
+HTTP 202 records the accepted event; invalid signatures return 401, invalid recipients/campaigns/events return 422, oversize bodies return 400, and server processing errors return 500. An external event identifier is deduplicated for the campaign/recipient context. Audience authorization and delivery frequency remain enforced. A shared HMAC key is **not** per-tenant authorization, and production integrations would need scoped credentials, revocation, rotation and rate limits.
 
-## Integração Nextcloud Flow
+## Compatibility and limitations
 
-A operação `Disparar campanha contextual` foi registrada no motor de operações do Nextcloud. Para usar:
-1. Crie uma campanha com gatilho `nextcloud.flow.matched`.
-2. Em Administração → Flow, configure uma regra sobre evento de arquivo, com ao menos uma condição e a operação deste aplicativo.
-3. Selecione a campanha pelo **nome**, usando o componente `NcSelect` fornecido pelo aplicativo na própria interface Flow; não é necessário digitar o ID.
-4. Um evento que cumprir a regra gera uma ocorrência vinculada exclusivamente àquele ID.
-
-A classe implementa `ISpecificOperation`, escopo de administração e eventos reais de arquivo. **Uma regra real foi validada de ponta a ponta** com evento de criação de arquivo e condição MIME `text/plain`, upload WebDAV, ocorrência registrada e entrega disponível. O componente de seleção pelo nome também foi verificado na tela administrativa do Flow. A capacidade de construir fluxos com entidades de outros aplicativos depende de integrações específicas.
-
-## Limitações atuais
-
-- Contagem e limites por usuário; não existe cobrança por anunciante, medição auditada ou medição por tenant.
-- Filtragem da fila usa eventos recentes de até 30 dias; o job de limpeza foi registrado, requer cron do Nextcloud ativo.
-- Adaptação para signatários **convidados sem login** e eventos de assinatura LibreSign ainda não existe.
-- Não há envio automático por Notifications/Announcement Center, integração de conteúdo com Mautic, traduções por campanha nem ACL delegada a anunciantes.
-- Não inserir HTML arbitrário. O visual usa Markdown renderizado pelo `NcRichText`.
+- `GET /api/routes` uses Nextcloud internal route metadata and must be revalidated after server upgrades.
+- Nextcloud native app events and the webhook are different trust boundaries; an internal event is not proof that an external PDF was signed.
+- Anonymous banners must be institutional, public-to-all, time-scheduled and free of private outbound channels.
+- Delivery counters, impressions and browser-reported navigation are not audited billing evidence.
+- This experimental API and its database schema are not a migration contract for the previous `contextualcampaigns` proof of concept.

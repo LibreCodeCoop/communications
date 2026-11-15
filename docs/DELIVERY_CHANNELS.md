@@ -1,121 +1,57 @@
 <!-- SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 SPDX-License-Identifier: AGPL-3.0-or-later -->
-# Formas de entrega independentes (Comunicações 0.28.0)
+# Independent delivery channels
 
-A mensagem, o público, a vigência, a apresentação e os canais de entrega
-pertencem à mesma publicação. A Caixa de entrada é opcional: não é mais uma
-dependência para o envio por outros canais.
+Communications 0.29.0 provides one publication editor, a recipient audience, a lifecycle, and independently selected delivery channels. The trigger determines **when** a publication or recipient-scoped event becomes eligible; the channels determine **where** its content appears or is sent. A copy in the Inbox is optional.
 
-## Como usar
+## Choosing destinations
 
-Na etapa **Formas de entrega**, todos os destinos aparecem juntos. Selecione
-um ou vários controles, inclusive banner contextual, janela modal, Caixa de
-entrada, Notificações do Nextcloud, feed de atividades (Activity), e-mail e
-provedores de mensageria/SMS do Two-Factor Gateway.
+The editor supports a contextual **banner or modal**, the **Inbox**, **Nextcloud Notifications**, **Activity**, **email**, and optional **Two-Factor Gateway** messaging/SMS transports.
 
-**Banner e janela modal são mutuamente exclusivos.** Ativar um desmarca o
-outro, mantendo os outros canais previamente escolhidos. Os demais destinos
-podem ser combinados livremente. A Caixa de entrada é um destino opcional
-como qualquer outro, não uma consequência do e-mail ou de Notifications.
+- Banner and modal are mutually exclusive visual presentations. Selecting one clears the other.
+- All other channel choices may be combined. Enabling email or Notifications does not implicitly create an Inbox entry.
+- At least one delivery destination is required; an empty selection produces HTTP 422.
+- Channel readiness is checked separately. An installed app is not necessarily configured to deliver messages.
+- Visual presentation options appear only for their selected format. Previews do not send actual messages or establish provider-specific rendering.
 
-O catálogo distingue instalado/indisponível, mostra instruções por canal
-e não permite selecionar um provedor externo não configurado. Se nenhum
-destino for selecionado, o editor não permite avançar. As configurações
-visuais só aparecem quando o formato visual correspondente está ativo.
-
-A prévia do banner ou modal testa o componente real sem enviar mensagens;
-sem destino visual, a prévia apresenta somente o conteúdo, pois cada
-provedor de saída possui formatação própria.
-
-## Combinações aceitas
-
-| Objetivo | Exibição | Caixa de entrada | Canais |
+| Use case | Contextual presentation | Inbox | Other channels |
 | --- | --- | --- | --- |
-| Somente e-mail | Nenhuma | Não | E-mail |
-| Somente sininho | Nenhuma | Não | Notifications |
-| Somente WhatsApp | Nenhuma | Não | Two-Factor Gateway: WhatsApp |
-| Somente mural | Nenhuma | Sim | Nenhum |
-| Banner e e-mail | Banner contextual | Opcional | E-mail |
-| Modal e Telegram | Janela modal | Opcional | Telegram |
-| Envio agendado sem tela | Nenhuma | Não | Um ou mais canais |
-| Mural + canais múltiplos | Caixa de entrada | Sim | Qualquer combinação |
+| Email only | None | No | Email |
+| Nextcloud bell only | None | No | Notifications |
+| WhatsApp only | None | No | Configured gateway and recipient consent |
+| Inbox only | None | Yes | None |
+| Banner plus email | Banner | Optional | Email |
+| Modal plus Telegram | Modal | Optional | Configured Telegram gateway |
+| Scheduled outbound message | None | Optional | One or more outbound channels |
 
-O editor das novas publicações usa `presentation=none` para entregas
-imediatas sem banner ou janela. O backend continua aceitando
-`presentation=board` de publicações antigas, sem migração destrutiva.
+`presentation=none` represents a publication without a banner or modal; `board_visible` separately controls an Inbox copy. The legacy `presentation=board` is still accepted for previously stored data, but is not the preferred new representation.
 
-**Publicação imediata com banner ou modal:** os envios em fila ocorrem
-na ativação; a visualização no Nextcloud ocorre na próxima visita elegível
-do destinatário. Ao selecionar o primeiro destino visual numa publicação
-imediata, o editor escolhe como frequência inicial uma exibição por usuário,
-que pode ser ajustada posteriormente. Banners e janelas não são mensagens push em tempo real.
+## When a publication is sent
 
-**Gatilhos por eventos individuais:** continuam precisando de banner ou
-janela modal. Canais de saída selecionados nesse cenário são enviados na
-ativação da campanha, não repetidamente a cada evento; a interface
-informa explicitamente esta diferença de momento.
+**Immediate and scheduled publications:** After activation, `BoardPublicationService` prepares due publications and background jobs process recipients in bounded batches. Asynchronous channels are queued separately, and a banner or modal appears on a recipient's next eligible visit. Reopening a page does not automatically resend an outbound message. Reactivating a publication can initiate a new activation round.
 
-Uma campanha sem apresentação visual, sem Caixa de entrada e sem canais
-selecionados é inválida e retorna HTTP 422. Banners para visitantes anônimos
-não podem ser combinados com avisos individualizados.
+**Individual events:** A trusted file, application, page, Flow or webhook occurrence is associated with the relevant recipient and eligible publication. Event-based delivery is **recipient-scoped**, including selected nonvisual channels; it is not an unrestricted broadcast on activation. Frequency, audience restrictions, preferences and per-recipient/channel idempotency still apply.
 
-## Momento do envio
+**Inbox visibility:** A publication sent solely by email, Notification, Activity or gateway is not listed as an Inbox item. Recipients can follow authorized detail links when an eligible delivery exists, but unrelated users cannot access a publication by guessing its ID.
 
-A publicação sem banner ou janela pode ser imediata, ao ativar, ou agendada
-por data/período. Não pode transformar um evento individual (arquivo, usuário,
-navegação, Flow ou webhook) em um disparo em massa ao ativar a campanha.
+**Anonymous visitors:** Public banners require an explicit safe configuration: an institutional, time-scheduled banner for all visitors with unrestricted placement. No private audience data or personalized outbound channel is exposed in the anonymous feed.
 
-O serviço BoardPublicationService processa publicações ativas mesmo quando
-board_visible é falso, caso exista um canal configurado. O cron coloca os
-destinatários na fila em lotes, verificando vigência, segmentação, opt-out
-e consentimento. A chave de outbox continua sendo composta pela publicação,
-ativação, usuário e canal. O envio não se repete por uma nova exibição de
-banner ou modal. Reativar uma publicação inicia outra rodada.
+The app maintains an outbox keyed by publication, activation, recipient and channel (and by event where applicable). Retries are possible. A third-party provider may accept a message without returning a definitive response, so **exactly-once external delivery is not guaranteed**.
 
-O evento AnnouncementPublished só ocorre quando a publicação é destinada
-à Caixa de entrada. Isso impede webhooks de publicação no mural para
-campanhas que não possuem mural.
+## Channel prerequisites
 
-## Acesso aos links recebidos
+| Channel | Prerequisite |
+| --- | --- |
+| Inbox | Eligible logged-in recipient and `board_visible` enabled |
+| Notifications | Nextcloud **Notifications** app enabled; `notify_push` alone is not a replacement |
+| Activity | Nextcloud **Activity** app enabled |
+| Email | Working Nextcloud SMTP configuration and a valid recipient address |
+| Two-Factor Gateway | Enabled app, fully configured direct provider, valid recipient destination and explicit per-user consent |
 
-Uma mensagem enviada exclusivamente por e-mail, Notifications, Activity ou
-gateway continua armazenada como registro editorial, mas **não aparece na
-lista da Caixa de entrada**. O link recebido abre um detalhe autenticado e
-autorizado, com validação de destinatário, estado e vigência. É necessário
-haver uma entrega correspondente no outbox como enviada ou em processamento.
-Uma pessoa fora do público não pode abrir o detalhe adivinhando o ID.
-Não há histórico nem marcação de leitura na Caixa de entrada para esses casos.
+Gateway provider settings, opt-in requirements, supported destination formats and sponsored-content consent are documented in [Two-Factor Gateway and consent](TWO_FACTOR_GATEWAY.md). Do not reuse the recipient's authentication/OTP identifiers as consent for editorial messages.
 
-Os links de canal não substituem a interface de apresentação. Uma prévia
-genérica não comprova a formatação real de e-mail, SMS ou mensageiros.
+## Tests and known limits
 
-## Dependências
+The app's current browser acceptance tests are `tests/e2e/app-smoke.spec.mjs` (publication, persistence and audience isolation on three database engines) and `tests/e2e/libresign-event.spec.mjs` (generic native-event delivery using a synthetic LibreSign fixture on SQLite only). Route and schema contracts are also checked during the Playwright CI jobs. These tests do **not** send live email, SMS or gateway messages, nor do they prove receipt from an external provider.
 
-- Notifications é o aplicativo nativo que mostra o sininho; notify_push não
-  é um substituto para o aplicativo Notifications.
-- Activity precisa do aplicativo Activity habilitado.
-- E-mail exige servidor SMTP configurado e endereços válidos. O catálogo
-  não comprova que o SMTP está operacional.
-- Two-Factor Gateway exige um provedor direto configurado e consentimento
-  por destinatário; dados de autenticação em dois fatores não são reutilizados.
-  Conteúdo patrocinado requer consentimento específico.
-  Consulte TWO_FACTOR_GATEWAY.md.
-
-Os transportes externos podem falhar ou aceitar uma mensagem sem devolver
-confirmação à fila. Há retentativas e proteção contra duplicidade comum,
-mas não há promessa de exatamente uma entrega externa.
-
-## Homologação NC36
-
-- test_channel_only_v27.py testa a API e a fila com transportes simulados,
-  acessos autorizados, ausência de cópia, revogação, deduplicação e agendamento.
-- test_channel_only_ui_v27.cjs verifica o editor em desktop e mobile,
-  canais exclusivos, prévia, revisão e persistência sem envio real.
-- Testes legados test_unified_delivery_v23.cjs e test_gateway_ui_v26.cjs
-  foram atualizados para verificar o Inbox opcional. As regressões de
-  publicações e de integrações permanecem.
-- O laboratório contém o Two-Factor Gateway instalado, mas sem provedores
-  externos configurados, portanto não há homologação de entrega real.
-
-Estas alterações pertencem apenas à POC de laboratório. Não houve deploy
-em servidores de produção nem publicação no GitHub.
+Test the actual outbound provider separately in an authorized, isolated environment before treating it as production-ready. See [Testing and evidence](TESTING.md) and [API](API.md).
