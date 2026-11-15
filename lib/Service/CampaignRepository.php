@@ -10,13 +10,14 @@ declare(strict_types=1);
 namespace OCA\Communications\Service;
 
 use InvalidArgumentException;
+use OCA\Communications\Db\CampaignMapper;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 use OCP\IGroupManager;
 use OCP\IUserManager;
 
 class CampaignRepository {
-	public const TABLE = 'cc_campaigns';
+	public const TABLE = CampaignMapper::TABLE;
 	public const TRIGGERS = [
 		'nextcloud.user.login' => 'Interactive login',
 		'nextcloud.files.created' => 'File created (Files)',
@@ -52,6 +53,7 @@ class CampaignRepository {
 
 	public function __construct(
 		private IDBConnection $db,
+		private CampaignMapper $mapper,
 		private IGroupManager $groupManager,
 		private IUserManager $userManager,
 		private CampaignInputValidator $inputValidator,
@@ -66,22 +68,10 @@ class CampaignRepository {
 	 * by an arbitrary 500-row cutoff.
 	 * @return \Generator<int,array>
 	 */
-	public function scan():\Generator {
-		$before = null;
-		do {
-			$qb = $this->db->getQueryBuilder();
-			$qb->select('*')->from(self::TABLE)->orderBy('id', 'DESC')->setMaxResults(250);
-			if ($before !== null) {
-				$qb->where($qb->expr()->lt('id', $qb->createNamedParameter($before, IQueryBuilder::PARAM_INT)));
-			}
-			$rs = $qb->executeQuery();
-			$rows = $rs->fetchAllAssociative();
-			$rs->closeCursor();
-			foreach ($rows as $row) {
-				$before = (int)$row['id'];
-				yield $this->castRow($row);
-			}
-		} while (count($rows) === 250);
+	public function scan(): \Generator {
+		foreach ($this->mapper->scanRows() as $row) {
+			yield $this->castRow($row);
+		}
 	}
 
 	/** Legacy admin and CLI list. Prefer pagedList() for large UI datasets. */
@@ -97,18 +87,7 @@ class CampaignRepository {
 	 * group membership, creator, metrics, unpublished records or internal data.
 	 */
 	public function publicForGuests(int $now):array {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('*')->from(self::TABLE)
-			->where($qb->expr()->eq('guest_visible', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('status', $qb->createNamedParameter('active')))
-			->andWhere($qb->expr()->eq('presentation', $qb->createNamedParameter('banner')))
-			->andWhere($qb->expr()->eq('audience_type', $qb->createNamedParameter('all')))
-			->andWhere($qb->expr()->eq('trigger_key', $qb->createNamedParameter('nextcloud.time.window')))
-			->andWhere($qb->expr()->eq('category', $qb->createNamedParameter('institutional')))
-			->orderBy('priority', 'DESC')->addOrderBy('manual_order', 'ASC')
-			->setMaxResults(30)->executeQuery();
-		$rows = $rs->fetchAllAssociative();
-		$rs->closeCursor();
+		$rows = $this->mapper->guestCandidates();
 		$out = [];
 		foreach ($rows as $row) {
 			$c = $this->castRow($row);
@@ -138,25 +117,12 @@ class CampaignRepository {
 	}
 
 	public function find(int $id): ?array {
-		$qb = $this->db->getQueryBuilder();
-		$result = $qb->select('*')->from(self::TABLE)
-			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->executeQuery();
-		$row = $result->fetchAssociative();
-		$result->closeCursor();
-		return $row === false ? null : $this->castRow($row);
+		$row = $this->mapper->byId($id);
+		return $row === null ? null : $this->castRow($row);
 	}
 
 	public function activeForTrigger(string $trigger): array {
-		$qb = $this->db->getQueryBuilder();
-		$result = $qb->select('*')->from(self::TABLE)
-			->where($qb->expr()->eq('trigger_key', $qb->createNamedParameter($trigger)))
-			->andWhere($qb->expr()->eq('status', $qb->createNamedParameter('active')))
-			->orderBy('priority', 'DESC')->addOrderBy('id', 'ASC')
-			->setMaxResults(100)->executeQuery();
-		$rows = $result->fetchAllAssociative();
-		$result->closeCursor();
-		return array_map($this->castRow(...), $rows);
+		return array_map($this->castRow(...), $this->mapper->activeForTrigger($trigger));
 	}
 
 	/**
