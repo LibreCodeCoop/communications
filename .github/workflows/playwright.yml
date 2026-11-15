@@ -82,20 +82,19 @@ jobs:
   playwright-tests:
     needs: [playwright-setup]
     timeout-minutes: 45
-    name: Nextcloud / ${{ matrix.database }}
+    name: Nextcloud / ${{ matrix.database }} / shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        database: [sqlite, pgsql, mariadb]
-        shardIndex: [1]
-        shardTotal: [1]
+        include:
+          - {database: sqlite, shardIndex: 1, shardTotal: 2}
+          - {database: sqlite, shardIndex: 2, shardTotal: 2}
+          - {database: pgsql, shardIndex: 1, shardTotal: 1}
+          - {database: mariadb, shardIndex: 1, shardTotal: 1}
     outputs:
       node-version: ${{ steps.versions.outputs.node-version }}
       package-manager-version: ${{ steps.versions.outputs.package-manager-version }}
-
-    env:
-      NC_CI_DB: ${{ matrix.database }}
 
     steps:
     - name: Restore context
@@ -131,19 +130,8 @@ jobs:
     - name: Install Playwright browsers
       run: npm run playwright:install-ci --if-present
 
-    - name: Provision disposable Nextcloud, database and generic LibreSign test fixture
-      run: bash scripts/ci/bootstrap.sh '${{ matrix.database }}'
-      env:
-        INSTALL_LIBRESIGN: ${{ matrix.database == 'sqlite' && '1' || '0' }}
-
-    - name: Validate controller route attributes
-      run: docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/ci/assert-routes.php
-
-    - name: Verify initial database schema contract
-      run: docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/schema_snapshot.php
-
     - name: Run Playwright tests
-      run: npm run playwright -- --shard='${{ matrix.shardIndex }}/${{ matrix.shardTotal }}' --reporter=blob
+      run: bash scripts/ci/run-playwright.sh '${{ matrix.database }}' '${{ matrix.shardIndex }}' '${{ matrix.shardTotal }}'
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
@@ -152,12 +140,6 @@ jobs:
         name: blob-report-${{ matrix.database }}-${{ matrix.shardIndex }}
         path: blob-report
         retention-days: 1
-
-    - name: Shutdown disposable test environment
-      if: always()
-      run: docker compose -f tests/ci/compose.yml -p communications-ci --profile postgresql --profile mariadb down --volumes --remove-orphans
-      env:
-        NC_TEST_PASSWORD: ephemeral-cleanup-only
 
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed

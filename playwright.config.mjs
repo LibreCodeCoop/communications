@@ -9,7 +9,8 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: process.env.CI ? [['list'], ['blob']] : 'list',
+  tag: process.env.NC_CI_DB ? `@db-${process.env.NC_CI_DB}` : undefined,
   use: {
     baseURL: process.env.NC_BASE_URL || 'http://127.0.0.1:18884',
     browserName: 'chromium',

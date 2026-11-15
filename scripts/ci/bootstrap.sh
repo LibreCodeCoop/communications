@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
 set -euo pipefail
-cd "$(dirname "$0")/../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 export NC_TEST_PASSWORD="${NC_TEST_PASSWORD:-$(openssl rand -hex 16)}"
 export NC_CONTAINER="${NC_CONTAINER:-communications-ci-nextcloud}"
 export NC_PORT="${NC_PORT:-18884}"
