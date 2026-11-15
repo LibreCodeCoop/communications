@@ -349,6 +349,7 @@ final class CampaignInputValidator {
 	}
 
 	private function timing(array $payload, callable $text, string $trigger, string $category): array {
+		$l10n = $this->l10n;
 		$integer = static function (string $name, int $max) use ($payload, $l10n): int {
 			$value = $payload[$name] ?? 0;
 			if (filter_var($value, FILTER_VALIDATE_INT) === false || (int)$value < 0 || (int)$value > $max) {
