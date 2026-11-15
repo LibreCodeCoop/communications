@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# TEMPORARY read-only diagnostic; no PR source modifications are persisted.
+name: Nextcloud ESLint migration diagnostic
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/nextcloud-eslint-diagnostic.yml'
+permissions:
+  contents: read
+jobs:
+  eslint-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - run: npm install --global npm@11
+      - run: npm ci --include=dev --include=optional
+      - run: npm install --no-save --package-lock=false --ignore-scripts @nextcloud/eslint-config@9.0.1
+      - name: Inspect upstream ESLint findings and autofix patch
+        shell: bash
+        run: |
+          cat > eslint.nextcloud-diagnostic.mjs <<'EOF'
+          import { recommended } from '@nextcloud/eslint-config'
+          export default [...recommended]
+          EOF
+          set +e
+          npx eslint --config eslint.nextcloud-diagnostic.mjs --fix src tests 'vite*.ts' vitest.config.ts playwright.config.mjs scripts > /tmp/eslint-fix.log 2>&1
+          echo "AUTOFIX_EXIT=$?"
+          git --no-pager diff --stat -- src tests 'vite*.ts' vitest.config.ts playwright.config.mjs scripts
+          echo 'NEXTCLOUD_ESLINT_PATCH_BEGIN'
+          git --no-pager diff --no-color -- src tests 'vite*.ts' vitest.config.ts playwright.config.mjs scripts
+          echo 'NEXTCLOUD_ESLINT_PATCH_END'
+          npx eslint --config eslint.nextcloud-diagnostic.mjs --format=json src tests 'vite*.ts' vitest.config.ts playwright.config.mjs scripts > /tmp/eslint-results.json 2>/tmp/eslint-errors.log
+          node -e 'const fs=require("fs");try{let p=JSON.parse(fs.readFileSync("/tmp/eslint-results.json","utf8"));console.log("ESLINT_STATS="+JSON.stringify({files:p.length,errorCount:p.reduce((n,f)=>n+f.errorCount,0),warningCount:p.reduce((n,f)=>n+f.warningCount,0),top:p.filter(f=>f.errorCount).map(f=>({file:f.filePath.split("/").slice(-3).join("/"),errors:f.errorCount,messages:f.messages.slice(0,3).map(m=>({rule:m.ruleId,message:m.message.slice(0,120)}))})).slice(0,24)}))}catch(e){console.log("JSON_READ_ERROR="+e.message)}'
+          tail -n 60 /tmp/eslint-errors.log || true
+          tail -n 80 /tmp/eslint-fix.log || true
+          exit 0
