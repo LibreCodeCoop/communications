@@ -14,6 +14,14 @@ const emit = defineEmits<{ change: [{ id: string; enabled: boolean }] }>()
 function change(channel: DeliveryChannel, enabled: boolean): void {
 	if (channel.selectable) emit('change', { id: channel.id, enabled })
 }
+function channelDetailsLabel(channel: string): string {
+	// TRANSLATORS {channel} is the delivery channel for which help is available.
+	return t('communications', 'Details about {channel}', { channel })
+}
+function channelStatusLabel(status: string): string {
+	// TRANSLATORS {status} is the delivery channel availability state shown to the user.
+	return t('communications', 'Why is this channel {status}?', { status })
+}
 </script>
 
 <template>
@@ -46,18 +54,8 @@ function change(channel: DeliveryChannel, enabled: boolean): void {
 						<NcButton
 							variant="tertiary"
 							class="cc-delivery-channel-help"
-							:aria-label="
-								t('communications', 'Details about {channel}', {
-									channel: channel.label,
-								})
-							"
-							:title="
-								t(
-									'communications',
-									'Why is this channel {status}?',
-									{ status: channel.status.toLowerCase() },
-								)
-							">
+							:aria-label="channelDetailsLabel(channel.label)"
+							:title="channelStatusLabel(channel.status.toLowerCase())">
 							<template #icon>
 								<NcIconSvgWrapper
 									:path="mdiHelpCircleOutline"

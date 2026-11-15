@@ -447,6 +447,14 @@ const selectApplicationValue = (app: NativeApplication): string => app.id
 const selectActionValue = (action: { value: string }): string => action.value
 const selectRouteValue = (route: PageRouteOption): string => route.value
 const selectSourceValue = (source: NativeSource): string => source.id
+function routeVariableLabel(variable: string): string {
+	// TRANSLATORS {variable} is the name of a variable in the selected URL route.
+	return t('communications', 'Value for {variable}', { variable })
+}
+function routeExampleLabel(value: string): string {
+	// TRANSLATORS {value} is an example URL parameter, such as recent or 123.
+	return t('communications', 'Example: {value}', { value })
+}
 function flowLink(): string {
 	return generateUrl('/settings/admin/workflow')
 }
@@ -762,21 +770,8 @@ function flowLink(): string {
 										:model-value="
 											pageFilters[variable]?.value || ''
 										"
-										:label="
-											t(
-												'communications',
-												'Value for {variable}',
-												{ variable },
-											)
-										"
-										:placeholder="
-											t('communications', 'Example: {value}', {
-												value:
-													variable === 'view'
-														? 'recent'
-														: '123',
-											})
-										"
+										:label="routeVariableLabel(variable)"
+										:placeholder="routeExampleLabel(variable === 'view' ? 'recent' : '123')"
 										@update:model-value="
 											setRouteValue(variable, $event)
 										" />

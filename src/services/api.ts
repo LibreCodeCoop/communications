@@ -8,6 +8,11 @@ import { t } from '@nextcloud/l10n'
 
 export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 
+function httpFailureMessage(status: number): string {
+	// TRANSLATORS {status} is the HTTP response status code, such as 404 or 500.
+	return t('communications', 'HTTP failure {status}', { status })
+}
+
 /** Nextcloud supplies CSRF/session headers, URL rewriting and typed responses. */
 export async function requestApi<T extends object>(
 	path: string,
@@ -35,9 +40,7 @@ export async function requestApi<T extends object>(
 					: undefined
 			throw new Error(
 				detail
-					|| t('communications', 'HTTP failure {status}', {
-						status: error.response.status,
-					}),
+					|| httpFailureMessage(error.response.status),
 				{ cause: error },
 			)
 		}

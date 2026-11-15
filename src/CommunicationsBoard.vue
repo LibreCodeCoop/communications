@@ -161,6 +161,18 @@ function dateText(ts: number | null | undefined): string {
 			})
 		: ''
 }
+function destinationLabel(channel: string): string {
+	// TRANSLATORS {channel} is the name of a delivery channel, such as SMS.
+	return t('communications', 'Destination for {channel}', { channel })
+}
+function unreadFilterLabel(count: number): string {
+	// TRANSLATORS {count} is the number of unread messages in the Inbox filter.
+	return t('communications', 'Unread ({count})', { count })
+}
+function commentsAriaLabel(title: string): string {
+	// TRANSLATORS {title} is the announcement headline above its comments.
+	return t('communications', 'Comments on {title}', { title })
+}
 function safeLink(url: unknown): string {
 	return safeCtaLink(url)
 }
@@ -393,11 +405,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					<template v-if="channel.enabled">
 						<NcTextField
 							v-model="channel.destination"
-							:label="
-								t('communications', 'Destination for {channel}', {
-									channel: channel.label,
-								})
-							"
+							:label="destinationLabel(channel.label)"
 							:placeholder="gatewayPlaceholder[channel.id]"
 							:maxlength="190"
 							:disabled="!channel.available" />
@@ -472,11 +480,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					<NcButton
 						:pressed="filter === 'unread'"
 						:variant="filter === 'unread' ? 'primary' : 'tertiary'"
-						:text="
-							t('communications', 'Unread ({count})', {
-								count: unreadTotal,
-							})
-						"
+						:text="unreadFilterLabel(unreadTotal)"
 						@click="switchFilter('unread')" />
 				</div>
 				<p v-if="loading" role="status">
@@ -617,11 +621,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 				<section
 					v-if="selected.commentsEnabled"
 					class="cc-board-comments"
-					:aria-label="
-						t('communications', 'Comments on {title}', {
-							title: selected.headline,
-						})
-					">
+					:aria-label="commentsAriaLabel(selected.headline)">
 					<h2>
 						{{ t('communications', 'Comments (')
 						}}{{ selected.commentCount }})
