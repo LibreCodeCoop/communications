@@ -28,7 +28,11 @@ The browser compatibility scenario creates a synthetic LibreSign completion even
 
 Development uses the organization-managed lint, type-check, build, Node test and REUSE workflows. Run `npm run lint`, `npm run check-types`, `npm run stylelint`, `npm run test:unit`, `composer cs:check`, `composer test`, and `composer analyse` before review. The optional `npm run test:mutation` tests the frontend URL allowlist using Stryker's Vitest runner and blocks scores below 85%. The separate `composer mutation:test` uses Infection with PCOV/Xdebug and blocks backend URL-sanitizer scores below 90%. Both are intentionally scoped to security-sensitive URL validation; neither claims mutation coverage for unrelated frontend modules or the full PHP application. The separate Playwright workflow validates recipient isolation, route/schema contracts, publication validation (including invalid combinations), native event discovery, and the generic LibreSign event contract on disposable Nextcloud instances. Pure unit tests cover ordering, application targeting, event scope, delivery transitions, and input normalization without requiring a database.
 
+Route registration is checked by reflecting the controllers' `#[FrontpageRoute]` declarations and comparing their paths and verbs against the Nextcloud router. There is no second hand-maintained route inventory; adding a controller action makes the test discover it automatically.
+
 The first-installation schema is checked against `tests/integration/schema-contract.sqlite.json`. The assertion checks full SQLite column types/defaults and portable nullability/length/index contracts in PostgreSQL and MariaDB on disposable databases. During pre-release development, discard and recreate isolated test databases after a schema change; there is no published upgrade chain.
+
+Frontend TypeScript unit tests belong in `tests/js/unit/` (Vitest); PHP unit tests remain in `tests/php/Unit/` (PHPUnit). Browser tests live in `tests/e2e/`, application integration contracts in `tests/integration/`, disposable test infrastructure in `tests/ci/`, and Node packaging checks in `tests/build/`. The runner configuration owns discovery paths rather than listing individual tests.
 
 ### Official Nextcloud CI templates
 
@@ -38,11 +42,11 @@ The CSS framework is the native `@nextcloud/vue` component and theme-variable sy
 
 ### Playwright database matrix, shards and merged reports
 
-The application-specific overlay is kept intentionally small. The shared Playwright workflow invokes `scripts/ci/run-playwright.sh`, which sources the disposable environment bootstrap, checks the route/schema contracts, runs the assigned shard, and always tears down the test-owned Docker Compose project. The script preserves the original failing exit status when cleaning up.
+The application-specific overlay is kept intentionally small. The shared Playwright workflow invokes `tests/ci/run-playwright.sh`, which sources the disposable environment bootstrap, checks the route/schema contracts, runs the assigned shard, and always tears down the test-owned Docker Compose project. The test harness preserves the original failing exit status when cleaning up. The bootstrap and runner are kept alongside the disposable Compose configuration under `tests/ci/`; the `scripts/` directory contains only build and packaging operations.
 
-The CI matrix contains **four** jobs: SQLite shard **1/2**, SQLite shard **2/2**, PostgreSQL shard **1/1**, and MariaDB shard **1/1**. Currently, SQLite runs both E2E files while the other databases exclude the LibreSign fixture and run only the common application smoke test. Do not create shards with no selected tests; revise the matrix when the suite grows.
+The CI matrix contains **four** jobs: SQLite shard **1/2**, SQLite shard **2/2**, PostgreSQL shard **1/1**, and MariaDB shard **1/1**. SQLite includes the LibreSign scenario, while PostgreSQL and MariaDB run the applicable common scenarios without its fixture. Playwright discovers tests from the source files; revise the shard matrix if a shard no longer selects any tests.
 
-`playwright.config.mjs` emits a `blob` report on CI and assigns a `@db-<database>` tag. Playwright incorporates that tag and the shard number into each internal ZIP filename. GitHub artifact names include the database and shard too; **distinct artifact names alone do not prevent an internal ZIP collision** when `download-artifact` uses `merge-multiple: true`. The shared `merge-reports` job must retain all results, not merely pass. With the current test files, expect four test results across four distinct blob reports (two SQLite, one PostgreSQL and one MariaDB). Inspect the merged HTML report and log rather than assuming a green job proves completeness.
+`playwright.config.mjs` emits a `blob` report on CI and assigns a `@db-<database>` tag. Playwright incorporates that tag and the shard number into each internal ZIP filename. GitHub artifact names include the database and shard too; **distinct artifact names alone do not prevent an internal ZIP collision** when `download-artifact` uses `merge-multiple: true`. The shared `merge-reports` job must retain all results, not merely pass. Compare the merged HTML report and log with Playwright's collected test count for each matrix job. Do not maintain a separate inventory of test names or assume a green job proves that every test report was merged.
 
 ### Standard Vue indentation
 
@@ -62,7 +66,7 @@ Run `npm run test:package` to check both the generated asset installer and the p
 
 ### Nextcloud TypeScript formatting
 
-All tracked TypeScript files under `src/`, `tests/`, and Vite configuration entry points follow the shared `@nextcloud/prettier-config` (4-column tabs). `npm run format:ts` verifies the checked-in formatting, and `npm run format:ts:fix` applies the upstream formatter. `npm run lint` runs the check, so the existing organization-managed ESLint CI catches formatting drift without a duplicate workflow. PHP uses `Nextcloud\CodingStandard\Config` through `composer cs:check`; PHP formatting and structural design require separate review.
+All tracked TypeScript files under `src/`, `tests/`, and Vite configuration entry points follow the shared `@nextcloud/prettier-config` (4-column tabs). `npm run format:ts` verifies the checked-in formatting, and `npm run format:ts:fix` applies the upstream formatter. `npm run lint` runs the check, so the existing organization-managed ESLint CI catches formatting drift without a duplicate workflow. PHP uses `Nextcloud\CodingStandard\Config` through `composer cs:check`. The existing PHP-CS-Fixer workflow is the sole automated PHP style gate; structural design still requires code review.
 
 ### Frontend state and data boundaries
 

@@ -27,7 +27,7 @@
  
      - name: Run Playwright tests
 -      run: npm run playwright -- --shard='${{ matrix.shardIndex }}/${{ matrix.shardTotal }}'
-+      run: bash scripts/ci/run-playwright.sh '${{ matrix.database }}' '${{ matrix.shardIndex }}' '${{ matrix.shardTotal }}'
++      run: bash tests/ci/run-playwright.sh '${{ matrix.database }}' '${{ matrix.shardIndex }}' '${{ matrix.shardTotal }}'
  
      - name: Upload blob report to GitHub Actions Artifacts
        if: ${{ !cancelled() }}

@@ -131,7 +131,7 @@ jobs:
       run: npm run playwright:install-ci --if-present
 
     - name: Run Playwright tests
-      run: bash scripts/ci/run-playwright.sh '${{ matrix.database }}' '${{ matrix.shardIndex }}' '${{ matrix.shardTotal }}'
+      run: bash tests/ci/run-playwright.sh '${{ matrix.database }}' '${{ matrix.shardIndex }}' '${{ matrix.shardTotal }}'
 
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}

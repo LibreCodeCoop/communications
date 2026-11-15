@@ -4,49 +4,60 @@
  * SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+
 declare(strict_types=1);
 
-// Run only inside the disposable Nextcloud test container, never production.
-// Console bootstrap avoids request dispatch and redirects of an unauthenticated browser.
+// Verify routes from controller attributes against Nextcloud's registered router.
 define('OC_CONSOLE', 1);
-// Nextcloud resolves bootstrap paths from SCRIPT_FILENAME, not just cwd.
 $_SERVER['SCRIPT_FILENAME'] = '/var/www/html/occ';
 chdir('/var/www/html');
 require '/var/www/html/lib/base.php';
 
-$expected = json_decode((string)file_get_contents(__DIR__ . '/routes-expected.json'), true, 512, JSON_THROW_ON_ERROR);
+use OCP\AppFramework\Http\Attribute\FrontpageRoute;
+
 $router = \OC::$server->get(\OC\Route\Router::class);
 $router->loadRoutes('communications');
-$routes = $router->getRouteCollection()->all();
-$prefix = '/apps/communications';
-$matching = [];
-
-foreach ($routes as $name => $route) {
-	if (!str_starts_with($name, 'communications.')) {
-		continue;
+$registered = $router->getRouteCollection()->all();
+$expected = [];
+foreach (glob(__DIR__ . '/../../lib/Controller/*Controller.php') ?: [] as $file) {
+	$controller = basename($file, '.php');
+	$class = 'OCA\\Communications\\Controller\\' . $controller;
+	$reflection = new ReflectionClass($class);
+	$controllerName = strtolower(substr($controller, 0, -strlen('Controller')));
+	foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+		foreach ($method->getAttributes(FrontpageRoute::class) as $attribute) {
+			$route = $attribute->newInstance();
+			$name = 'communications.' . $controllerName . '.' . strtolower($method->getName());
+			$path = '/apps/communications' . $route->getUrl();
+			$verb = strtoupper($route->getVerb());
+			if (isset($expected[$name]) && $expected[$name]['path'] !== $path) {
+				throw new RuntimeException('Ambiguous route declarations for ' . $name);
+			}
+			$expected[$name] ??= ['path' => $path, 'methods' => []];
+			$expected[$name]['methods'][] = $verb;
+		}
 	}
-	$matching[$name] = [
-		'path' => $route->getPath(),
-		'methods' => array_map('strtoupper', $route->getMethods()),
-	];
+}
+if ($expected === []) {
+	throw new RuntimeException('No attributed controller routes were discovered');
 }
 
 $failures = [];
-foreach ($expected as $item) {
-	$path = $prefix . ($item['url'] === '/' ? '/' : $item['url']);
-	// Attribute routing canonicalizes controller and method names to lowercase
-	// and removes underscores from compound controller names.
-	$expectedName = 'communications.' . strtolower(str_replace('_', '', str_replace('#', '.', $item['name'])));
-	$actual = $matching[$expectedName] ?? null;
-	if ($actual === null || $actual['path'] !== $path || !in_array($item['verb'], $actual['methods'], true)) {
-		$failures[] = sprintf('%s %s %s: expected named route missing or mismatched',
-			$expectedName, $item['verb'], $path);
+foreach ($expected as $name => $declaration) {
+	$route = $registered[$name] ?? null;
+	if ($route === null || $route->getPath() !== $declaration['path']
+		|| array_diff($declaration['methods'], array_map('strtoupper', $route->getMethods())) !== []) {
+		$failures[] = sprintf('Controller route not registered: %s %s', $name, $declaration['path']);
+	}
+}
+foreach ($registered as $name => $route) {
+	if (str_starts_with($name, 'communications.') && !isset($expected[$name])) {
+		$failures[] = 'Unexpected route outside controller attributes: ' . $name;
 	}
 }
 
 if ($failures !== []) {
 	fwrite(STDERR, implode("\n", $failures) . "\n");
-	fwrite(STDERR, json_encode($matching, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 	exit(1);
 }
-printf("All %d declared controller routes resolve in Nextcloud.\n", count($expected));
+printf("All %d annotated controller routes resolve in Nextcloud.\n", count($expected));

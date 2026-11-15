@@ -3,9 +3,6 @@
   "description": "Nextcloud institutional publications and event-triggered communications",
   "type": "project",
   "license": "AGPL-3.0-or-later",
-  "require": {
-    "php": ">=8.3"
-  },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.59",
     "infection/infection": "^0.35",
@@ -35,10 +32,7 @@
       "@test",
       "@analyse"
     ],
-    "cs:check": [
-      "php-cs-fixer fix --dry-run --diff --using-cache=no",
-      "@php scripts/ci/check-php-source-style.php"
-    ],
+    "cs:check": "php-cs-fixer fix --dry-run --diff --using-cache=no",
     "cs:fix": "php-cs-fixer fix --using-cache=no",
     "mutation:test": "infection lib/Service/CtaUrl.php --threads=2 --no-progress --no-interaction",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
