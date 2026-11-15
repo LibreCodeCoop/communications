@@ -207,8 +207,8 @@ class CampaignRepository {
 	public function isAudienceMember(array $campaign, string $uid):bool {
 		if ($campaign['excluded_groups'] !== []) {
 			$excluded = ($campaign['excluded_match'] ?? 'any') === 'all'
-	? $this->inAllGroups($uid, $campaign['excluded_groups'])
-	: $this->inAnyGroup($uid, $campaign['excluded_groups']);
+				? $this->inAllGroups($uid, $campaign['excluded_groups'])
+				: $this->inAnyGroup($uid, $campaign['excluded_groups']);
 			if ($excluded) {
 				return false;
 			}
@@ -217,8 +217,8 @@ class CampaignRepository {
 			'all' => true,
 			'admins' => $this->groupManager->isAdmin($uid),
 			'group' => $campaign['group_match'] === 'all'
-	? $this->inAllGroups($uid, $campaign['audience_groups'])
-	: $this->inAnyGroup($uid, $campaign['audience_groups']),
+				? $this->inAllGroups($uid, $campaign['audience_groups'])
+				: $this->inAnyGroup($uid, $campaign['audience_groups']),
 			'users' => in_array($uid, $campaign['audience_users'], true),
 			default => false,
 		};
@@ -458,7 +458,7 @@ class CampaignRepository {
 			$value = $row[$field] ?? '[]';
 			$decoded = json_decode($value, true);
 			$row[$field] = is_array($decoded) && array_is_list($decoded)
-	? array_values(array_filter($decoded, 'is_string')) : [];
+				? array_values(array_filter($decoded, 'is_string')) : [];
 		}
 		if ($row['audience_type'] === 'group' && $row['audience_groups'] === [] && $row['audience_group'] !== '') {
 			$row['audience_groups'] = [$row['audience_group']];

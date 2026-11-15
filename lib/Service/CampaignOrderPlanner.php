@@ -28,10 +28,7 @@ final class CampaignOrderPlanner {
 		}
 		$rows = array_values(array_filter($campaigns,
 			static fn (array $c):bool => $c['status'] !== 'archived'));
-		usort($rows, static fn (array $a, array $b):int
-			=> ($a['manual_order'] <=> $b['manual_order'])
-	?:($b['priority'] <=> $a['priority'])
-	?:($b['id'] <=> $a['id']));
+		usort($rows, self::compare(...));
 		$index = null;
 		foreach ($rows as $i => $c) {
 			if ((int)$c['id'] === $id) {
@@ -70,5 +67,14 @@ final class CampaignOrderPlanner {
 			array_splice($rows, $position + ($direction === 'after'?1:0), 0, [$current]);
 		}
 		return $rows;
+	}
+
+	private static function compare(array $a, array $b): int {
+		$order = $a['manual_order'] <=> $b['manual_order'];
+		if ($order !== 0) {
+			return $order;
+		}
+		$priority = $b['priority'] <=> $a['priority'];
+		return $priority !== 0 ? $priority : ($b['id'] <=> $a['id']);
 	}
 }

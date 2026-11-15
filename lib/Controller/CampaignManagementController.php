@@ -222,9 +222,12 @@ class CampaignManagementController extends Controller {
 		}
 		try {
 			$items = $this->campaigns->move($id, $direction, $target_id);
-			return $items === null
-	?new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404)
-	:new JSONResponse(['order' => array_map(static fn (array $row):int => (int)$row['id'], $items)]);
+			if ($items === null) {
+				return new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
+			}
+			return new JSONResponse([
+				'order' => array_map(static fn (array $row): int => (int)$row['id'], $items),
+			]);
 		} catch (InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], 422);
 		}
@@ -249,9 +252,10 @@ class CampaignManagementController extends Controller {
 			return $deny;
 		}
 		try {
-			return $this->campaigns->purgeArchived($id, $confirmName)
-	? new JSONResponse(['deleted' => true,'id' => $id])
-	: new JSONResponse(['error' => $this->l10n->t('Publication not found.')], 404);
+			if (!$this->campaigns->purgeArchived($id, $confirmName)) {
+				return new JSONResponse(['error' => $this->l10n->t('Publication not found.')], 404);
+			}
+			return new JSONResponse(['deleted' => true, 'id' => $id]);
 		} catch (InvalidArgumentException $error) {
 			return new JSONResponse(['error' => $error->getMessage()], 422);
 		}
