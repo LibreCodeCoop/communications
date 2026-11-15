@@ -30,7 +30,7 @@ jobs:
           ini-values: pcov.enabled=1, pcov.directory=${{ github.workspace }}/lib
           tools: composer:v2
       - name: Install PHP dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+        run: composer install --no-interaction --no-progress --prefer-dist
       - name: Run backend URL-sanitizer mutation contract
         run: |
           set -o pipefail

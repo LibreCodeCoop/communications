@@ -1,0 +1,14 @@
+{
+  "require-dev": {
+    "infection/infection": "^0.35"
+  },
+  "config": {
+    "platform": {
+      "php": "8.3.0"
+    },
+    "sort-packages": true,
+    "allow-plugins": {
+      "infection/extension-installer": false
+    }
+  }
+}

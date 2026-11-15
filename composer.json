@@ -4,12 +4,8 @@
   "type": "project",
   "license": "AGPL-3.0-or-later",
   "require-dev": {
-    "friendsofphp/php-cs-fixer": "^3.59",
-    "infection/infection": "^0.35",
-    "nextcloud/coding-standard": "^1.5",
+    "bamarni/composer-bin-plugin": "^1.9",
     "nextcloud/ocp": "^35.0",
-    "phpstan/phpstan": "^2.1",
-    "phpunit/phpunit": "^11.5",
     "symfony/console": "^7.4",
     "symfony/routing": "^7.4"
   },
@@ -36,15 +32,27 @@
     "cs:fix": "php-cs-fixer fix --using-cache=no",
     "mutation:test": "infection lib/Service/CtaUrl.php --threads=2 --no-progress --no-interaction",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
-    "phpstan": "phpstan analyse --configuration phpstan.neon"
+    "phpstan": "phpstan analyse --configuration phpstan.neon",
+    "post-install-cmd": [
+      "[ \"$COMPOSER_DEV_MODE\" -eq 0 ] || composer bin all install --ansi"
+    ],
+    "post-update-cmd": [
+      "[ \"$COMPOSER_DEV_MODE\" -eq 0 ] || composer bin all update --ansi"
+    ]
   },
   "config": {
     "sort-packages": true,
     "allow-plugins": {
-      "infection/extension-installer": false
+      "bamarni/composer-bin-plugin": true
     },
     "platform": {
       "php": "8.3.0"
+    }
+  },
+  "extra": {
+    "bamarni-bin": {
+      "bin-links": true,
+      "forward-command": true
     }
   }
 }
