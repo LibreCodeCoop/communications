@@ -43,6 +43,8 @@ if [[ "$schema_output" != *"Initial schema contract passed:"* ]]; then
   exit 1
 fi
 docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/canonical_contract.php
+docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/publication_validation_contract.php
+docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/native_event_catalog_contract.php
 echo "::endgroup::"
 
 npm run playwright -- --shard="$2/$3"

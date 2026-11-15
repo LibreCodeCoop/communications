@@ -74,6 +74,7 @@ else
   DB_SERVICE=''
 fi
 docker exec -u 0 "$NC_CONTAINER" chown -R 33:33 /var/www/html/config /var/www/html/data /var/www/html/apps
+docker exec -u 0 "$NC_CONTAINER" chown 33:33 /var/www/html/custom_apps
 docker exec -u 0 "$NC_CONTAINER" chmod 0770 /var/www/html/config /var/www/html/data
 # Nextcloud from a development archive may not have a writable custom app
 # path configured by default. Keep the app source mounted independently.

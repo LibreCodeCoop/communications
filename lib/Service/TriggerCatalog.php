@@ -330,65 +330,71 @@ final class TriggerCatalog {
 	public function placements(): array {
 		$options = [
 			// TRANSLATORS Application page placement option without a route restriction.
-			['value' => 'any','label' => $this->l10n->t('Any compatible page')],
+			['value' => 'any', 'label' => $this->l10n->t('Any compatible page')],
 			// TRANSLATORS Page inside the signed-in user settings area.
-			['value' => 'settings','label' => $this->l10n->t('Personal settings')],
+			['value' => 'settings', 'label' => $this->l10n->t('Personal settings')],
 			// TRANSLATORS Page inside the administrator settings area.
-			['value' => 'admin_settings','label' => $this->l10n->t('Administration settings')],
+			['value' => 'admin_settings', 'label' => $this->l10n->t('Administration settings')],
 		];
-		$seen = ['any' => true,'settings' => true,'admin_settings' => true];
-		$navIcons = [];
+		$seen = ['any' => true, 'settings' => true, 'admin_settings' => true];
+		$this->navigationPlacements($options, $seen);
+		$this->installedAppPlacements($options, $seen);
+		usort($options, self::comparePlacement(...));
+		return $options;
+	}
+
+	private function navigationPlacements(array &$options, array &$seen): void {
 		foreach ($this->navigation->getAll() as $item) {
-			$href = $item['href'] ?? '';
-			if (!is_string($href)) {
-				continue;
-			}
-			if (!preg_match('~/(?:index\.php/)?apps/([a-z0-9_-]{2,32})(?:/|$)~', $href, $matches)) {
+			$href = $item['href'] ?? null;
+			if (!is_string($href)
+				|| !preg_match('~/(?:index\.php/)?apps/([a-z0-9_-]{2,32})(?:/|$)~', $href, $matches)) {
 				continue;
 			}
 			$app = $matches[1];
-			$navIcons[$app] = $item['icon'] ?? null;
-			// Campaigns are not presented over their own administrative editor.
 			if ($app === 'communications' || isset($seen[$app]) || !$this->apps->isEnabledForAnyone($app)) {
 				continue;
 			}
-			if ($this->webRoutes->routesFor($app) === []) {
-				continue;
-			}
-			$seen[$app] = true;
-			$options[] = ['value' => $app,'label' => is_string($item['name'] ?? null) ? $item['name'] : $app,
-				'icon' => $this->safeIcon($navIcons[$app] ?? $this->apps->getAppIcon($app))];
+			$label = is_string($item['name'] ?? null) ? $item['name'] : $app;
+			$icon = is_string($item['icon'] ?? null) ? $item['icon'] : null;
+			$this->addPlacement($options, $seen, $app, $label, $icon);
 		}
-		// Discover every enabled app declaring navigation in its installed info.xml,
-		// even when an app's navigation entry is not loaded for this request.
-		// Do not promote a server-only app to a UI merely because it is installed.
+	}
+
+	private function installedAppPlacements(array &$options, array &$seen): void {
 		foreach ($this->apps->getEnabledApps() as $app) {
 			if ($app === 'communications' || isset($seen[$app]) || !$this->apps->isEnabledForAnyone($app)) {
 				continue;
 			}
 			$info = $this->apps->getAppInfo($app);
-			if (empty($info['navigations']['navigation']) || $this->webRoutes->routesFor($app) === []) {
+			if (empty($info['navigations']['navigation'])) {
 				continue;
 			}
-			$seen[$app] = true;
-			$options[] = [
-				'value' => $app,
-				'label' => is_string($info['name'] ?? null) ? $info['name'] : $app,
-				'icon' => $this->safeIcon($this->apps->getAppIcon($app)),
-			];
+			$label = is_string($info['name'] ?? null) ? $info['name'] : $app;
+			$this->addPlacement($options, $seen, $app, $label, null);
 		}
-		usort($options, static function (array $a, array $b): int {
-			return ($a['value'] === 'any' ? -1 : ($b['value'] === 'any' ? 1 : 0))
-				?: strcasecmp($a['label'], $b['label']);
-		});
-		return $options;
 	}
 
-	/**
-	 * Configurable applications include event adapters and real navigable GUIs.
-	 * An installed app without an event adapter can still offer page visits.
-	 * Applications that only expose APIs are not page origins.
-	 */
+	private function addPlacement(
+		array &$options, array &$seen, string $app, string $label, ?string $icon,
+	): void {
+		if ($app === 'communications' || isset($seen[$app]) || !$this->apps->isEnabledForAnyone($app)
+			|| $this->webRoutes->routesFor($app) === []) {
+			return;
+		}
+		$seen[$app] = true;
+		$options[] = ['value' => $app, 'label' => $label, 'icon' => $this->safeIcon($icon ?? $this->apps->getAppIcon($app))];
+	}
+
+	private static function comparePlacement(array $a, array $b): int {
+		if ($a['value'] === 'any') {
+			return -1;
+		}
+		if ($b['value'] === 'any') {
+			return 1;
+		}
+		return strcasecmp($a['label'], $b['label']);
+	}
+
 	private function safeIcon(?string $url): ?string {
 		// Never expose a third-party tracking image from an untrusted navigation entry.
 		return $url !== null && preg_match('~^/(?!/)[^\\\\?&#<>"\x00-\x1f]+\\.(?:svg|png)$~i', $url) ? $url : null;

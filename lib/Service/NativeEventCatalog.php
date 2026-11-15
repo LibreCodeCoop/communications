@@ -9,19 +9,14 @@ declare(strict_types=1);
 
 namespace OCA\Communications\Service;
 
+use OCP\App\AppPathNotFoundException;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\Event;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 
-/**
- * Index typed PHP events of enabled apps on ADMIN discovery, never on
- * user requests or while dispatching an event.
- *
- * Catalog entries are metadata only. Do not instantiate events, call their
- * getters or serialize their bodies. No untrusted class name reaches autoload.
- */
+/** Discover only typed event-class metadata on administrator catalog requests. */
 final class NativeEventCatalog {
 	private const APP_ID = 'communications';
 	private const INDEX_KEY = 'native_event_catalog_v2';
@@ -47,29 +42,43 @@ final class NativeEventCatalog {
 			return $this->memo;
 		}
 		$enabled = $this->apps->getEnabledApps();
-		$revisionData = ['core' => (int)@filemtime(\OC::$SERVERROOT . '/version.php')];
+		$revision = $this->revision($enabled);
+		$stored = $this->storedIndex($revision);
+		if ($stored !== null) {
+			return $this->memo = $stored;
+		}
+		$events = $this->discover($enabled);
+		$this->config->setValueString(self::APP_ID, self::INDEX_KEY, json_encode($events, JSON_THROW_ON_ERROR));
+		$this->config->setValueString(self::APP_ID, self::REV_KEY, $revision);
+		return $this->memo = $events;
+	}
+
+	private function revision(array $enabled): string {
+		$data = ['core' => (int)@filemtime(\OC::$SERVERROOT . '/version.php')];
 		foreach ($enabled as $app) {
 			if ($app === self::APP_ID) {
 				continue;
 			}
 			$info = $this->apps->getAppInfo($app);
-			$revisionData[$app] = [
+			$data[$app] = [
 				'version' => is_array($info) ? (string)($info['version'] ?? '') : '',
-				// Development builds may publish new typed events without changing
-				// info.xml. Inspect event class bytes on ADMIN catalog requests only.
 				'eventClasses' => $this->eventClassFingerprint($app),
 			];
 		}
-		ksort($revisionData);
-		$revision = hash('sha256', json_encode($revisionData, JSON_THROW_ON_ERROR));
-		if ($this->config->getValueString(self::APP_ID, self::REV_KEY, '') === $revision) {
-			$stored = json_decode($this->config->getValueString(self::APP_ID, self::INDEX_KEY, ''), true);
-			if (is_array($stored) && array_is_list($stored)) {
-				return $this->memo = $stored;
-			}
+		ksort($data);
+		return hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
+	}
+
+	private function storedIndex(string $revision): ?array {
+		if ($this->config->getValueString(self::APP_ID, self::REV_KEY, '') !== $revision) {
+			return null;
 		}
+		$stored = json_decode($this->config->getValueString(self::APP_ID, self::INDEX_KEY, ''), true);
+		return is_array($stored) && array_is_list($stored) ? $stored : null;
+	}
+
+	private function discover(array $enabled): array {
 		$events = [];
-		// Core public events are present even when a corresponding UI app is absent.
 		$this->scan(\OC::$SERVERROOT . '/lib/public', 'OCP', 'core', $events, true);
 		foreach ($enabled as $app) {
 			if ($app === self::APP_ID || !preg_match('/^[a-z0-9_-]{2,32}$/', $app)) {
@@ -78,10 +87,10 @@ final class NativeEventCatalog {
 			try {
 				$path = $this->apps->getAppPath($app);
 				$namespace = $this->apps->getAppNamespace($app);
-				foreach (['Events', 'Event'] as $dir) {
-					$this->scan($path . '/lib/' . $dir, $namespace . '\\' . $dir, $app, $events, false);
+				foreach (['Events', 'Event'] as $folder) {
+					$this->scan($path . '/lib/' . $folder, $namespace . '\\' . $folder, $app, $events, false);
 				}
-			} catch (\Throwable $error) {
+			} catch (AppPathNotFoundException|\UnexpectedValueException $error) {
 				$this->logger->debug('Optional app event discovery failed', [
 					'appId' => $app, 'exceptionClass' => $error::class,
 				]);
@@ -91,13 +100,12 @@ final class NativeEventCatalog {
 			}
 		}
 		$events = array_values($events);
-		usort($events, static fn (array $a, array $b): int
-			=> strcmp($a['appId'], $b['appId']) ?: strcmp($a['class'], $b['class']));
-		// Write the complete index before the revision marker so an interrupted
-		// write cannot make an incomplete catalog appear current.
-		$this->config->setValueString(self::APP_ID, self::INDEX_KEY, json_encode($events, JSON_THROW_ON_ERROR));
-		$this->config->setValueString(self::APP_ID, self::REV_KEY, $revision);
-		return $this->memo = $events;
+		usort($events, self::compareEvents(...));
+		return $events;
+	}
+
+	private static function compareEvents(array $a, array $b): int {
+		return strcmp($a['appId'], $b['appId']) ?: strcmp($a['class'], $b['class']);
 	}
 
 	public function byKey(string $key): ?array {
@@ -112,54 +120,44 @@ final class NativeEventCatalog {
 		return null;
 	}
 
-	/**
-	 * Tracks the event class inventory (including changed webhook interfaces)
-	 * independently of the app version. Metadata only; no class instantiated.
-	 * This runs when an administrator opens the catalog, never in the hot path
-	 * of event dispatch. Bounded to supported Event/Events folders.
-	 */
 	private function eventClassFingerprint(string $app): string {
+		$hashes = [];
 		try {
 			$path = $this->apps->getAppPath($app);
-			$hashes = [];
-			foreach (['Events','Event'] as $folder) {
+			foreach (['Events', 'Event'] as $folder) {
 				$root = $path . '/lib/' . $folder;
 				if (!is_dir($root) || is_link($root)) {
 					continue;
 				}
 				$iterator = new \RecursiveIteratorIterator(
 					new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS),
-					\RecursiveIteratorIterator::LEAVES_ONLY
+					\RecursiveIteratorIterator::LEAVES_ONLY,
 				);
 				foreach ($iterator as $file) {
 					if (count($hashes) >= self::MAX_EVENTS) {
 						break 2;
 					}
-					if (!$file->isFile() || $file->isLink()
-						|| !str_ends_with($file->getFilename(), 'Event.php')) {
+					if (!$file->isFile() || $file->isLink() || !str_ends_with($file->getFilename(), 'Event.php')) {
 						continue;
 					}
-					$rel = $folder . '/' . substr($file->getPathname(), strlen($root) + 1);
+					$relative = $folder . '/' . substr($file->getPathname(), strlen($root) + 1);
 					$digest = @hash_file('sha256', $file->getPathname());
 					if ($digest !== false) {
-						$hashes[$rel] = $digest;
+						$hashes[$relative] = $digest;
 					}
 				}
 			}
-			ksort($hashes);
-			return hash('sha256', json_encode($hashes, JSON_THROW_ON_ERROR));
-		} catch (\Throwable $error) {
+		} catch (AppPathNotFoundException|\UnexpectedValueException $error) {
 			$this->logger->debug('Optional app event index unavailable', [
 				'appId' => $app, 'exceptionClass' => $error::class,
 			]);
 			return '';
 		}
+		ksort($hashes);
+		return hash('sha256', json_encode($hashes, JSON_THROW_ON_ERROR));
 	}
 
-	/**
-	 * Map public OCP event families to their Nextcloud app.
-	 * Do not infer the action's owner from this metadata.
-	 */
+	/** Return the Nextcloud app that owns this OCP event family. */
 	private function coreApp(string $class): string {
 		return match (true) {
 			str_starts_with($class, 'OCP\\Files\\') => 'files',
@@ -190,60 +188,67 @@ final class NativeEventCatalog {
 			if (!$file->isFile() || $file->isLink()) {
 				continue;
 			}
-			$fileName = $file->getFilename();
-			if (!str_ends_with($fileName, 'Event.php')) {
+			$relative = substr($file->getPathname(), strlen($root) + 1);
+			$class = NativeEventClassPolicy::fromRelativePath($relative, $namespace);
+			if ($class === null) {
 				continue;
 			}
-			$subPath = substr($file->getPathname(), strlen($root) + 1);
-			if ($subPath === '' || substr_count($subPath, '/') > 6) {
-				continue;
-			}
-			$part = substr($subPath, 0, -4);
-			if (!preg_match('~^[A-Za-z][A-Za-z0-9_]*(?:/[A-Za-z][A-Za-z0-9_]*)*$~D', $part)) {
-				continue;
-			}
-			// A few core files ending Event.php are not typed Event subclasses.
-			$class = $namespace . '\\' . str_replace('/', '\\', $part);
-			try {
-				if (!class_exists($class) || !is_subclass_of($class, Event::class)) {
-					continue;
-				}
-				$reflection = new \ReflectionClass($class);
-				if ($reflection->isAbstract() || $reflection->isInterface()) {
-					continue;
-				}
-				$appId = $core ? $this->coreApp($class) : $app;
-				if ($appId !== 'core' && !$this->apps->isEnabledForAnyone($appId)) {
-					continue;
-				}
-				$short = $reflection->getShortName();
-				$phase = str_starts_with($short, 'Before') ? 'before' : 'unknown';
-				$webhook = is_a($class, \OCP\EventDispatcher\IWebhookCompatibleEvent::class, true);
-				// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
-				$description = ($phase === 'before' ? $this->l10n->t('Before the operation; does not confirm completion. ')
-					// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
-					: $this->l10n->t('The timing of this event depends on the app and does not prove the operation completed. '))
-					// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
-					. $this->l10n->t('Recipient: the authenticated user of this request, not necessarily the affected user. ')
-					. (NativeEventSubscriptions::eventIsMutationByName($class)
-					// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
-					? $this->l10n->t('To keep page requests fast, this trigger ignores GET, HEAD and OPTIONS. ') : '')
-					// TRANSLATORS Short label for an option or field in the Nextcloud native-event catalog.
-					// TRANSLATORS Short label for an option or field in the Nextcloud native-event catalog.
-					. ($webhook ? $this->l10n->t('Compatible with Webhook Listeners.') : $this->l10n->t('Internal PHP event.'));
-				$key = self::triggerKey($class);
-				$out[$class] = [
-					'key' => $key, 'appId' => $appId, 'class' => $class,
-					// TRANSLATORS Prefix before the short class name of a discovered PHP event.
-					'label' => $this->l10n->t('PHP event: ') . $short,
-					'description' => $description,
-					'webhook' => $webhook, 'phase' => $phase,
-				];
-			} catch (\Throwable $error) {
-				$this->logger->debug('External event metadata was skipped', [
-					'appId' => $app, 'exceptionClass' => $error::class,
-				]);
+			$entry = $this->describe($class, $app, $core);
+			if ($entry !== null) {
+				$out[$class] = $entry;
 			}
 		}
+	}
+
+	private function describe(string $class, string $app, bool $core): ?array {
+		try {
+			if (!class_exists($class) || !is_subclass_of($class, Event::class)) {
+				return null;
+			}
+			$reflection = new \ReflectionClass($class);
+			if ($reflection->isAbstract() || $reflection->isInterface()) {
+				return null;
+			}
+			$appId = $core ? $this->coreApp($class) : $app;
+			if ($appId !== 'core' && !$this->apps->isEnabledForAnyone($appId)) {
+				return null;
+			}
+			$short = $reflection->getShortName();
+			$phase = str_starts_with($short, 'Before') ? 'before' : 'unknown';
+			$webhook = is_a($class, \OCP\EventDispatcher\IWebhookCompatibleEvent::class, true);
+			return [
+				'key' => self::triggerKey($class), 'appId' => $appId, 'class' => $class,
+				// TRANSLATORS Prefix before the short class name of a discovered PHP event.
+				'label' => $this->l10n->t('PHP event: ') . $short,
+				'description' => $this->description($class, $phase, $webhook),
+				'webhook' => $webhook, 'phase' => $phase,
+			];
+		} catch (\ReflectionException|\Error $error) {
+			$this->logger->debug('External event metadata was skipped', [
+				'appId' => $app, 'exceptionClass' => $error::class,
+			]);
+			return null;
+		}
+	}
+
+	private function description(string $class, string $phase, bool $webhook): string {
+		// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
+		$timing = $phase === 'before'
+			? $this->l10n->t('Before the operation; does not confirm completion. ')
+			// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
+			: $this->l10n->t('The timing of this event depends on the app and does not prove the operation completed. ');
+		// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
+		$recipient = $this->l10n->t('Recipient: the authenticated user of this request, not necessarily the affected user. ');
+		$readMethods = '';
+		if (NativeEventSubscriptions::eventIsMutationByName($class)) {
+			// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
+			$readMethods = $this->l10n->t('To keep page requests fast, this trigger ignores GET, HEAD and OPTIONS. ');
+		}
+		// TRANSLATORS Short label for an option or field in the Nextcloud native-event catalog.
+		$kind = $webhook
+			? $this->l10n->t('Compatible with Webhook Listeners.')
+			// TRANSLATORS Short label for an option or field in the Nextcloud native-event catalog.
+			: $this->l10n->t('Internal PHP event.');
+		return $timing . $recipient . $readMethods . $kind;
 	}
 }

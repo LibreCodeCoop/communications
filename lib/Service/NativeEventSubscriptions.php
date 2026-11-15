@@ -34,12 +34,7 @@ final class NativeEventSubscriptions {
 	) {
 	}
 
-	/**
-	 * Parse the already-compiled app configuration in early bootstrap. This
-	 * static fast path has no DI, app-manager, DB or filesystem dependencies.
-	 * A potentially disabled app is excluded later inside the event handler.
-	 *
-	 */
+	/** Only named mutating event types skip read-only HTTP requests. */
 	public static function eventIsMutationByName(string $class): bool {
 		// Conservative opt-out of safe HTTP methods for events explicitly named
 		// after a state-changing operation. This is an optimization, not a claim
