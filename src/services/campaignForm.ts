@@ -32,21 +32,20 @@ export function campaignRecordToForm(
 		page_route: c.page_route || '',
 		page_filters: c.page_filters || {},
 		audience_type: c.audience_type,
-		audience_group: c.audience_group,
 		audience_groups: groupIds,
 		audience_users: c.audience_users || [],
-		presentation: c.presentation === 'board' ? 'none' : c.presentation,
+		presentation: c.presentation,
 		status: c.status === 'archived' ? 'draft' : c.status,
 		priority: c.priority,
 		placement: c.placement || 'any',
-		app_target_mode: c.app_target_mode || 'legacy',
+		app_target_mode: c.app_target_mode || 'area',
 		app_target_apps: c.app_target_apps || [],
 		frequency: c.frequency || 'event',
 		min_interval_minutes: c.min_interval_minutes || 0,
 		max_total: c.max_total || 0,
 		max_per_day: c.max_per_day || 0,
 		category: c.category || 'institutional',
-		theme: c.theme || 'default',
+		theme: c.theme || 'info',
 		banner_color: c.banner_color || defaultBannerColor,
 		banner_icon: c.banner_icon || 'auto',
 		board_visible: !!c.board_visible,
@@ -80,7 +79,6 @@ export function serializeCampaignForm(
 ): CampaignSavePayload {
 	return {
 		...form,
-		audience_group: groups[0]?.id || '',
 		audience_groups:
 			form.audience_type === 'group' ? groups.map((option) => option.id) : [],
 		audience_users:
@@ -120,7 +118,6 @@ export function validateCampaignPayload(
 	}
 	if (
 		['only', 'exclude'].includes(data.app_target_mode)
-		&& data.presentation !== 'board'
 		&& data.trigger_key !== 'nextcloud.page.opened'
 		&& !data.app_target_apps.length
 	) {

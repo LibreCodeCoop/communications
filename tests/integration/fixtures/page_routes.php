@@ -46,7 +46,7 @@ $data = [
 	'page_route' => '/apps/files/{view}',
 	'placement' => 'files',
 	'audience_type' => 'users','audience_users' => [$uid],
-	'audience_groups' => [],'audience_group' => '','excluded_groups' => [],
+	'audience_groups' => [],'excluded_groups' => [],
 	'presentation' => 'banner','status' => 'active','priority' => 100,
 	'starts_at' => null,'ends_at' => null,'frequency' => 'event',
 	'max_total' => 0,'max_per_day' => 0,

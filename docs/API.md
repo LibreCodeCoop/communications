@@ -22,7 +22,7 @@ This document describes the **Communications** Nextcloud app (`communications`),
 | GET | `/api/editor-groups` | Current editor delegation; administrator only |
 | POST | `/api/editor-groups` | Replace delegated editor groups; administrator only |
 
-`/api/catalog` returns `automation.intents`, `automation.sources`, `automation.applications`, `automation.placements`, `deliveryChannels`, `groups`, `statuses` and `presentations`. The `triggers` array is retained for older clients; use the intent/source catalog for new editor flows. Event sources can come from installed apps without a Communications-specific adapter. Display labels depend on the Nextcloud locale; integrate using stable IDs, not localized text.
+`/api/catalog` returns `automation.intents`, `automation.sources`, `automation.applications`, `automation.placements`, `deliveryChannels`, `groups`, `statuses` and `presentations`. Event sources can come from installed apps without a Communications-specific adapter. Display labels depend on the Nextcloud locale; integrate using stable IDs, not localized text.
 
 A page trigger (`trigger_key=nextcloud.page.opened`) requires a concrete navigable `placement` and, optionally, an exact `page_route` pattern returned by `/api/routes`. An empty `page_route` matches any supported page in that app, not every page in Nextcloud. The route discovery is heuristic and uses Nextcloud internals: an API endpoint or a concrete user-specific URL is not a valid route-pattern substitute.
 
@@ -69,7 +69,7 @@ Example `POST /api/campaigns` body, using a recipient that exists in the test in
 
 `name`, `headline`, `message`, `trigger_key`, `status`, `presentation` and `audience_type` are required. The service validates target accounts/groups, registered triggers, publication status, timing and channel combinations. Invalid payloads return HTTP 422. If `audience_type=group`, supply `audience_groups`; `group_match` supports `any` or `all`, and `excluded_groups` takes precedence over inclusions. For a scheduled `nextcloud.time.window` trigger, `starts_at` is required.
 
-`presentation` accepts `banner`, `modal`, `none` and the legacy `board` value. `board_visible` independently controls the Inbox copy. `notify_users`, `notify_activity`, `notify_email` and `gateway_channels` choose optional additional delivery channels; at least one destination is required. A `presentation=none` publication with no Inbox and no outbound channel is invalid. See [Delivery channels](DELIVERY_CHANNELS.md).
+`presentation` accepts `banner`, `modal` or `none`. `board_visible` independently controls the Inbox copy. `notify_users`, `notify_activity`, `notify_email` and `gateway_channels` choose optional additional delivery channels; at least one destination is required. A `presentation=none` publication with no Inbox and no outbound channel is invalid. See [Delivery channels](DELIVERY_CHANNELS.md).
 
 `frequency` accepts `event`, `once`, `daily`, `weekly` and `custom`. `min_interval_minutes`, `max_per_day` and `max_total` constrain repeated deliveries. Sponsored publications have a conservative default daily ceiling when the maximum is omitted. `starts_at` and `ends_at` are Unix timestamps (or null), checked on the server; the end must be after the start. The API allows safe internal paths, HTTP(S), `mailto:` and `tel:` for CTA links, with label and URL provided together.
 
@@ -79,8 +79,6 @@ For localization, `translated_content` is a mapping from supported locale identi
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/api/pending?page=files&path=...` | Diagnostic listing without taking a delivery reservation |
-| POST | `/api/claim` | Reserve one eligible contextual delivery for the current tab |
 | POST | `/api/claim-batch` | Reserve up to five eligible contextual deliveries (`limit`, maximum 5) |
 | POST | `/api/impression` | Record presentation of a reserved delivery |
 | POST | `/api/ack` | Acknowledge or dismiss a reserved delivery |
@@ -102,7 +100,7 @@ Example claim input:
 {"page": "files", "path": "/index.php/apps/files/recent", "newVisit": true}
 ```
 
-The server identifies the recipient from the authenticated session. The claim response contains `campaign`, which is null if no delivery is available. For a claimed item, use the returned `deliveryId` and `claimToken` in `/api/impression`, `/api/ack` or `/api/click`:
+The server identifies the recipient from the authenticated session. The claim-batch response contains `campaign` for an exclusive modal, or a `campaigns` array for up to five banners. For each claimed item, use the returned `deliveryId` and `claimToken` in `/api/impression`, `/api/ack` or `/api/click`:
 
 ```json
 {"deliveryId": 456, "claimToken": "returned-reservation-token"}

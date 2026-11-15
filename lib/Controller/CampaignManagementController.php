@@ -80,7 +80,6 @@ class CampaignManagementController extends Controller {
 			return $deny;
 		}
 		return new JSONResponse([
-			'triggers' => $this->triggerCatalog->legacyTriggers(),
 			'automation' => [
 				'intents' => $this->triggerCatalog->intents(),
 				'sources' => $this->triggerCatalog->sources(),

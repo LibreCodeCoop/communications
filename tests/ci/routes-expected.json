@@ -45,16 +45,6 @@
     "verb": "DELETE"
   },
   {
-    "name": "campaign#pending",
-    "url": "/api/pending",
-    "verb": "GET"
-  },
-  {
-    "name": "campaign#claim",
-    "url": "/api/claim",
-    "verb": "POST"
-  },
-  {
     "name": "campaign#claimBatch",
     "url": "/api/claim-batch",
     "verb": "POST"

@@ -12,7 +12,7 @@ export interface PublicationPresentation {
 	message?: string
 	category?: string
 	theme?: string
-	presentation?: 'banner' | 'modal' | 'none' | 'board'
+	presentation?: 'banner' | 'modal' | 'none'
 	ctaLabel?: string
 	ctaUrl?: string
 	cta_label?: string
@@ -163,10 +163,9 @@ export interface CampaignForm {
 	page_route: string
 	page_filters: PageRouteFilters
 	audience_type: string
-	audience_group: string
 	audience_groups: string[]
 	audience_users: string[]
-	presentation: 'banner' | 'modal' | 'none' | 'board'
+	presentation: 'banner' | 'modal' | 'none'
 	status: string
 	priority: number
 	placement: string
@@ -218,10 +217,6 @@ export interface UserSelection {
 	displayName: string
 	user?: string
 }
-export interface CampaignTrigger {
-	key: string
-	label: string
-}
 export interface CampaignGroup {
 	id: string
 	name: string
@@ -235,7 +230,6 @@ export interface CatalogDeliveryChannel {
 	help: string
 }
 export interface CampaignCatalog {
-	triggers: CampaignTrigger[]
 	groups: CampaignGroup[]
 	automation: AutomationCatalog
 	deliveryChannels: CatalogDeliveryChannel[]
@@ -256,7 +250,6 @@ export interface CampaignApiPayload {
 	users?: Array<{ id: string; name: string }>
 	error?: string
 	message?: string
-	triggers?: CampaignTrigger[]
 	automation?: AutomationCatalog
 	editorGroups?: string[]
 	deliveryChannels?: CatalogDeliveryChannel[]

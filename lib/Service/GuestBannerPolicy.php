@@ -19,7 +19,7 @@ final class GuestBannerPolicy {
 			&& $campaign['trigger_key'] === 'nextcloud.time.window'
 			&& $campaign['category'] === 'institutional'
 			&& $campaign['placement'] === 'any'
-			&& in_array($campaign['app_target_mode'], ['legacy', 'all'], true)
+			&& in_array($campaign['app_target_mode'], ['area', 'all'], true)
 			&& !$campaign['board_visible'];
 	}
 }

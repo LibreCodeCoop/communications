@@ -70,9 +70,8 @@ class FlowCampaignOperation implements ISpecificOperation {
 	}
 
 	public function onEvent(string $eventName, Event $event, IRuleMatcher $matcher): void {
-		// The Flow engine's file entity dispatches legacy GenericEvent objects,
-		// not modern NodeCreatedEvent/NodeWrittenEvent. Use the event contract the
-		// registered entity actually provides, after Flow has evaluated its checks.
+		// The current Flow file entity passes GenericEvent for the registered
+		// Files hooks. Only process those events after Flow has checked its rules.
 		if (!$event instanceof GenericEvent || !in_array($eventName, ['\\OCP\\Files::postCreate', '\\OCP\\Files::postWrite'], true)) {
 			return;
 		}

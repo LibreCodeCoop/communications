@@ -94,7 +94,7 @@ final class WebRouteCatalog {
 	private function isAuthenticatedHtmlRoute(string $app, object $route): bool {
 		$caller = $route->getDefault('caller');
 		if (!is_array($caller) || count($caller) < 3 || !is_string($caller[1]) || !is_string($caller[2])) {
-			return true; // Old route definitions: still subject to path exclusions.
+			return false; // Unresolved controller metadata cannot prove a route is a navigable page.
 		}
 		try {
 			$controller = $this->apps->getAppNamespace($app) . '\\Controller\\' . $caller[1];

@@ -36,36 +36,6 @@ class CampaignController extends Controller {
 		return $this->userSession->getUser()?->getUID();
 	}
 
-	/**
-	 * Diagnostic backwards-compatible list. No tab lease is taken here; production
-	 * frontend uses POST /api/claim to ensure only one tab presents each delivery.
-	 */
-	#[NoAdminRequired]
-	#[NoCSRFRequired]
-	#[UseSession]
-	#[FrontpageRoute(verb: 'GET', url: '/api/pending')]
-	public function pending(string $page = 'any', string $path = ''): JSONResponse {
-		$uid = $this->uid();
-		if ($uid === null) {
-			return new JSONResponse(['campaigns' => []], 401);
-		}
-		$this->deliveries->prepare($uid, $page, false, $path);
-		return new JSONResponse(['campaigns' => $this->deliveries->pending($uid, $page, 30, $path)]);
-	}
-
-	#[NoAdminRequired]
-	#[UseSession]
-	#[FrontpageRoute(verb: 'POST', url: '/api/claim')]
-	public function claim(string $page = 'any', bool $newVisit = false, string $path = ''): JSONResponse {
-		$uid = $this->uid();
-		if ($uid === null) {
-			// TRANSLATORS Short label for an option or field in the CampaignController API response.
-			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
-		}
-		$item = $this->deliveries->claim($uid, $page, $newVisit, $path);
-		return new JSONResponse(['campaign' => $item]);
-	}
-
 	#[NoAdminRequired]
 	#[UseSession]
 	#[FrontpageRoute(verb: 'POST', url: '/api/claim-batch')]
@@ -99,8 +69,6 @@ class CampaignController extends Controller {
 	public function acknowledge(
 		int $deliveryId = 0,
 		string $claimToken = '',
-		int $campaignId = 0,
-		string $eventId = '',
 	): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
@@ -108,8 +76,7 @@ class CampaignController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$ok = $deliveryId > 0 && $claimToken !== ''
-			? $this->deliveries->transition($uid, $deliveryId, $claimToken, 'dismiss')
-			: ($campaignId > 0 && $eventId !== '' && $this->deliveries->legacyAcknowledge($uid, $campaignId, $eventId));
+			&& $this->deliveries->transition($uid, $deliveryId, $claimToken, 'dismiss');
 		// TRANSLATORS Validation or failure message shown in the CampaignController API response.
 		return $ok ? new JSONResponse(['acknowledged' => true]) : new JSONResponse(['error' => $this->l10n->t('Invalid delivery.')], 409);
 	}

@@ -538,13 +538,4 @@ final class TriggerCatalog {
 		return false;
 	}
 
-	public function legacyTriggers(): array {
-		$out = [];
-		foreach ($this->sources() as $source) {
-			foreach ($source['actions'] as $action) {
-				$out[] = ['key' => $action['key'], 'label' => $action['label']];
-			}
-		}
-		return $out;
-	}
 }

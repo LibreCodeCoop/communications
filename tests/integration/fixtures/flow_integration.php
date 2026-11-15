@@ -38,7 +38,7 @@ if ($cmd === 'create') {
 		'headline' => 'Real Flow matched', 'message' => 'Flow match confirmed',
 		'cta_label' => '', 'cta_url' => '', 'trigger_key' => 'nextcloud.flow.matched',
 		'audience_type' => 'users', 'audience_users' => ['poc_admin'], 'audience_groups' => [],
-		'audience_group' => '', 'presentation' => 'banner',
+		 'presentation' => 'banner',
 		'status' => 'active','priority' => 99, 'starts_at' => null,'ends_at' => null,
 		'frequency' => 'once', 'placement' => 'files',
 	], 'poc_admin');

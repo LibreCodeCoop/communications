@@ -18,30 +18,14 @@ use OCP\IUserManager;
 
 class CampaignRepository {
 	public const TABLE = CampaignMapper::TABLE;
-	public const TRIGGERS = [
-		'nextcloud.user.login' => 'Interactive login',
-		'nextcloud.files.created' => 'File created (Files)',
-		'nextcloud.files.updated' => 'File updated (Files)',
-		'nextcloud.files.deleted' => 'File removed (Files)',
-		'nextcloud.user.first_login' => 'First login',
-		'nextcloud.share.created' => 'Share created',
-		'nextcloud.share.accepted' => 'Share accepted',
-		'nextcloud.comment.created' => 'Comment published',
-		'nextcloud.page.opened' => 'Application page opened',
-		'nextcloud.time.window' => 'Date-scheduled campaign',
-		'nextcloud.flow.matched' => 'Nextcloud Flow rule matched',
-		'external.webhook' => 'Authenticated external webhook',
-		'nextcloud.board.published' => 'Persistent announcement on the board',
-	];
 	public const STATUSES = ['draft', 'active', 'paused', 'archived'];
-	public const PRESENTATIONS = ['banner', 'modal', 'board', 'none'];
+	public const PRESENTATIONS = ['banner', 'modal', 'none'];
 	public const PLACEMENTS = ['any', 'files', 'dashboard', 'settings', 'admin_settings'];
 	public const FREQUENCIES = ['event', 'once', 'daily', 'weekly', 'custom'];
 	public const CATEGORIES = ['institutional', 'sponsored'];
-	// Preserve legacy themes while supporting the four native NcNoteCard types.
-	public const THEMES = ['default', 'primary', 'info', 'success', 'warning', 'error', 'neutral', 'custom'];
+	public const THEMES = ['info', 'success', 'warning', 'error', 'neutral', 'custom'];
 	public const BANNER_ICONS = [
-		'auto','none','info','success','warning','error','shield',
+		'auto','none',
 		'megaphone','bullhorn','bell','bell-ring','alert','alert-circle','alert-octagon',
 		'information','information-outline','check-circle','check-decagram',
 		'close-circle','close-octagon','shield-alert','shield-check','lock',
@@ -73,7 +57,7 @@ class CampaignRepository {
 		}
 	}
 
-	/** Legacy admin and CLI list. Prefer pagedList() for large UI datasets. */
+	/** Complete enumeration for CLI commands, ordering and background jobs. */
 	public function all():array {
 		$rows = iterator_to_array($this->scan(), false);
 		usort($rows, static fn (array $a, array $b):int
@@ -240,7 +224,6 @@ class CampaignRepository {
 
 	/**
 	 * Target IDs are validated on the server; the browser never decides authorization.
-	 * 'group' is accepted as a legacy single-group input for existing API consumers.
 	 */
 	public function validate(array $payload): array {
 		return $this->inputValidator->validate($payload);
@@ -359,10 +342,6 @@ class CampaignRepository {
 	}
 
 	private function castRow(array $row): array {
-		// Legacy rows use the schema default marker for unrestricted pages.
-		if (!isset($row['page_route']) || $row['page_route'] === '*') {
-			$row['page_route'] = '';
-		}
 		$rawFilters = json_decode($row['page_filters'] ?? '{}', true);
 		$row['page_filters'] = is_array($rawFilters) ? $rawFilters : [];
 		$row['text_color'] = $row['text_color'] ?? '';
@@ -383,9 +362,6 @@ class CampaignRepository {
 			$decoded = json_decode($value, true);
 			$row[$field] = is_array($decoded) && array_is_list($decoded)
 				? array_values(array_filter($decoded, 'is_string')) : [];
-		}
-		if ($row['audience_type'] === 'group' && $row['audience_groups'] === [] && $row['audience_group'] !== '') {
-			$row['audience_groups'] = [$row['audience_group']];
 		}
 		return $row;
 	}

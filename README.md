@@ -16,7 +16,7 @@ Administrators publish information to eligible audiences using a single editor a
 - CI tests install a disposable Nextcloud 36 development instance with SQLite, PostgreSQL and MariaDB. Stable-version compatibility and production suitability require separate certification.
 - Optional Nextcloud apps: Notifications, Activity, Dashboard, Flow and Two-Factor Gateway. Providers must be configured separately.
 
-This project was derived from the local `contextualcampaigns` proof of concept. **It is a new app ID**, not a drop-in upgrade. Do not install it alongside `contextualcampaigns` in the same database; both historically use `cc_` tables. Data migration and upgrade from the old laboratory identifier are not supported.
+Communications is an unreleased application with one canonical initial schema. For development, reinstall into an isolated disposable database whenever the unpublished schema changes. Do not share a database with the separate `contextualcampaigns` proof-of-concept app because its `cc_` table names overlap.
 
 ## Basic use
 

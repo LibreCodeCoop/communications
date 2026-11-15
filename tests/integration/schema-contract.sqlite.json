@@ -309,14 +309,7 @@
                 "type": "stringtype",
                 "length": 12,
                 "notnull": true,
-                "default": "legacy",
-                "autoincrement": false
-            },
-            "audience_group": {
-                "type": "stringtype",
-                "length": 64,
-                "notnull": true,
-                "default": "",
+                "default": "area",
                 "autoincrement": false
             },
             "audience_groups": {
@@ -554,7 +547,7 @@
                 "type": "stringtype",
                 "length": 255,
                 "notnull": true,
-                "default": "*",
+                "default": "",
                 "autoincrement": false
             },
             "placement": {
@@ -617,7 +610,7 @@
                 "type": "stringtype",
                 "length": 12,
                 "notnull": true,
-                "default": "default",
+                "default": "info",
                 "autoincrement": false
             },
             "translated_content": {

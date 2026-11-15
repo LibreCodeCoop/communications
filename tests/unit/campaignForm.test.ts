@@ -23,21 +23,20 @@ function validForm(): CampaignForm {
 		page_route: '',
 		page_filters: {},
 		audience_type: 'all',
-		audience_group: '',
 		audience_groups: [],
 		audience_users: [],
 		presentation: 'banner',
 		status: 'draft',
 		priority: 10,
 		placement: 'any',
-		app_target_mode: 'legacy',
+		app_target_mode: 'area',
 		app_target_apps: [],
 		frequency: 'event',
 		min_interval_minutes: 0,
 		max_total: 0,
 		max_per_day: 0,
 		category: 'institutional',
-		theme: 'default',
+		theme: 'info',
 		banner_color: '',
 		banner_icon: 'auto',
 		board_visible: false,
@@ -69,10 +68,9 @@ describe('pure campaign editor data contracts', () => {
 			updated_at: 3,
 			published_at: 4,
 			audience_type: 'group',
-			audience_groups: [],
-			audience_group: 'cooperados',
+			audience_groups: ['cooperados'],
 			status: 'archived',
-			presentation: 'board',
+			presentation: 'none',
 			starts_at: 100,
 			ends_at: 200,
 		} as CampaignRecord
@@ -103,7 +101,6 @@ describe('pure campaign editor data contracts', () => {
 			[{ id: 'blocked', displayName: 'Blocked' }],
 		)
 		expect(payload.audience_groups).toEqual(['cooperados', 'equipe'])
-		expect(payload.audience_group).toBe('cooperados')
 		expect(payload.audience_users).toEqual([])
 		expect(payload.excluded_groups).toEqual(['blocked'])
 		expect(payload.starts_at).toBe(120)

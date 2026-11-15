@@ -24,7 +24,7 @@ The editor supports a contextual **banner or modal**, the **Inbox**, **Nextcloud
 | Modal plus Telegram | Modal | Optional | Configured Telegram gateway |
 | Scheduled outbound message | None | Optional | One or more outbound channels |
 
-`presentation=none` represents a publication without a banner or modal; `board_visible` separately controls an Inbox copy. The legacy `presentation=board` is still accepted for previously stored data, but is not the preferred new representation.
+`presentation=none` represents a publication without a banner or modal; `board_visible` separately controls an Inbox copy.
 
 ## When a publication is sent
 

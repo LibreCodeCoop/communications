@@ -7,6 +7,11 @@
 
 declare(strict_types=1);
 
+// Run as a console script in the disposable Nextcloud test instance so that
+// the schema assertion cannot be skipped by web request initialization.
+define('OC_CONSOLE', 1);
+$_SERVER['SCRIPT_FILENAME'] = '/var/www/html/occ';
+chdir('/var/www/html');
 require '/var/www/html/lib/base.php';
 $db = \OC::$server->get(\OCP\IDBConnection::class);
 $tables = [];
@@ -51,7 +56,7 @@ $failures = [];
 if (array_keys($expected) !== array_keys($tables)) {
 	$failures[] = 'Initial app table names differ from the reviewed schema';
 }
-$isSqlite = \OC::$server->getConfig()->getSystemValueString('dbtype', '') === 'sqlite3';
+$isSqlite = \OC::$server->get(\OCP\IConfig::class)->getSystemValueString('dbtype', '') === 'sqlite3';
 foreach ($expected as $tableName => $contract) {
 	if (!isset($tables[$tableName])) {
 		$failures[] = "Missing table {$tableName}";
@@ -67,7 +72,7 @@ foreach ($expected as $tableName => $contract) {
 		}
 		$found = $actual['columns'][$name];
 		// Databases normalize types, defaults and autoincrement differently.
-		// Verify the full historical schema on SQLite, and the portable
+		// Verify the full initial-install schema on SQLite, and the portable
 		// nullability/length contract on PostgreSQL and MariaDB.
 		if ($isSqlite && $found !== $column) {
 			$failures[] = "Column differs: {$tableName}.{$name}";

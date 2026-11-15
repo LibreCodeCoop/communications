@@ -28,7 +28,7 @@ The browser compatibility scenario creates a synthetic LibreSign completion even
 
 Development uses the organization-managed lint, type-check, build, Node test and REUSE workflows. Run `npm run lint`, `npm run check-types`, `npm run stylelint`, `npm run test:unit`, `composer cs:check`, `composer test`, and `composer analyse` before review. The optional `npm run test:mutation` tests the frontend URL allowlist using Stryker's Vitest runner and blocks scores below 85%. The separate `composer mutation:test` uses Infection with PCOV/Xdebug and blocks backend URL-sanitizer scores below 90%. Both are intentionally scoped to security-sensitive URL validation; neither claims mutation coverage for unrelated frontend modules or the full PHP application. The separate Playwright workflow validates recipient isolation, route/schema contracts, and the generic LibreSign event contract on disposable Nextcloud instances.
 
-The consolidated schema is compared with the pre-consolidation contract in `tests/integration/schema-contract.sqlite.json`. The assertion checks full SQLite column types/defaults and portable nullability/length/index contracts in PostgreSQL and MariaDB. No migration of the old laboratory app ID is implied.
+The first-installation schema is checked against `tests/integration/schema-contract.sqlite.json`. The assertion checks full SQLite column types/defaults and portable nullability/length/index contracts in PostgreSQL and MariaDB on disposable databases. During pre-release development, discard and recreate isolated test databases after a schema change; there is no published upgrade chain.
 
 ### Official Nextcloud CI templates
 

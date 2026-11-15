@@ -26,7 +26,7 @@ if ($cmd === 'create') {
 		'cta_label' => '','cta_url' => '',
 		'trigger_key' => 'external.webhook', 'status' => 'active', 'placement' => 'any',
 		'audience_type' => 'users','audience_users' => ['poc_second'],
-		'audience_group' => '','audience_groups' => [],
+		'audience_groups' => [],
 		'presentation' => 'banner','priority' => 100,
 	];
 	$a = $repo->create($data, 'poc_admin');

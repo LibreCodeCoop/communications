@@ -146,9 +146,9 @@ const placementOptions = computed(() =>
 )
 const targetModeOptions = [
 	{
-		value: 'legacy',
-		// TRANSLATORS Short label for an option or field in the publications management screen.
-		label: t('communications', 'A defined area (existing mode)'),
+		value: 'area',
+		// TRANSLATORS Only display the publication within one chosen Nextcloud application area.
+		label: t('communications', 'Selected application area'),
 	},
 	// TRANSLATORS Short label for an option or field in the publications management screen.
 	{ value: 'all', label: t('communications', 'All supported applications') },
@@ -203,10 +203,6 @@ const categoryOptions = [
 	{ label: t('communications', 'Sponsored content'), value: 'sponsored' },
 ]
 const themeOptions = [
-	// TRANSLATORS Visual theme matching the Nextcloud instance styling.
-	{ label: t('communications', 'Nextcloud default'), value: 'default' },
-	// TRANSLATORS Visual theme that emphasizes organizational announcements.
-	{ label: t('communications', 'Institutional highlight'), value: 'primary' },
 	// TRANSLATORS Informational visual theme or notification style, not a menu command.
 	{ label: t('communications', 'Information'), value: 'info' },
 	// TRANSLATORS Visual theme used for a successful or positive announcement.
@@ -254,7 +250,6 @@ const bannerTypes = [
 const selectable = (option: { value: string }): string => option.value
 const campaigns = ref<CampaignRecord[]>([])
 const catalog = ref<CampaignCatalog>({
-	triggers: [],
 	groups: [],
 	automation: { intents: [], sources: [], placements: [], applications: [] },
 	deliveryChannels: [],
@@ -829,7 +824,6 @@ const deliveryReview = computed(() => {
 	// TRANSLATORS Empty state or unavailable-condition message in the publications management screen.
 	return surfaces.join(' · ') || t('communications', 'No destination selected')
 })
-// Legacy default/primary become informational banners without migrating data.
 const selectedBannerType = computed(() =>
 	bannerTypes.some((item) => item.value === form.value.theme)
 		? form.value.theme
@@ -957,21 +951,20 @@ function makeDefault(): CampaignForm {
 		page_route: '',
 		page_filters: {},
 		audience_type: 'all',
-		audience_group: '',
 		audience_groups: [],
 		audience_users: [],
 		presentation: 'banner',
 		status: 'draft',
 		priority: 10,
 		placement: 'any',
-		app_target_mode: 'legacy',
+		app_target_mode: 'area',
 		app_target_apps: [],
 		frequency: 'event',
 		min_interval_minutes: 0,
 		max_total: 0,
 		max_per_day: 0,
 		category: 'institutional',
-		theme: 'default',
+		theme: 'info',
 		banner_color: DEFAULT_BANNER_COLOR,
 		banner_icon: 'auto',
 		board_visible: false,
@@ -1125,7 +1118,12 @@ watch([search, filterStatus], () => {
 	page.value = 1
 })
 const triggerOptions = computed(() =>
-	(catalog.value.triggers || []).map((t) => ({ label: t.label, value: t.key })),
+	(catalog.value.automation?.sources || []).flatMap((source) =>
+		(source.actions || []).map((action) => ({
+			label: action.label,
+			value: action.key,
+		})),
+	),
 )
 const groupOptions = computed(() =>
 	(catalog.value.groups || []).map((g) => ({ label: g.name, value: g.id })),
@@ -1194,11 +1192,7 @@ function period(c: CampaignRecord): string {
 }
 function groupLabel(c: CampaignRecord): string {
 	if (c.audience_type === 'group') {
-		const ids = c.audience_groups?.length
-			? c.audience_groups
-			: c.audience_group
-				? [c.audience_group]
-				: []
+		const ids = c.audience_groups
 		return (
 			ids
 				.map(
@@ -1309,11 +1303,8 @@ const locationReview = computed(() =>
 				t('communications', 'Inbox only; no banner or dialog')
 			: // TRANSLATORS Publication that does not show a banner or modal.
 				t('communications', 'No on-screen display')
-		: form.value.presentation === 'board'
-			? // TRANSLATORS The Communications app message Inbox, distinct from the Nextcloud Mail app.
-				t('communications', 'Inbox')
-			: placementOptions.value.find((x) => x.value === form.value.placement)
-					?.label || form.value.placement,
+		: placementOptions.value.find((x) => x.value === form.value.placement)?.label
+			|| form.value.placement,
 )
 function dailyFrequencyLabel(count: number): string {
 	// TRANSLATORS {count} is the maximum number of deliveries allowed in 24 hours.
@@ -1564,11 +1555,7 @@ function openCreate() {
 	view.value = 'editor'
 }
 function openEdit(c: CampaignRecord) {
-	const groupIds = c.audience_groups?.length
-		? c.audience_groups
-		: c.audience_group
-			? [c.audience_group]
-			: []
+	const groupIds = c.audience_groups
 	selectedGroups.value = groupIds.map((id) => {
 		const label =
 			groupChoices.value.find((option) => option.id === id)?.displayName || id
@@ -1621,7 +1608,6 @@ async function save() {
 		errorMessage.value = validationError
 		return
 	}
-	if (data.audience_type !== 'group') data.audience_group = ''
 	saving.value = true
 	try {
 		const isNew = editorId.value === null
@@ -2932,7 +2918,7 @@ onMounted(async () => {
 								<div
 									v-if="
 										form.presentation === 'banner'
-										|| form.presentation === 'board'
+										|| form.presentation === 'none'
 									"
 									class="cc-native-control">
 									<label for="cc-text-align"
@@ -2950,7 +2936,7 @@ onMounted(async () => {
 								<div
 									v-if="
 										form.presentation === 'banner'
-										|| form.presentation === 'board'
+										|| form.presentation === 'none'
 									"
 									class="cc-banner-color-picker">
 									<label
@@ -3128,7 +3114,7 @@ onMounted(async () => {
 											&& ['banner', 'modal'].includes(
 												form.presentation,
 											)
-											&& form.app_target_mode === 'legacy'
+											&& form.app_target_mode === 'area'
 										"
 										class="cc-native-control">
 										<label for="cc-placement"
@@ -3247,7 +3233,7 @@ onMounted(async () => {
 											|| form.audience_type !== 'all'
 											|| form.category !== 'institutional'
 											|| form.placement !== 'any'
-											|| !['legacy', 'all'].includes(
+											|| !['area', 'all'].includes(
 												form.app_target_mode,
 											)
 										">
@@ -3675,10 +3661,7 @@ onMounted(async () => {
 
 	<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 	<NcDialog
-		v-if="
-			previewOpen
-			&& ['board', 'none'].includes((previewCampaign || form).presentation)
-		"
+		v-if="previewOpen && (previewCampaign || form).presentation === 'none'"
 		:open="previewOpen"
 		:name="
 			(previewCampaign || form).headline

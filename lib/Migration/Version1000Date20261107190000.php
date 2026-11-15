@@ -15,7 +15,7 @@ use OCP\DB\Types;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 
-/** Initial schema for new installations; no historical upgrade chain is published. */
+/** Initial installation schema for the unreleased Communications application. */
 final class Version1000Date20261107190000 extends SimpleMigrationStep {
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
 		$schema = $schemaClosure();
@@ -26,8 +26,7 @@ final class Version1000Date20261107190000 extends SimpleMigrationStep {
 				'columns' => [
 					'id' => [Types::BIGINT, ['notnull' => true, 'autoincrement' => true]],
 					'app_target_apps' => [Types::TEXT, ['notnull' => true, 'default' => '[]']],
-					'app_target_mode' => [Types::STRING, ['length' => 12, 'notnull' => true, 'default' => 'legacy']],
-					'audience_group' => [Types::STRING, ['length' => 64, 'notnull' => true, 'default' => '']],
+					'app_target_mode' => [Types::STRING, ['length' => 12, 'notnull' => true, 'default' => 'area']],
 					'audience_groups' => [Types::TEXT, ['notnull' => true, 'default' => '[]']],
 					'audience_type' => [Types::STRING, ['length' => 20, 'notnull' => true, 'default' => 'all']],
 					'audience_users' => [Types::TEXT, ['notnull' => true, 'default' => '[]']],
@@ -60,7 +59,7 @@ final class Version1000Date20261107190000 extends SimpleMigrationStep {
 					'notify_email' => [Types::SMALLINT, ['notnull' => true, 'default' => 0]],
 					'notify_users' => [Types::SMALLINT, ['notnull' => true, 'default' => 0]],
 					'page_filters' => [Types::TEXT, ['notnull' => true, 'default' => '{}']],
-					'page_route' => [Types::STRING, ['length' => 255, 'notnull' => true, 'default' => '*']],
+					'page_route' => [Types::STRING, ['length' => 255, 'notnull' => true, 'default' => '']],
 					'placement' => [Types::STRING, ['length' => 32, 'notnull' => true, 'default' => 'any']],
 					'presentation' => [Types::STRING, ['length' => 12, 'notnull' => true, 'default' => 'banner']],
 					'priority' => [Types::INTEGER, ['notnull' => true, 'default' => 10]],
@@ -69,7 +68,7 @@ final class Version1000Date20261107190000 extends SimpleMigrationStep {
 					'status' => [Types::STRING, ['length' => 12, 'notnull' => true, 'default' => 'draft']],
 					'text_align' => [Types::STRING, ['length' => 8, 'notnull' => true, 'default' => 'left']],
 					'text_color' => [Types::STRING, ['length' => 9, 'notnull' => false]],
-					'theme' => [Types::STRING, ['length' => 12, 'notnull' => true, 'default' => 'default']],
+					'theme' => [Types::STRING, ['length' => 12, 'notnull' => true, 'default' => 'info']],
 					'translated_content' => [Types::TEXT, ['notnull' => true, 'default' => '{}']],
 					'trigger_key' => [Types::STRING, ['length' => 64, 'notnull' => true]],
 					'updated_at' => [Types::BIGINT, ['notnull' => true]],

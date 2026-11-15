@@ -64,15 +64,8 @@ final class CampaignInputValidator {
 		};
 	}
 
-	private function targets(array $payload, string $field, string $legacyField, bool $required): array {
-		$values = $payload[$field] ?? null;
-		if ($values === null && $legacyField !== '' && isset($payload[$legacyField])) {
-			$legacy = $payload[$legacyField];
-			$values = is_string($legacy) && trim($legacy) !== '' ? [trim($legacy)] : [];
-		}
-		if ($values === null) {
-			$values = [];
-		}
+	private function targets(array $payload, string $field, bool $required): array {
+		$values = $payload[$field] ?? [];
 		if (!is_array($values) || !array_is_list($values) || count($values) > self::MAX_TARGETS) {
 			// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
 			throw new InvalidArgumentException($this->l10n->t('Invalid selection for ') . $field . '.');
@@ -130,9 +123,9 @@ final class CampaignInputValidator {
 			throw new InvalidArgumentException($this->l10n->t('Invalid target audience.'));
 		}
 		$groups = $audience === 'group'
-			? $this->targets($payload, 'audience_groups', 'audience_group', true) : [];
+			? $this->targets($payload, 'audience_groups', true) : [];
 		$users = $audience === 'users'
-			? $this->targets($payload, 'audience_users', '', true) : [];
+			? $this->targets($payload, 'audience_users', true) : [];
 		foreach ($groups as $group) {
 			if ($this->groupManager->get($group) === null) {
 				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
@@ -145,7 +138,7 @@ final class CampaignInputValidator {
 				throw new InvalidArgumentException($this->l10n->t('Selected user does not exist.'));
 			}
 		}
-		$excluded = $this->targets($payload, 'excluded_groups', '', false);
+		$excluded = $this->targets($payload, 'excluded_groups', false);
 		foreach ($excluded as $groupId) {
 			if ($this->groupManager->get($groupId) === null) {
 				// TRANSLATORS Short label for an option or field in the publication input validation.
@@ -164,8 +157,7 @@ final class CampaignInputValidator {
 		}
 		return [
 			'trigger_key' => $trigger, 'presentation' => $presentation,
-			'audience_type' => $audience, 'audience_group' => $groups[0] ?? '',
-			'audience_groups' => json_encode($groups, JSON_THROW_ON_ERROR),
+			'audience_type' => $audience, 'audience_groups' => json_encode($groups, JSON_THROW_ON_ERROR),
 			'audience_users' => json_encode($users, JSON_THROW_ON_ERROR),
 			'excluded_groups' => json_encode($excluded, JSON_THROW_ON_ERROR),
 			'group_match' => $groupMatch, 'excluded_match' => $excludedMatch,
@@ -178,16 +170,16 @@ final class CampaignInputValidator {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid display location.'));
 		}
-		$appTargetMode = $text('app_target_mode', 12) ?: 'legacy';
-		if (!in_array($appTargetMode, ['legacy','all','only','exclude'], true)) {
+		$appTargetMode = $text('app_target_mode', 12) ?: 'area';
+		if (!in_array($appTargetMode, ['area','all','only','exclude'], true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid application selection mode.'));
 		}
 		$appTargetApps = [];
-		if ($trigger === 'nextcloud.page.opened' || in_array($presentation, ['board','none'], true)) {
-			$appTargetMode = 'legacy';
+		if ($trigger === 'nextcloud.page.opened' || $presentation === 'none') {
+			$appTargetMode = 'area';
 		} elseif (in_array($appTargetMode, ['only','exclude'], true)) {
-			$appTargetApps = $this->targets($payload, 'app_target_apps', '', true);
+			$appTargetApps = $this->targets($payload, 'app_target_apps', true);
 			foreach ($appTargetApps as $appId) {
 				if ($appId === 'any' || !$this->triggerCatalog->supportsPlacement($appId)) {
 					// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
@@ -241,7 +233,7 @@ final class CampaignInputValidator {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid campaign category.'));
 		}
-		$boardVisible = ($payload['board_visible'] ?? false) === true || ($payload['board_visible'] ?? 0) === 1 || $presentation === 'board';
+		$boardVisible = ($payload['board_visible'] ?? false) === true || ($payload['board_visible'] ?? 0) === 1;
 		$guestVisible = $payload['guest_visible'] ?? false;
 		if (!in_array($guestVisible, [true,false,0,1], true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
@@ -370,7 +362,7 @@ final class CampaignInputValidator {
 			throw new InvalidArgumentException($this->l10n->t('Presentation order is out of range.'));
 		}
 		$safeTranslations = $this->translations($payload);
-		$theme = $text('theme', 12) ?: 'default';
+		$theme = $text('theme', 12) ?: 'info';
 		if (!in_array($theme, CampaignRepository::THEMES, true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid theme.'));

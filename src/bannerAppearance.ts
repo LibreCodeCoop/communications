@@ -153,15 +153,10 @@ const ICONS: ReadonlyArray<readonly [string, string, string]> = Object.freeze([
 	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
 	['help-circle', t('communications', 'Help'), mdiHelpCircle],
 	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	['info', t('communications', 'Information (legacy)'), mdiInformation],
 	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	['success', t('communications', 'Success (legacy)'), mdiCheckboxMarkedCircle],
 	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	['warning', t('communications', 'Warning (legacy)'), mdiAlert],
 	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	['error', t('communications', 'Error (legacy)'), mdiAlertDecagram],
 	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	['shield', t('communications', 'Shield (legacy)'), mdiShieldCheckOutline],
 ])
 const ICON_PATHS: Readonly<Record<string, string>> = Object.freeze(
 	Object.fromEntries(ICONS.map(([id, _label, path]) => [id, path])),
@@ -192,7 +187,7 @@ export interface BannerAppearanceResult {
 export function bannerAppearance(
 	campaign: BannerAppearanceInput = {},
 ): BannerAppearanceResult {
-	const theme = typeof campaign.theme === 'string' ? campaign.theme : 'default'
+	const theme = typeof campaign.theme === 'string' ? campaign.theme : 'info'
 	const nativeType = (
 		SEMANTIC_TYPES.has(theme) ? theme : 'info'
 	) as BannerAppearanceResult['type']

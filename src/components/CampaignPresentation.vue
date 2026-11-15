@@ -25,8 +25,8 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ close: []; cta: []; optout: [] }>()
 const sponsored = computed(() => props.campaign.category === 'sponsored')
-const theme = computed(() => props.campaign.theme || 'default')
-// Keeps live delivery identical to the editor preview, including legacy themes.
+const theme = computed(() => props.campaign.theme || 'info')
+// Use the same appearance rules in the editor preview and delivery surface.
 const appearance = computed(() => bannerAppearance(props.campaign))
 const textStyle = computed(() => {
 	const c =
@@ -294,10 +294,6 @@ function updateOpen(open: boolean): void {
 
 .cc-live-dialog-content[data-theme='warning'] {
 	border-top: 4px solid var(--color-warning-text);
-}
-
-.cc-live-dialog-content[data-theme='primary'] {
-	border-top: 4px solid var(--color-primary-element);
 }
 
 .cc-live-dialog-content[data-theme='info'] {

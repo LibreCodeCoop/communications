@@ -129,9 +129,9 @@ class DeliveryStore {
 	}
 
 	private function matchesPlace(array $campaign, string $app, string $pagePath = ''): bool {
-		$mode = $campaign['app_target_mode'] ?? 'legacy';
+		$mode = $campaign['app_target_mode'];
 		$choices = $campaign['app_target_apps'] ?? [];
-		if ($campaign['trigger_key'] === 'nextcloud.page.opened' || $mode === 'legacy') {
+		if ($campaign['trigger_key'] === 'nextcloud.page.opened' || $mode === 'area') {
 			if ($campaign['placement'] !== 'any' && $campaign['placement'] !== $app) {
 				return false;
 			}
@@ -225,28 +225,9 @@ class DeliveryStore {
 		return DeliveryFrequencyPolicy::allows($campaign, $views, $now);
 	}
 
-	public function claim(string $uid, string $app, bool $newVisit, string $pagePath = ''): ?array {
-		$this->prepare($uid, $app, $newVisit, $pagePath);
-		foreach ($this->pending($uid, $app, 30, $pagePath) as $item) {
-			$token = bin2hex(random_bytes(24));
-			$now = time();
-			if (!$this->mapper->reserveCampaign($uid, $item['campaignId'], $item['deliveryId'], $token, $now)) {
-				continue;
-			}
-			$changed = $this->mapper->claimDelivery((int)$item['deliveryId'], $uid, $token, $now);
-			if ($changed) {
-				$item['claimToken'] = $token;
-				return $item;
-			}
-			$this->mapper->releaseCampaign($uid, $item['campaignId'], $token);
-		}
-		return null;
-	}
-
 	/**
 	 * Claim up to five independent banners while keeping modals exclusive.
 	 * Each banner retains its own user/campaign lease and claimToken.
-	 * The original claim() contract is retained for older API consumers.
 	 */
 	public function claimBatch(string $uid, string $app, bool $newVisit, string $pagePath = '', int $limit = 5):array {
 		$this->prepare($uid, $app, $newVisit, $pagePath);
@@ -349,21 +330,6 @@ class DeliveryStore {
 			$this->mapper->releaseCampaign($uid, (int)$row['campaign_id'], $token);
 		}
 		return $changed;
-	}
-
-	/** Legacy API compatibility. Only the user's own queued event can be acknowledged. */
-	public function legacyAcknowledge(string $uid, int $campaignId, string $eventUuid): bool {
-		$row = $this->mapper->legacyRow($uid, $campaignId, $eventUuid);
-		if ($row === false) {
-			return false;
-		}
-		if (in_array($row['state'], ['dismissed', 'clicked'], true)) {
-			return true;
-		}
-		if (!in_array($row['state'], ['pending', 'claimed', 'shown'], true)) {
-			return false;
-		}
-		return $this->mapper->dismissLegacy((int)$row['id'], $uid, time());
 	}
 
 	public function metrics(int $campaignId): array {

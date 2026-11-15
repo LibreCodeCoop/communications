@@ -183,26 +183,4 @@ final class DeliveryMapper extends QBMapper {
 		return $qb->executeStatement() === 1;
 	}
 
-	public function legacyRow(string $uid, int $campaignId, string $eventUuid): array|false {
-		$qb = $this->db->getQueryBuilder();
-		$rs = $qb->select('d.id', 'd.state')->from(self::TABLE, 'd')
-			->innerJoin('d', EventStore::TABLE, 'e', 'e.id = d.event_id')
-			->where($qb->expr()->eq('d.uid', $qb->createNamedParameter($uid)))
-			->andWhere($qb->expr()->eq('d.campaign_id', $qb->createNamedParameter($campaignId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('e.event_uuid', $qb->createNamedParameter($eventUuid)))
-			->executeQuery();
-		$row = $rs->fetchAssociative();
-		$rs->closeCursor();
-		return $row;
-	}
-
-	public function dismissLegacy(int $id, string $uid, int $now): bool {
-		$qb = $this->db->getQueryBuilder();
-		return $qb->update(self::TABLE)
-			->set('state', $qb->createNamedParameter('dismissed'))
-			->set('dismissed_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT))
-			->where($qb->expr()->eq('id', $qb->createNamedParameter((int)$id, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->eq('uid', $qb->createNamedParameter($uid)))
-			->executeStatement() === 1;
-	}
 }

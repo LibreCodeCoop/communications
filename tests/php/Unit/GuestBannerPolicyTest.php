@@ -25,8 +25,9 @@ final class GuestBannerPolicyTest extends TestCase {
 			'application restricted denied' => [['placement' => 'files'], false],
 			'app allowlist denied' => [['app_target_mode' => 'only'], false],
 			'Inbox copy denied' => [['board_visible' => true], false],
-			'legacy unrestricted allowed' => [['app_target_mode' => 'legacy'], true],
-			'new unrestricted allowed' => [['app_target_mode' => 'all'], true],
+			'area unrestricted allowed' => [['app_target_mode' => 'area'], true],
+			'all applications allowed' => [['app_target_mode' => 'all'], true],
+			'unsupported application mode denied' => [['app_target_mode' => 'unknown'], false],
 		];
 	}
 
@@ -38,7 +39,7 @@ final class GuestBannerPolicyTest extends TestCase {
 			'trigger_key' => 'nextcloud.time.window',
 			'category' => 'institutional',
 			'placement' => 'any',
-			'app_target_mode' => 'legacy',
+			'app_target_mode' => 'area',
 			'board_visible' => false,
 		], $changes);
 		self::assertSame($expected, GuestBannerPolicy::supports($campaign));

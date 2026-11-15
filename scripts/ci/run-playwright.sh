@@ -36,7 +36,13 @@ source scripts/ci/bootstrap.sh "$database"
 
 echo "::group::Check route and database contracts"
 docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/ci/assert-routes.php
-docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/schema_snapshot.php
+schema_output="$(docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/schema_snapshot.php)"
+printf '%s\n' "$schema_output"
+if [[ "$schema_output" != *"Initial schema contract passed:"* ]]; then
+  echo "Schema assertion did not report completion" >&2
+  exit 1
+fi
+docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/canonical_contract.php
 echo "::endgroup::"
 
 npm run playwright -- --shard="$2/$3"
