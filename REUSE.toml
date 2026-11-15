@@ -30,3 +30,9 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2007 Free Software Foundation, Inc."
 SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = ".github/workflows/*.yml.patch"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 LibreCode Coop and contributors"
+SPDX-License-Identifier = "MIT"
