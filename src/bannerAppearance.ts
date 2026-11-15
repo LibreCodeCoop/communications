@@ -152,11 +152,6 @@ const ICONS: ReadonlyArray<readonly [string, string, string]> = Object.freeze([
 	['lightning-bolt', t('communications', 'Energy'), mdiLightningBolt],
 	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
 	['help-circle', t('communications', 'Help'), mdiHelpCircle],
-	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
-	// TRANSLATORS Name of a pictogram in the selectable publication banner icon list.
 ])
 const ICON_PATHS: Readonly<Record<string, string>> = Object.freeze(
 	Object.fromEntries(ICONS.map(([id, _label, path]) => [id, path])),
@@ -184,6 +179,45 @@ export interface BannerAppearanceResult {
 	iconPath: string | null
 }
 
+function normalizedBannerColor(value: unknown): string {
+	if (typeof value !== 'string') return DEFAULT_BANNER_COLOR
+	if (/^#[0-9a-fA-F]{3}$/.test(value)) {
+		return '#' + [...value.slice(1)].map((char) => char + char).join('')
+	}
+	return /^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$/.test(value)
+		? value
+		: DEFAULT_BANNER_COLOR
+}
+
+function selectedIcon(value: unknown): string {
+	return typeof value === 'string'
+		&& BANNER_ICON_OPTIONS.some((icon) => icon.value === value)
+		? value
+		: 'auto'
+}
+
+function themedStyle(theme: string, color: string): Record<string, string> {
+	if (theme === 'neutral') {
+		return {
+			'--note-background': 'var(--color-main-background)',
+			'--note-theme': 'var(--color-border-dark, var(--color-border))',
+			'background-color': 'var(--color-main-background) !important',
+			'border-inline-start': '2px solid var(--color-border) !important',
+		}
+	}
+	if (theme !== 'custom') return {}
+	const background =
+		'color-mix(in srgb, ' + color + ' 22%, var(--color-main-background))'
+	const accent =
+		'color-mix(in srgb, ' + color + ' 45%, var(--color-main-text) 55%)'
+	return {
+		'--cc-selected-color': color,
+		'--note-background': background,
+		'--note-theme': accent,
+		'background-color': background + ' !important',
+	}
+}
+
 export function bannerAppearance(
 	campaign: BannerAppearanceInput = {},
 ): BannerAppearanceResult {
@@ -191,43 +225,11 @@ export function bannerAppearance(
 	const nativeType = (
 		SEMANTIC_TYPES.has(theme) ? theme : 'info'
 	) as BannerAppearanceResult['type']
-	const choice =
-		typeof campaign.banner_icon === 'string'
-		&& BANNER_ICON_OPTIONS.some((i) => i.value === campaign.banner_icon)
-			? campaign.banner_icon
-			: 'auto'
-	const rawColor =
-		typeof campaign.banner_color === 'string' ? campaign.banner_color : ''
-	const color = /^#[0-9a-fA-F]{3}$/.test(rawColor)
-		? '#' + [...rawColor.slice(1)].map((char) => char + char).join('')
-		: /^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$/.test(rawColor)
-			? rawColor
-			: DEFAULT_BANNER_COLOR
+	const choice = selectedIcon(campaign.banner_icon)
+	const color = normalizedBannerColor(campaign.banner_color)
 	const noIcon =
 		choice === 'none'
 		|| (choice === 'auto' && (theme === 'neutral' || theme === 'custom'))
-	const background =
-		'color-mix(in srgb, ' + color + ' 22%, var(--color-main-background))'
-	const accent =
-		'color-mix(in srgb, ' + color + ' 45%, var(--color-main-text) 55%)'
-	const style = (
-		theme === 'neutral'
-			? {
-					'--note-background': 'var(--color-main-background)',
-					'--note-theme': 'var(--color-border-dark, var(--color-border))',
-					'background-color': 'var(--color-main-background) !important',
-					'border-inline-start':
-						'2px solid var(--color-border) !important',
-				}
-			: theme === 'custom'
-				? {
-						'--cc-selected-color': color,
-						'--note-background': background,
-						'--note-theme': accent,
-						'background-color': background + ' !important',
-					}
-				: {}
-	) as Record<string, string>
 	return {
 		type: nativeType,
 		noteClass: {
@@ -235,7 +237,7 @@ export function bannerAppearance(
 			'cc-note-custom': theme === 'custom',
 			'cc-note-no-icon': noIcon,
 		},
-		style,
+		style: themedStyle(theme, color),
 		hideIcon: noIcon,
 		iconPath: choice !== 'auto' && choice !== 'none' ? ICON_PATHS[choice] : null,
 	}

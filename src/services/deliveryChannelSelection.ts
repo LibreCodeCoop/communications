@@ -82,3 +82,121 @@ function gatewayChange(
 			: selected.filter((item) => item !== gateway),
 	}
 }
+
+export interface ChannelAvailabilityLabels {
+	noRecipients: string
+	selectedUnavailable: string
+	checking: string
+	guestGatewayHelp: string
+	checkingGateway: string
+	noIndividualDelivery: string
+	guestNoticeHelp: string
+	checkingNotice: string
+}
+
+function channelAvailability(
+	guest: boolean,
+	meta: CatalogDeliveryChannel | undefined,
+): string {
+	return guest ? 'guest' : meta?.availability || 'loading'
+}
+
+function channelStatus(
+	guest: boolean,
+	selected: boolean,
+	ready: boolean,
+	meta: CatalogDeliveryChannel | undefined,
+	labels: ChannelAvailabilityLabels,
+	guestStatus: string,
+): string {
+	if (guest) return guestStatus
+	if (selected && !ready) return labels.selectedUnavailable
+	return meta?.status || labels.checking
+}
+
+function channelHelp(
+	guest: boolean,
+	meta: CatalogDeliveryChannel | undefined,
+	guestHelp: string,
+	checkingHelp: string,
+): string {
+	return guest ? guestHelp : meta?.help || checkingHelp
+}
+
+/** Derive the gateway display from published availability and recipient selection. */
+export function gatewayChannelOption<T extends { id: string }>(
+	definition: T,
+	form: CampaignForm,
+	channels: readonly CatalogDeliveryChannel[],
+	labels: ChannelAvailabilityLabels,
+) {
+	const meta = channels.find((channel) => channel.id === definition.id)
+	const gatewayId = definition.id.slice('gateway:'.length)
+	const selected = (form.gateway_channels || []).includes(gatewayId)
+	const ready = meta?.ready === true
+	const selectable = !form.guest_visible && (ready || selected)
+	const availability = channelAvailability(form.guest_visible, meta)
+	const status = channelStatus(
+		form.guest_visible,
+		selected,
+		ready,
+		meta,
+		labels,
+		labels.noRecipients,
+	)
+	const help = channelHelp(
+		form.guest_visible,
+		meta,
+		labels.guestGatewayHelp,
+		labels.checkingGateway,
+	)
+	return {
+		...definition,
+		gatewayId,
+		selected,
+		ready,
+		selectable,
+		availability,
+		status,
+		help,
+	}
+}
+
+/** Notice channels can be removed even when their upstream app is unavailable. */
+export function noticeChannelOption<
+	T extends { id: string; field: ChannelNoticeField | null },
+>(
+	definition: T,
+	form: CampaignForm,
+	channels: readonly CatalogDeliveryChannel[],
+	labels: ChannelAvailabilityLabels,
+) {
+	const meta = channels.find((channel) => channel.id === definition.id)
+	const selected = definition.field !== null && !!form[definition.field]
+	const ready = meta?.ready === true && definition.field !== null
+	const selectable = !form.guest_visible && (ready || selected)
+	const availability = channelAvailability(form.guest_visible, meta)
+	const status = channelStatus(
+		form.guest_visible,
+		selected,
+		ready,
+		meta,
+		labels,
+		labels.noIndividualDelivery,
+	)
+	const help = channelHelp(
+		form.guest_visible,
+		meta,
+		labels.guestNoticeHelp,
+		labels.checkingNotice,
+	)
+	return {
+		...definition,
+		selected,
+		ready,
+		selectable,
+		availability,
+		status,
+		help,
+	}
+}

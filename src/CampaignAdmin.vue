@@ -14,7 +14,11 @@ import { effectiveCampaignStatus, selectCampaigns } from './services/campaignLis
 import { fetchCampaignMetrics, persistEditorGroups } from './services/campaigns'
 import { useCampaignUserLookup } from './composables/useCampaignUserLookup'
 import { intentChangePatch, validateWizardStep } from './services/campaignWizard'
-import { channelChangePatch } from './services/deliveryChannelSelection'
+import {
+	channelChangePatch,
+	gatewayChannelOption,
+	noticeChannelOption,
+} from './services/deliveryChannelSelection'
 import type { WizardIssue } from './services/campaignWizard'
 
 import { computed, onMounted, ref, watch } from 'vue'
@@ -530,47 +534,42 @@ const gatewayDefinitions = [
 		description: t('communications', 'Recipient JID address.'),
 	},
 ]
+const channelLabels = {
+	// TRANSLATORS Status shown when a channel has no eligible recipients.
+	noRecipients: t('communications', 'No recipients'),
+	// TRANSLATORS Status for a selected delivery channel whose provider is unavailable.
+	selectedUnavailable: t('communications', 'Selected · unavailable'),
+	// TRANSLATORS Provider availability status while integration checks run.
+	checking: t('communications', 'Checking…'),
+	// TRANSLATORS Explanation that public visitor banners do not use personal gateway addresses.
+	guestGatewayHelp: t(
+		'communications',
+		'Anonymous public banners cannot send individual messages.',
+	),
+	// TRANSLATORS Status while an external gateway provider is checked.
+	checkingGateway: t('communications', 'Checking provider availability.'),
+	// TRANSLATORS Delivery channel status when there is no individual recipient.
+	noIndividualDelivery: t('communications', 'No individual delivery'),
+	// TRANSLATORS Explanation that anonymous banners cannot also send notifications.
+	guestNoticeHelp: t(
+		'communications',
+		'Anonymous public banners do not send individual messages. Disable guest mode to configure recipients and channels.',
+	),
+	// TRANSLATORS Help while a Nextcloud delivery app is being checked.
+	checkingNotice: t(
+		'communications',
+		'Availability of this channel is still being checked.',
+	),
+}
 const gatewayOptions = computed(() =>
-	gatewayDefinitions.map((definition) => {
-		const meta = (catalog.value.deliveryChannels || []).find(
-			(item) => item.id === definition.id,
-		)
-		const gatewayId = definition.id.slice(8)
-		const selected = (form.value.gateway_channels || []).includes(gatewayId)
-		const ready = meta?.ready === true
-		const selectable =
-			(!form.value.guest_visible && ready)
-			|| (!form.value.guest_visible && selected)
-		const availability = form.value.guest_visible
-			? 'guest'
-			: meta?.availability || 'loading'
-		const status = form.value.guest_visible
-			? // TRANSLATORS Status of a delivery channel without an eligible audience.
-				t('communications', 'No recipients')
-			: selected && !ready
-				? // TRANSLATORS Action or instruction in the publications management screen.
-					t('communications', 'Selected · unavailable')
-				: // TRANSLATORS Status while delivery-channel availability is being checked.
-					meta?.status || t('communications', 'Checking…')
-		const help = form.value.guest_visible
-			? // TRANSLATORS Descriptive message shown in the publications management screen.
-				t(
-					'communications',
-					'Anonymous public banners cannot send individual messages.',
-				)
-			: // TRANSLATORS Progress indicator shown in the publications management screen.
-				meta?.help || t('communications', 'Checking provider availability.')
-		return {
-			...definition,
-			gatewayId,
-			selected,
-			ready,
-			selectable,
-			availability,
-			status,
-			help,
-		}
-	}),
+	gatewayDefinitions.map((definition) =>
+		gatewayChannelOption(
+			definition,
+			form.value,
+			catalog.value.deliveryChannels || [],
+			channelLabels,
+		),
+	),
 )
 const gatewayGroup = computed(() =>
 	(catalog.value.deliveryChannels || []).find(
@@ -591,47 +590,14 @@ const gatewayProviderCountLabel = computed(() => {
 })
 
 const deliveryChannelOptions = computed(() =>
-	deliveryChannelDefinitions.map((definition) => {
-		const meta = (catalog.value.deliveryChannels || []).find(
-			(item) => item.id === definition.id,
-		)
-		const selected = definition.field !== null && !!form.value[definition.field]
-		const ready = meta?.ready === true && definition.field !== null
-		const usable = ready && !form.value.guest_visible
-		const selectable = usable || (selected && !form.value.guest_visible)
-		const availability = form.value.guest_visible
-			? 'guest'
-			: meta?.availability || 'loading'
-		let status = form.value.guest_visible
-			? // TRANSLATORS Empty state or unavailable-condition message in the publications management screen.
-				t('communications', 'No individual delivery')
-			: // TRANSLATORS Status while delivery-channel availability is being checked.
-				meta?.status || t('communications', 'Checking…')
-		if (selected && !ready && !form.value.guest_visible)
-			// TRANSLATORS Action or instruction in the publications management screen.
-			status = t('communications', 'Selected · unavailable')
-		const help = form.value.guest_visible
-			? // TRANSLATORS Explanatory help text shown in the publications management screen.
-				t(
-					'communications',
-					'Anonymous public banners do not send individual messages. Disable guest mode to configure recipients and channels.',
-				)
-			: meta?.help
-				// TRANSLATORS Descriptive message shown in the publications management screen.
-				|| t(
-					'communications',
-					'Availability of this channel is still being checked.',
-				)
-		return {
-			...definition,
-			selected,
-			ready,
-			selectable,
-			availability,
-			status,
-			help,
-		}
-	}),
+	deliveryChannelDefinitions.map((definition) =>
+		noticeChannelOption(
+			definition,
+			form.value,
+			catalog.value.deliveryChannels || [],
+			channelLabels,
+		),
+	),
 )
 function setNoticeChannel(field: ChannelNoticeField, enabled: boolean): void {
 	const channel = deliveryChannelDefinitions.find((item) => item.field === field)

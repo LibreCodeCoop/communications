@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest'
-import { channelChangePatch } from '../../../src/services/deliveryChannelSelection'
+import {
+	channelChangePatch,
+	gatewayChannelOption,
+	noticeChannelOption,
+} from '../../../src/services/deliveryChannelSelection'
 import type {
 	CampaignForm,
 	CatalogDeliveryChannel,
@@ -101,5 +105,93 @@ describe('editor delivery channel business rules', () => {
 			notify_email: false,
 		})
 		expect(apply(base({ guest_visible: true }), 'email', true)).toEqual({})
+	})
+})
+
+const labels = {
+	noRecipients: 'No recipients',
+	selectedUnavailable: 'Selected · unavailable',
+	checking: 'Checking…',
+	guestGatewayHelp: 'Guest banners have no personal transport',
+	checkingGateway: 'Checking gateway',
+	noIndividualDelivery: 'No individual delivery',
+	guestNoticeHelp: 'Guest banners cannot notify individuals',
+	checkingNotice: 'Checking notice channel',
+}
+
+describe('delivery channel availability presentation', () => {
+	it('offers available gateways and preserves selected gateways', () => {
+		const gateway = gatewayChannelOption(
+			{ id: 'gateway:sms', label: 'SMS' },
+			base(),
+			channels,
+			labels,
+		)
+		expect(gateway).toMatchObject({
+			id: 'gateway:sms',
+			gatewayId: 'sms',
+			selected: true,
+			ready: true,
+			selectable: true,
+			availability: 'ready',
+		})
+	})
+
+	it('does not advertise unavailable or anonymous guest gateway delivery', () => {
+		const unavailable = gatewayChannelOption(
+			{ id: 'gateway:telegram' },
+			base({ gateway_channels: ['telegram'] }),
+			channels,
+			labels,
+		)
+		expect(unavailable).toMatchObject({
+			selected: true,
+			ready: false,
+			selectable: true,
+			status: 'Selected · unavailable',
+		})
+		const guest = gatewayChannelOption(
+			{ id: 'gateway:sms' },
+			base({ guest_visible: true }),
+			channels,
+			labels,
+		)
+		expect(guest).toMatchObject({
+			selectable: false,
+			availability: 'guest',
+			status: 'No recipients',
+			help: 'Guest banners have no personal transport',
+		})
+	})
+
+	it('allows removing selected unavailable notice channels but not adding them', () => {
+		const definition = { id: 'email', field: 'notify_email' as const }
+		const unavailable = noticeChannelOption(
+			definition,
+			base({ notify_email: true }),
+			[],
+			labels,
+		)
+		expect(unavailable).toMatchObject({
+			selected: true,
+			ready: false,
+			selectable: true,
+			status: 'Selected · unavailable',
+		})
+		const unselected = noticeChannelOption(definition, base(), [], labels)
+		expect(unselected.selectable).toBe(false)
+		const guest = noticeChannelOption(
+			definition,
+			base({ notify_email: true, guest_visible: true }),
+			channels,
+			labels,
+		)
+		expect(guest).toMatchObject({
+			selected: true,
+			selectable: false,
+			availability: 'guest',
+			status: 'No individual delivery',
+			help: 'Guest banners cannot notify individuals',
+		})
 	})
 })

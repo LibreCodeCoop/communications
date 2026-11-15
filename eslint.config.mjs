@@ -62,7 +62,7 @@ export default [
 			'no-undef': 'error',
 			'no-unreachable': 'error',
 			'no-constant-condition': 'error',
-			complexity: ['warn', 15],
+			complexity: ['error', 15],
 		},
 	},
 	{

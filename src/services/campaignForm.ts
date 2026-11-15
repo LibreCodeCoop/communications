@@ -15,7 +15,7 @@ export type CampaignSavePayload = Omit<CampaignForm, 'starts_at' | 'ends_at'> & 
 	ends_at: number | null
 }
 
-/** Convert persisted timestamps to editor-local dates. Never attach DB IDs to the editor form. */
+/** Never pass persisted record IDs or timestamps into an editable campaign form. */
 export function campaignRecordToForm(
 	c: CampaignRecord,
 	groupIds: string[],
@@ -29,17 +29,34 @@ export function campaignRecordToForm(
 		cta_label: c.cta_label,
 		cta_url: c.cta_url,
 		trigger_key: c.trigger_key,
+		status: c.status === 'archived' ? 'draft' : c.status,
+		priority: c.priority,
+		...recipientFields(c, groupIds),
+		...presentationFields(c, defaultBannerColor),
+		...notificationFields(c),
+		...availabilityFields(c),
+	}
+}
+
+function recipientFields(c: CampaignRecord, groupIds: string[]) {
+	return {
 		page_route: c.page_route || '',
 		page_filters: c.page_filters || {},
 		audience_type: c.audience_type,
 		audience_groups: groupIds,
 		audience_users: c.audience_users || [],
-		presentation: c.presentation,
-		status: c.status === 'archived' ? 'draft' : c.status,
-		priority: c.priority,
-		placement: c.placement || 'any',
 		app_target_mode: c.app_target_mode || 'area',
 		app_target_apps: c.app_target_apps || [],
+		group_match: c.group_match || 'any',
+		excluded_match: c.excluded_match || 'any',
+		excluded_groups: c.excluded_groups || [],
+	}
+}
+
+function presentationFields(c: CampaignRecord, defaultBannerColor: string) {
+	return {
+		presentation: c.presentation,
+		placement: c.placement || 'any',
 		frequency: c.frequency || 'event',
 		min_interval_minutes: c.min_interval_minutes || 0,
 		max_total: c.max_total || 0,
@@ -48,6 +65,16 @@ export function campaignRecordToForm(
 		theme: c.theme || 'info',
 		banner_color: c.banner_color || defaultBannerColor,
 		banner_icon: c.banner_icon || 'auto',
+		dismissible: c.dismissible !== false,
+		text_align: c.text_align || 'left',
+		text_color: c.text_color || '',
+		manual_order: c.manual_order || 0,
+		translated_content: c.translated_content || {},
+	}
+}
+
+function notificationFields(c: CampaignRecord) {
+	return {
 		board_visible: !!c.board_visible,
 		guest_visible: !!c.guest_visible,
 		comments_enabled: c.comments_enabled !== false,
@@ -57,14 +84,11 @@ export function campaignRecordToForm(
 		gateway_channels: Array.isArray(c.gateway_channels)
 			? c.gateway_channels
 			: [],
-		dismissible: c.dismissible !== false,
-		text_align: c.text_align || 'left',
-		text_color: c.text_color || '',
-		manual_order: c.manual_order || 0,
-		translated_content: c.translated_content || {},
-		group_match: c.group_match || 'any',
-		excluded_match: c.excluded_match || 'any',
-		excluded_groups: c.excluded_groups || [],
+	}
+}
+
+function availabilityFields(c: CampaignRecord) {
+	return {
 		starts_at: c.starts_at === null ? null : new Date(c.starts_at * 1000),
 		ends_at: c.ends_at === null ? null : new Date(c.ends_at * 1000),
 	}
@@ -95,11 +119,20 @@ export function serializeCampaignForm(
 	}
 }
 
-/** Reject missing context before a publication reaches the API. Server repeats authorization checks. */
+/** Return the first user-facing business rule violation; the server repeats access checks. */
 export function validateCampaignPayload(
 	data: CampaignSavePayload,
 	hasDestination: boolean,
 ): string | null {
+	return (
+		validateRequiredFields(data)
+		?? validateTargeting(data)
+		?? validateSchedule(data)
+		?? validateDelivery(data, hasDestination)
+	)
+}
+
+function validateRequiredFields(data: CampaignSavePayload): string | null {
 	if (!data.name.trim() || !data.headline.trim() || !data.message.trim()) {
 		// TRANSLATORS Descriptive message shown in the publication form validation.
 		return t('communications', 'Internal name, title, and message are required.')
@@ -116,6 +149,10 @@ export function validateCampaignPayload(
 		// TRANSLATORS Action or instruction in the publication form validation.
 		return t('communications', 'Select at least one user.')
 	}
+	return null
+}
+
+function validateTargeting(data: CampaignSavePayload): string | null {
 	if (
 		['only', 'exclude'].includes(data.app_target_mode)
 		&& data.trigger_key !== 'nextcloud.page.opened'
@@ -128,6 +165,10 @@ export function validateCampaignPayload(
 		// TRANSLATORS Descriptive message shown in the publication form validation.
 		return t('communications', 'To display a button, enter its text and URL.')
 	}
+	return null
+}
+
+function validateSchedule(data: CampaignSavePayload): string | null {
 	if (data.trigger_key === 'nextcloud.time.window' && data.starts_at === null) {
 		// TRANSLATORS Short label for an option or field in the publication form validation.
 		return t('communications', 'The schedule needs a start date.')
@@ -140,11 +181,17 @@ export function validateCampaignPayload(
 		// TRANSLATORS Validation or failure message shown in the publication form validation.
 		return t('communications', 'The end date must be after the start date.')
 	}
+	return null
+}
+
+function validateDelivery(
+	data: CampaignSavePayload,
+	hasDestination: boolean,
+): string | null {
 	if (!hasDestination) {
 		// TRANSLATORS Action or instruction in the publication form validation.
 		return t('communications', 'Select at least one delivery method.')
 	}
-
 	if (
 		data.guest_visible
 		&& (data.board_visible
