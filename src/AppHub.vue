@@ -52,6 +52,12 @@ function onUnreadCount(total: number): void {
 function onEditorView(next: string): void {
 	editorView.value = next
 }
+const unreadCountAriaLabel = computed(() => {
+	// TRANSLATORS {count} is the number of unread messages in the Inbox tab.
+	return t('communications', 'Unread messages: {count}', {
+		count: unreadCount.value ?? 0,
+	})
+})
 const hubTitle = computed(() =>
 	section.value === 'inbox'
 		? t('communications', 'Inbox')
@@ -109,11 +115,7 @@ onUnmounted(() => window.removeEventListener('popstate', applyHistory))
 					<span
 						v-if="unreadCount !== null && unreadCount > 0"
 						class="cc-hub-count"
-						:aria-label="
-							t('communications', 'Unread messages: {count}', {
-								count: unreadCount,
-							})
-						"
+						:aria-label="unreadCountAriaLabel"
 						>{{ unreadCount }}</span
 					>
 				</NcButton>

@@ -1166,6 +1166,14 @@ const locationReview = computed(() =>
 			: placementOptions.value.find((x) => x.value === form.value.placement)
 					?.label || form.value.placement,
 )
+function dailyFrequencyLabel(count: number): string {
+	// TRANSLATORS {count} is the maximum number of deliveries allowed in 24 hours.
+	return t('communications', '{count} in 24 hours', { count })
+}
+function campaignActionsLabel(name: string): string {
+	// TRANSLATORS {name} is the publication name shown in the actions menu.
+	return t('communications', 'Actions for {name}', { name })
+}
 const frequencyReview = computed(() => {
 	if (eventDrivenDelivery.value) {
 		return t(
@@ -1186,9 +1194,7 @@ const frequencyReview = computed(() => {
 				+ t('communications', ' per user')
 			: '',
 		form.value.max_per_day > 0
-			? t('communications', '{count} in 24 hours', {
-					count: form.value.max_per_day,
-				})
+			? dailyFrequencyLabel(form.value.max_per_day)
 			: '',
 	].filter(Boolean)
 	return caps.length ? freq + '; ' + caps.join('; ') : freq
@@ -1635,13 +1641,7 @@ onMounted(async () => {
 												:text="t('communications', 'Edit')"
 												@click="openEdit(campaign)" />
 											<NcActions
-												:aria-label="
-													t(
-														'communications',
-														'Actions for {name}',
-														{ name: campaign.name },
-													)
-												"
+												:aria-label="campaignActionsLabel(campaign.name)"
 												:open="
 													rowMenuOpen[campaign.id] || false
 												"
