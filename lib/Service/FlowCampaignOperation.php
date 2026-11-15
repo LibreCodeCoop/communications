@@ -88,7 +88,7 @@ class FlowCampaignOperation implements ISpecificOperation {
 				$this->events->record($owner->getUID(), 'nextcloud.flow.matched', 'campaign_' . $id);
 			}
 		} catch (\Throwable $e) {
-			$this->logger->warning('Flow campaign rule failed without stopping Files', ['exception' => $e]);
+			$this->logger->warning('Flow campaign rule failed without stopping Files', ['exceptionClass' => $e::class]);
 		}
 	}
 }

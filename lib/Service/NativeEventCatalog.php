@@ -12,6 +12,7 @@ namespace OCA\Communications\Service;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\Event;
 use OCP\IAppConfig;
+use Psr\Log\LoggerInterface;
 
 /**
  * Index typed PHP events of enabled apps on ADMIN discovery, never on
@@ -31,6 +32,7 @@ final class NativeEventCatalog {
 		private IAppManager $apps,
 		private IAppConfig $config,
 		private \OCP\IL10N $l10n,
+		private LoggerInterface $logger,
 	) {
 	}
 
@@ -78,8 +80,10 @@ final class NativeEventCatalog {
 				foreach (['Events', 'Event'] as $dir) {
 					$this->scan($path . '/lib/' . $dir, $namespace . '\\' . $dir, $app, $events, false);
 				}
-			} catch (\Throwable) {
-				// A broken third-party app may not prevent campaign configuration.
+			} catch (\Throwable $error) {
+				$this->logger->debug('Optional app event discovery failed', [
+					'appId' => $app, 'exceptionClass' => $error::class,
+				]);
 			}
 			if (count($events) >= self::MAX_EVENTS) {
 				break;
@@ -143,8 +147,10 @@ final class NativeEventCatalog {
 			}
 			ksort($hashes);
 			return hash('sha256', json_encode($hashes, JSON_THROW_ON_ERROR));
-		} catch (\Throwable) {
-			// Unavailable optional apps must not break the administrative editor.
+		} catch (\Throwable $error) {
+			$this->logger->debug('Optional app event index unavailable', [
+				'appId' => $app, 'exceptionClass' => $error::class,
+			]);
 			return '';
 		}
 	}
@@ -225,8 +231,10 @@ final class NativeEventCatalog {
 					'description' => $description,
 					'webhook' => $webhook, 'phase' => $phase,
 				];
-			} catch (\Throwable) {
-				// Discovery of other apps must never affect Nextcloud's normal operation.
+			} catch (\Throwable $error) {
+				$this->logger->debug('External event metadata was skipped', [
+					'appId' => $app, 'exceptionClass' => $error::class,
+				]);
 			}
 		}
 	}
