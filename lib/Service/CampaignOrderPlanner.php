@@ -16,49 +16,54 @@ namespace OCA\Communications\Service;
 final class CampaignOrderPlanner {
 
 	public function plan(array $campaigns, int $id, string $direction, ?int $targetId = null): ?array {
-		if (!in_array($direction, ['up','down','before','after'], true)) {
+		if (!in_array($direction, ['up', 'down', 'before', 'after'], true)) {
 			throw new CampaignOrderException(CampaignOrderException::INVALID_DIRECTION, 'Invalid reordering operation.');
 		}
 		$rows = array_values(array_filter($campaigns,
-			static fn (array $c):bool => $c['status'] !== 'archived'));
+			static fn (array $campaign): bool => $campaign['status'] !== 'archived'));
 		usort($rows, self::compare(...));
-		$index = null;
-		foreach ($rows as $i => $c) {
-			if ((int)$c['id'] === $id) {
-				$index = $i;
-				break;
-			}
-		}
-		if ($index === null) {
+		$position = self::indexOf($rows, $id);
+		if ($position === null) {
 			return null;
 		}
-		if ($direction === 'up' || $direction === 'down') {
-			$neighbor = $index + ($direction === 'up'?-1:1);
-			if ($neighbor < 0 || $neighbor >= count($rows)) {
-				return $rows;
+		return in_array($direction, ['up', 'down'], true)
+			? self::moveAdjacent($rows, $position, $direction)
+			: self::moveRelative($rows, $position, $id, $direction, $targetId);
+	}
+
+	private static function indexOf(array $rows, int $id): ?int {
+		foreach ($rows as $index => $row) {
+			if ((int)$row['id'] === $id) {
+				return $index;
 			}
-			[$rows[$index],$rows[$neighbor]] = [$rows[$neighbor],$rows[$index]];
-		} else {
-			if ($targetId === null || $targetId < 1) {
-				throw new CampaignOrderException(CampaignOrderException::MISSING_TARGET, 'Select the destination campaign.');
-			}
-			if ($targetId === $id) {
-				return $rows;
-			}
-			$current = $rows[$index];
-			array_splice($rows, $index, 1);
-			$position = null;
-			foreach ($rows as $i => $row) {
-				if ((int)$row['id'] === $targetId) {
-					$position = $i;
-					break;
-				}
-			}
-			if ($position === null) {
-				throw new CampaignOrderException(CampaignOrderException::UNKNOWN_TARGET, 'Destination campaign unavailable.');
-			}
-			array_splice($rows, $position + ($direction === 'after'?1:0), 0, [$current]);
 		}
+		return null;
+	}
+
+	private static function moveAdjacent(array $rows, int $position, string $direction): array {
+		$neighbor = $position + ($direction === 'up' ? -1 : 1);
+		if ($neighbor >= 0 && $neighbor < count($rows)) {
+			[$rows[$position], $rows[$neighbor]] = [$rows[$neighbor], $rows[$position]];
+		}
+		return $rows;
+	}
+
+	private static function moveRelative(
+		array $rows, int $position, int $id, string $direction, ?int $targetId,
+	): array {
+		if ($targetId === null || $targetId < 1) {
+			throw new CampaignOrderException(CampaignOrderException::MISSING_TARGET, 'Select the destination campaign.');
+		}
+		if ($id === $targetId) {
+			return $rows;
+		}
+		$campaign = $rows[$position];
+		array_splice($rows, $position, 1);
+		$target = self::indexOf($rows, $targetId);
+		if ($target === null) {
+			throw new CampaignOrderException(CampaignOrderException::UNKNOWN_TARGET, 'Destination campaign unavailable.');
+		}
+		array_splice($rows, $target + ($direction === 'after' ? 1 : 0), 0, [$campaign]);
 		return $rows;
 	}
 

@@ -97,16 +97,17 @@ class BoardService {
 			}
 			$found[] = $c;
 		}
-		usort($found, fn (array $a, array $b):int
-			=> (($b['published_at'] ?: ($receipts[(int)$b['id']] ?? $b['created_at']))
-	  <=> ($a['published_at'] ?: ($receipts[(int)$a['id']] ?? $a['created_at'])))
-		?: ($b['id'] <=> $a['id']));
+		$found = InboxOrderingPolicy::newestFirst($found, $receipts);
 		$total = count($found);
 		$size = 10;
 		$slice = array_slice($found, ($page - 1) * $size, $size);
+		$announcements = [];
+		foreach ($slice as $campaign) {
+			$id = (int)$campaign['id'];
+			$announcements[] = $this->payload($campaign, $uid, $receipts[$id] ?? null, $reads[$id] ?? null);
+		}
 		return [
-			'announcements' => array_map(fn (array $c) => $this->payload($c, $uid,
-				$receipts[(int)$c['id']] ?? null, $reads[(int)$c['id']] ?? null), $slice),
+			'announcements' => $announcements,
 			'unreadTotal' => $unreadTotal,
 			'page' => $page,'pageSize' => $size,'total' => $total,'hasMore' => $page * $size < $total,
 		];

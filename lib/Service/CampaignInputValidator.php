@@ -20,6 +20,7 @@ use OCP\IUserManager;
  */
 final class CampaignInputValidator {
 	private const MAX_TARGETS = 40;
+	private const SPONSORED_DEFAULT_DAILY_LIMIT = 2;
 
 	public function __construct(
 		private IGroupManager $groupManager,
@@ -31,37 +32,15 @@ final class CampaignInputValidator {
 	}
 
 	public function validate(array $payload): array {
-		$text = $this->textReader($payload);
-		$content = $this->content($text);
-		$audience = $this->audience($payload, $text);
-		$location = $this->location($payload, $text, $audience['trigger_key'], $audience['presentation']);
-		$channels = $this->channels($payload, $text, $audience, $location);
-		$appearance = $this->appearance($payload, $text);
-		$timing = $this->timing($payload, $text, $audience['trigger_key'], $channels['category']);
+		$fields = new CampaignInputFields($payload, $this->l10n);
+		$content = $this->content($fields);
+		$audience = $this->audience($payload, $fields);
+		$location = $this->location($payload, $fields, $audience['trigger_key'], $audience['presentation']);
+		$channels = $this->channels($payload, $fields, $audience, $location);
+		$appearance = $this->appearance($payload, $fields);
+		$timing = $this->timing($payload, $fields, $audience['trigger_key'], $channels['category']);
 
 		return [...$content, ...$audience, ...$location, ...$channels, ...$appearance, ...$timing];
-	}
-
-	private function textReader(array $payload): \Closure {
-		$l10n = $this->l10n;
-		return static function (string $key, int $max, bool $required = false) use ($payload, $l10n): string {
-			$value = $payload[$key] ?? '';
-			if (!is_string($value)) {
-				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
-				throw new InvalidArgumentException($l10n->t('Invalid field: ') . $key);
-			}
-			$value = trim($value);
-			if (($required && $value === '') || mb_strlen($value) > $max) {
-				// TRANSLATORS Prefix followed by a field name in a publication validation error.
-				$fieldPrefix = $l10n->t('Review the field ');
-				// TRANSLATORS Prefix before a maximum character count in a validation error; keep spaces.
-				$maximumPrefix = $l10n->t(' (maximum ');
-				// TRANSLATORS Suffix following the maximum character count in a validation error.
-				$maximumSuffix = $l10n->t(' characters).');
-				throw new InvalidArgumentException($fieldPrefix . $key . $maximumPrefix . $max . $maximumSuffix);
-			}
-			return $value;
-		};
 	}
 
 	private function targets(array $payload, string $field, bool $required): array {
@@ -85,13 +64,13 @@ final class CampaignInputValidator {
 		return array_values($ids);
 	}
 
-	private function content(callable $text): array {
-		$name = $text('name', 160, true);
-		$description = $text('description', 700);
-		$headline = $text('headline', 180, true);
-		$message = $text('message', 4000, true);
-		$ctaLabel = $text('cta_label', 80);
-		$ctaUrl = $text('cta_url', 1900);
+	private function content(CampaignInputFields $fields): array {
+		$name = $fields->text('name', 160, true);
+		$description = $fields->text('description', 700);
+		$headline = $fields->text('headline', 180, true);
+		$message = $fields->text('message', 4000, true);
+		$ctaLabel = $fields->text('cta_label', 80);
+		$ctaUrl = $fields->text('cta_url', 1900);
 		if (($ctaLabel === '') !== ($ctaUrl === '')) {
 			// TRANSLATORS Action or instruction in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Enter both button text and URL.'));
@@ -106,51 +85,31 @@ final class CampaignInputValidator {
 		];
 	}
 
-	private function audience(array $payload, callable $text): array {
-		$trigger = $text('trigger_key', 64, true);
+	private function audience(array $payload, CampaignInputFields $fields): array {
+		$trigger = $fields->text('trigger_key', 64, true);
 		if (!$this->triggerCatalog->supports($trigger)) {
 			// TRANSLATORS Descriptive message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Trigger unavailable. Verify that the integration is enabled.'));
 		}
-		$presentation = $text('presentation', 12, true);
+		$presentation = $fields->text('presentation', 12, true);
 		if (!in_array($presentation, CampaignRepository::PRESENTATIONS, true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid presentation format.'));
 		}
-		$audience = $text('audience_type', 20, true);
+		$audience = $fields->text('audience_type', 20, true);
 		if (!in_array($audience, ['all', 'admins', 'group', 'users'], true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid target audience.'));
 		}
-		$groups = $audience === 'group'
-			? $this->targets($payload, 'audience_groups', true) : [];
-		$users = $audience === 'users'
-			? $this->targets($payload, 'audience_users', true) : [];
-		foreach ($groups as $group) {
-			if ($this->groupManager->get($group) === null) {
-				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
-				throw new InvalidArgumentException($this->l10n->t('Selected group does not exist: ') . $group);
-			}
-		}
-		foreach ($users as $uid) {
-			if ($this->userManager->get($uid) === null) {
-				// TRANSLATORS Action or instruction in the publication input validation.
-				throw new InvalidArgumentException($this->l10n->t('Selected user does not exist.'));
-			}
-		}
-		$excluded = $this->targets($payload, 'excluded_groups', false);
-		foreach ($excluded as $groupId) {
-			if ($this->groupManager->get($groupId) === null) {
-				// TRANSLATORS Short label for an option or field in the publication input validation.
-				throw new InvalidArgumentException($this->l10n->t('An excluded group does not exist.'));
-			}
-		}
-		$groupMatch = $text('group_match', 8) ?: 'any';
+		$groups = $audience === 'group' ? $this->audienceGroups($payload) : [];
+		$users = $audience === 'users' ? $this->audienceUsers($payload) : [];
+		$excluded = $this->excludedGroups($payload);
+		$groupMatch = $fields->text('group_match', 8) ?: 'any';
 		if (!in_array($groupMatch, ['any', 'all'], true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid group matching criteria.'));
 		}
-		$excludedMatch = $text('excluded_match', 8) ?: 'any';
+		$excludedMatch = $fields->text('excluded_match', 8) ?: 'any';
 		if (!in_array($excludedMatch, ['any', 'all'], true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid group exclusion criteria.'));
@@ -164,51 +123,47 @@ final class CampaignInputValidator {
 		];
 	}
 
-	private function location(array $payload, callable $text, string $trigger, string $presentation): array {
-		$placement = $text('placement', 32) ?: 'any';
+	private function audienceGroups(array $payload): array {
+		$groups = $this->targets($payload, 'audience_groups', true);
+		foreach ($groups as $group) {
+			if ($this->groupManager->get($group) === null) {
+				// TRANSLATORS Prefix followed by the identifier of a missing group; keep the trailing space.
+				throw new InvalidArgumentException($this->l10n->t('Selected group does not exist: ') . $group);
+			}
+		}
+		return $groups;
+	}
+
+	private function audienceUsers(array $payload): array {
+		$users = $this->targets($payload, 'audience_users', true);
+		foreach ($users as $uid) {
+			if ($this->userManager->get($uid) === null) {
+				// TRANSLATORS Action or instruction in the publication input validation.
+				throw new InvalidArgumentException($this->l10n->t('Selected user does not exist.'));
+			}
+		}
+		return $users;
+	}
+
+	private function excludedGroups(array $payload): array {
+		$groups = $this->targets($payload, 'excluded_groups', false);
+		foreach ($groups as $group) {
+			if ($this->groupManager->get($group) === null) {
+				// TRANSLATORS Short label for an option or field in the publication input validation.
+				throw new InvalidArgumentException($this->l10n->t('An excluded group does not exist.'));
+			}
+		}
+		return $groups;
+	}
+
+	private function location(array $payload, CampaignInputFields $fields, string $trigger, string $presentation): array {
+		$placement = $fields->text('placement', 32) ?: 'any';
 		if (!$this->triggerCatalog->supportsPlacement($placement)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid display location.'));
 		}
-		$appTargetMode = $text('app_target_mode', 12) ?: 'area';
-		if (!in_array($appTargetMode, ['area','all','only','exclude'], true)) {
-			// TRANSLATORS Validation or failure message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Invalid application selection mode.'));
-		}
-		$appTargetApps = [];
-		if ($trigger === 'nextcloud.page.opened' || $presentation === 'none') {
-			$appTargetMode = 'area';
-		} elseif (in_array($appTargetMode, ['only','exclude'], true)) {
-			$appTargetApps = $this->targets($payload, 'app_target_apps', true);
-			foreach ($appTargetApps as $appId) {
-				if ($appId === 'any' || !$this->triggerCatalog->supportsPlacement($appId)) {
-					// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
-					throw new InvalidArgumentException($this->l10n->t('Selected application is unavailable: ') . $appId);
-				}
-			}
-		}
-		$pageRoute = $text('page_route', 255);
-		$pageFilters = $payload['page_filters'] ?? [];
-		if (!is_array($pageFilters)) {
-			// TRANSLATORS Validation or failure message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Invalid route filters.'));
-		}
-		if ($trigger === 'nextcloud.page.opened') {
-			// Page triggers need a concrete navigable app even when its route is wildcard.
-			// Otherwise the saved campaign can never match a browser visit.
-			if (in_array($placement, ['any','settings','admin_settings'], true)) {
-				// TRANSLATORS Action or instruction in the publication input validation.
-				throw new InvalidArgumentException($this->l10n->t('Select an app with pages for the navigation trigger.'));
-			}
-			if ($pageRoute !== '' && !$this->webRoutes->isSelectable($placement, $pageRoute)) {
-				// TRANSLATORS Action or instruction in the publication input validation.
-				throw new InvalidArgumentException($this->l10n->t('Select a valid web route rather than an API endpoint.'));
-			}
-			$pageFilters = $this->webRoutes->normalizeFilters($pageRoute, $pageFilters);
-		} else {
-			$pageRoute = '';
-			$pageFilters = [];
-		}
+		[$appTargetMode, $appTargetApps] = $this->applicationTargets($payload, $fields, $trigger, $presentation);
+		[$pageRoute, $pageFilters] = $this->pageSelection($payload, $fields, $trigger, $placement);
 		return [
 			'placement' => $placement, 'app_target_mode' => $appTargetMode,
 			'app_target_apps' => json_encode($appTargetApps, JSON_THROW_ON_ERROR),
@@ -217,72 +172,74 @@ final class CampaignInputValidator {
 		];
 	}
 
-	private function channels(array $payload, callable $text, array $audience, array $location): array {
-		$trigger = $audience['trigger_key'];
+	private function applicationTargets(
+		array $payload, CampaignInputFields $fields, string $trigger, string $presentation,
+	): array {
+		$mode = $fields->text('app_target_mode', 12) ?: 'area';
+		if (!in_array($mode, ['area', 'all', 'only', 'exclude'], true)) {
+			// TRANSLATORS Validation or failure message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Invalid application selection mode.'));
+		}
+		if ($trigger === 'nextcloud.page.opened' || $presentation === 'none') {
+			return ['area', []];
+		}
+		if (!in_array($mode, ['only', 'exclude'], true)) {
+			return [$mode, []];
+		}
+		$apps = $this->targets($payload, 'app_target_apps', true);
+		foreach ($apps as $app) {
+			if ($app === 'any' || !$this->triggerCatalog->supportsPlacement($app)) {
+				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
+				throw new InvalidArgumentException($this->l10n->t('Selected application is unavailable: ') . $app);
+			}
+		}
+		return [$mode, $apps];
+	}
+
+	private function pageSelection(
+		array $payload, CampaignInputFields $fields, string $trigger, string $placement,
+	): array {
+		$pageRoute = $fields->text('page_route', 255);
+		$pageFilters = $payload['page_filters'] ?? [];
+		if (!is_array($pageFilters)) {
+			// TRANSLATORS Validation or failure message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Invalid route filters.'));
+		}
+		if ($trigger !== 'nextcloud.page.opened') {
+			return ['', []];
+		}
+		if (in_array($placement, ['any', 'settings', 'admin_settings'], true)) {
+			// TRANSLATORS Action or instruction in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Select an app with pages for the navigation trigger.'));
+		}
+		if ($pageRoute !== '' && !$this->webRoutes->isSelectable($placement, $pageRoute)) {
+			// TRANSLATORS Action or instruction in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Select a valid web route rather than an API endpoint.'));
+		}
+		return [$pageRoute, $this->webRoutes->normalizeFilters($pageRoute, $pageFilters)];
+	}
+
+	private function channels(array $payload, CampaignInputFields $fields, array $audience, array $location): array {
 		$presentation = $audience['presentation'];
-		$audienceType = $audience['audience_type'];
-		$placement = $location['placement'];
-		$appTargetMode = $location['app_target_mode'];
-		$frequency = $text('frequency', 12) ?: 'event';
+		$frequency = $fields->text('frequency', 12) ?: 'event';
 		if (!in_array($frequency, CampaignRepository::FREQUENCIES, true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid frequency.'));
 		}
-		$category = $text('category', 16) ?: 'institutional';
+		$category = $fields->text('category', 16) ?: 'institutional';
 		if (!in_array($category, CampaignRepository::CATEGORIES, true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid campaign category.'));
 		}
 		$boardVisible = ($payload['board_visible'] ?? false) === true || ($payload['board_visible'] ?? 0) === 1;
-		$guestVisible = $payload['guest_visible'] ?? false;
-		if (!in_array($guestVisible, [true,false,0,1], true)) {
-			// TRANSLATORS Validation or failure message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Invalid anonymous-visitor option.'));
-		}
-		$guestVisible = $guestVisible === true || $guestVisible === 1;
-		$guestEligibility = [
-			'audience_type' => $audienceType,
-			'presentation' => $presentation,
-			'trigger_key' => $trigger,
-			'category' => $category,
-			'placement' => $placement,
-			'app_target_mode' => $appTargetMode,
-			'board_visible' => $boardVisible,
-		];
-		if ($guestVisible && !GuestBannerPolicy::supports($guestEligibility)) {
-			// TRANSLATORS Explanatory help text shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Anonymous visitors require a time-scheduled institutional banner for everyone without app restrictions.'));
-		}
-		$notificationFlags = [];
-		foreach (['notify_users','notify_activity','notify_email'] as $key) {
-			$value = $payload[$key] ?? false;
-			if (!in_array($value, [true,false,0,1], true)) {
-				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
-				throw new InvalidArgumentException($this->l10n->t('Invalid channel configuration: ') . $key);
-			}
-			$notificationFlags[$key] = ($value === true || $value === 1) ? 1 : 0;
-		}
-		$gatewayChannels = $payload['gateway_channels'] ?? [];
-		if (!is_array($gatewayChannels) || !array_is_list($gatewayChannels)
-			|| count($gatewayChannels) > count(GatewayTransport::LABELS)
-			|| count($gatewayChannels) !== count(array_unique($gatewayChannels, SORT_REGULAR))) {
-			// TRANSLATORS Validation or failure message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Invalid Two-Factor Gateway channels.'));
-		}
-		foreach ($gatewayChannels as $gateway) {
-			if (!is_string($gateway) || !isset(GatewayTransport::LABELS[$gateway])) {
-				// TRANSLATORS Validation or failure message shown in the publication input validation.
-				throw new InvalidArgumentException($this->l10n->t('Unknown Two-Factor Gateway provider.'));
-			}
-		}
+		$guestVisible = $this->guestVisibility($payload, $audience, $location, $category, $boardVisible);
+		$notificationFlags = $this->notificationFlags($payload);
+		$gatewayChannels = $this->gatewayChannels($payload);
 		$hasOutbound = array_sum($notificationFlags) > 0 || $gatewayChannels !== [];
 		if ($guestVisible && $hasOutbound) {
 			// TRANSLATORS Descriptive message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Anonymous public banners do not send individual messages.'));
 		}
-		// Any trigger may deliver without a visual surface. All channels follow
-		// the same event occurrence; a recipient-scoped outbox prevents global
-		// sends when an individual action is observed.
 		if ($presentation === 'none' && !$boardVisible && !$hasOutbound) {
 			// TRANSLATORS Action or instruction in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Select at least one delivery destination.'));
@@ -294,6 +251,60 @@ final class CampaignInputValidator {
 			...$notificationFlags,
 			'gateway_channels' => json_encode($gatewayChannels, JSON_THROW_ON_ERROR),
 		];
+	}
+
+	private function guestVisibility(
+		array $payload, array $audience, array $location, string $category, bool $boardVisible,
+	): bool {
+		$value = $payload['guest_visible'] ?? false;
+		if (!in_array($value, [true, false, 0, 1], true)) {
+			// TRANSLATORS Validation or failure message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Invalid anonymous-visitor option.'));
+		}
+		$guest = $value === true || $value === 1;
+		if ($guest && !GuestBannerPolicy::supports([
+			'audience_type' => $audience['audience_type'],
+			'presentation' => $audience['presentation'],
+			'trigger_key' => $audience['trigger_key'],
+			'category' => $category,
+			'placement' => $location['placement'],
+			'app_target_mode' => $location['app_target_mode'],
+			'board_visible' => $boardVisible,
+		])) {
+			// TRANSLATORS Explanatory help text shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Anonymous visitors require a time-scheduled institutional banner for everyone without app restrictions.'));
+		}
+		return $guest;
+	}
+
+	private function notificationFlags(array $payload): array {
+		$flags = [];
+		foreach (['notify_users', 'notify_activity', 'notify_email'] as $key) {
+			$value = $payload[$key] ?? false;
+			if (!in_array($value, [true, false, 0, 1], true)) {
+				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
+				throw new InvalidArgumentException($this->l10n->t('Invalid channel configuration: ') . $key);
+			}
+			$flags[$key] = ($value === true || $value === 1) ? 1 : 0;
+		}
+		return $flags;
+	}
+
+	private function gatewayChannels(array $payload): array {
+		$channels = $payload['gateway_channels'] ?? [];
+		if (!is_array($channels) || !array_is_list($channels)
+			|| count($channels) > count(GatewayTransport::LABELS)
+			|| count($channels) !== count(array_unique($channels, SORT_REGULAR))) {
+			// TRANSLATORS Validation or failure message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Invalid Two-Factor Gateway channels.'));
+		}
+		foreach ($channels as $channel) {
+			if (!is_string($channel) || !isset(GatewayTransport::LABELS[$channel])) {
+				// TRANSLATORS Validation or failure message shown in the publication input validation.
+				throw new InvalidArgumentException($this->l10n->t('Unknown Two-Factor Gateway provider.'));
+			}
+		}
+		return $channels;
 	}
 
 	/** @return array<string,array<string,string>> */
@@ -314,70 +325,48 @@ final class CampaignInputValidator {
 				// TRANSLATORS Validation or failure message shown in the publication input validation.
 				throw new InvalidArgumentException($this->l10n->t('Invalid translation format.'));
 			}
-			if (array_diff(array_keys($item), ['headline','message','cta_label']) !== []) {
-				// TRANSLATORS Short label for an option or field in the publication input validation.
-				throw new InvalidArgumentException($this->l10n->t('Translation fields not allowed.'));
-			}
-			$values = [];
-			foreach (['headline' => 180, 'message' => 5000, 'cta_label' => 80] as $field => $max) {
-				if (!isset($item[$field])) {
-					continue;
-				}
-				if (!is_string($item[$field]) || mb_strlen($item[$field]) > $max) {
-					// TRANSLATORS Validation or failure message shown in the publication input validation.
-					throw new InvalidArgumentException($this->l10n->t('Invalid translated text.'));
-				}
-				$values[$field] = trim($item[$field]);
-			}
-			$safeTranslations[$locale] = $values;
+			$safeTranslations[$locale] = $this->translatedFields($item);
 		}
 		return $safeTranslations;
 	}
 
-	private function appearance(array $payload, callable $text): array {
+	private function translatedFields(array $item): array {
+		if (array_diff(array_keys($item), ['headline', 'message', 'cta_label']) !== []) {
+			// TRANSLATORS Short label for an option or field in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Translation fields not allowed.'));
+		}
+		$values = [];
+		foreach (['headline' => 180, 'message' => 5000, 'cta_label' => 80] as $field => $max) {
+			if (!isset($item[$field])) {
+				continue;
+			}
+			if (!is_string($item[$field]) || mb_strlen($item[$field]) > $max) {
+				// TRANSLATORS Validation or failure message shown in the publication input validation.
+				throw new InvalidArgumentException($this->l10n->t('Invalid translated text.'));
+			}
+			$values[$field] = trim($item[$field]);
+		}
+		return $values;
+	}
+
+	private function appearance(array $payload, CampaignInputFields $fields): array {
 		$commentsEnabled = ($payload['comments_enabled'] ?? true) !== false && ($payload['comments_enabled'] ?? 1) !== 0;
 		$dismissible = ($payload['dismissible'] ?? true) !== false && ($payload['dismissible'] ?? 1) !== 0;
-		$alignment = $text('text_align', 8) ?: 'left';
+		$alignment = $fields->text('text_align', 8) ?: 'left';
 		if (!in_array($alignment, ['left','center','right'], true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid alignment.'));
 		}
-		$textColor = $text('text_color', 9);
-		if ($textColor !== '' && !preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/D', $textColor)) {
-			// TRANSLATORS Validation or failure message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Invalid text color.'));
-		}
-		if (strlen($textColor) === 4) {
-			$textColor = '#' . $textColor[1] . $textColor[1]
-	. $textColor[2] . $textColor[2] . $textColor[3] . $textColor[3];
-		}
-		$manualOrder = $payload['manual_order'] ?? 0;
-		if (!is_int($manualOrder) && (!is_string($manualOrder) || !preg_match('/^-?[0-9]{1,6}$/D', $manualOrder))) {
-			// TRANSLATORS Validation or failure message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Invalid presentation order.'));
-		}
-		$manualOrder = (int)$manualOrder;
-		if ($manualOrder < -1000000 || $manualOrder > 1000000) {
-			// TRANSLATORS Descriptive message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Presentation order is out of range.'));
-		}
+		$textColor = $this->textColor($fields);
+		$manualOrder = $this->manualOrder($payload);
 		$safeTranslations = $this->translations($payload);
-		$theme = $text('theme', 12) ?: 'info';
+		$theme = $fields->text('theme', 12) ?: 'info';
 		if (!in_array($theme, CampaignRepository::THEMES, true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Invalid theme.'));
 		}
-		$bannerColor = $text('banner_color', 9) ?: '#6748AC';
-		if (!preg_match('/^#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{6}|[a-fA-F0-9]{8})$/D', $bannerColor)) {
-			// TRANSLATORS Descriptive message shown in the publication input validation.
-			throw new InvalidArgumentException($this->l10n->t('Color must use #RGB, #RRGGBB or #RRGGBBAA.'));
-		}
-		if (strlen($bannerColor) === 4) {
-			$bannerColor = '#' . $bannerColor[1] . $bannerColor[1]
-	. $bannerColor[2] . $bannerColor[2] . $bannerColor[3] . $bannerColor[3];
-		}
-		$bannerColor = strtoupper($bannerColor);
-		$bannerIcon = $text('banner_icon', 12) ?: 'auto';
+		$bannerColor = $this->bannerColor($fields);
+		$bannerIcon = $fields->text('banner_icon', 12) ?: 'auto';
 		if (!in_array($bannerIcon, CampaignRepository::BANNER_ICONS, true)) {
 			// TRANSLATORS Action or instruction in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Select an allowed icon or the no-icon option.'));
@@ -393,45 +382,63 @@ final class CampaignInputValidator {
 		];
 	}
 
-	private function timing(array $payload, callable $text, string $trigger, string $category): array {
-		$l10n = $this->l10n;
-		$integer = static function (string $name, int $max) use ($payload, $l10n): int {
-			$value = $payload[$name] ?? 0;
-			if (filter_var($value, FILTER_VALIDATE_INT) === false || (int)$value < 0 || (int)$value > $max) {
-				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
-				throw new InvalidArgumentException($l10n->t('Invalid number: ') . $name);
-			}
-			return (int)$value;
-		};
-		$minInterval = $integer('min_interval_minutes', 43200);
-		$maxTotal = $integer('max_total', 10000);
-		$maxPerDay = $integer('max_per_day', 100);
-		if ($category === 'sponsored' && $maxPerDay === 0) {
-			$maxPerDay = 2; // Conservative ceiling for this POC
+	private function textColor(CampaignInputFields $fields): string {
+		$color = $fields->text('text_color', 9);
+		if ($color !== '' && !preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/D', $color)) {
+			// TRANSLATORS Validation or failure message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Invalid text color.'));
 		}
-		$status = $text('status', 12, true);
+		return self::expandShortColor($color);
+	}
+
+	private function bannerColor(CampaignInputFields $fields): string {
+		$color = $fields->text('banner_color', 9) ?: '#6748AC';
+		if (!preg_match('/^#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{6}|[a-fA-F0-9]{8})$/D', $color)) {
+			// TRANSLATORS Descriptive message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Color must use #RGB, #RRGGBB or #RRGGBBAA.'));
+		}
+		return strtoupper(self::expandShortColor($color));
+	}
+
+	private static function expandShortColor(string $color): string {
+		return strlen($color) === 4
+			? '#' . $color[1] . $color[1] . $color[2] . $color[2] . $color[3] . $color[3]
+			: $color;
+	}
+
+	private function manualOrder(array $payload): int {
+		$value = $payload['manual_order'] ?? 0;
+		if (!is_int($value) && (!is_string($value) || !preg_match('/^-?[0-9]{1,6}$/D', $value))) {
+			// TRANSLATORS Validation or failure message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Invalid presentation order.'));
+		}
+		$value = (int)$value;
+		if ($value < -1000000 || $value > 1000000) {
+			// TRANSLATORS Descriptive message shown in the publication input validation.
+			throw new InvalidArgumentException($this->l10n->t('Presentation order is out of range.'));
+		}
+		return $value;
+	}
+
+	private function timing(array $payload, CampaignInputFields $fields, string $trigger, string $category): array {
+		$minInterval = $fields->number('min_interval_minutes', 43200);
+		$maxTotal = $fields->number('max_total', 10000);
+		$maxPerDay = $fields->number('max_per_day', 100);
+		if ($category === 'sponsored' && $maxPerDay === 0) {
+			$maxPerDay = self::SPONSORED_DEFAULT_DAILY_LIMIT;
+		}
+		$status = $fields->text('status', 12, true);
 		if (!in_array($status, CampaignRepository::STATUSES, true)) {
 			// TRANSLATORS Validation or failure message shown in the publication input validation.
-			throw new InvalidArgumentException($l10n->t('Invalid campaign status.'));
+			throw new InvalidArgumentException($this->l10n->t('Invalid campaign status.'));
 		}
 		$priority = $payload['priority'] ?? 10;
 		if (filter_var($priority, FILTER_VALIDATE_INT) === false || (int)$priority < 0 || (int)$priority > 100) {
 			// TRANSLATORS Descriptive message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Priority must be between 0 and 100.'));
 		}
-		$parseTimestamp = static function (string $key) use ($payload, $l10n): ?int {
-			$value = $payload[$key] ?? null;
-			if ($value === null || $value === '') {
-				return null;
-			}
-			if (filter_var($value, FILTER_VALIDATE_INT) === false || (int)$value < 0) {
-				// TRANSLATORS Prefix followed by a dynamic value in the publication input validation; preserve its trailing space.
-				throw new InvalidArgumentException($l10n->t('Invalid date: ') . $key);
-			}
-			return (int)$value;
-		};
-		$starts = $parseTimestamp('starts_at');
-		$ends = $parseTimestamp('ends_at');
+		$starts = $fields->timestamp('starts_at');
+		$ends = $fields->timestamp('ends_at');
 		if ($trigger === 'nextcloud.time.window' && $starts === null) {
 			// TRANSLATORS Descriptive message shown in the publication input validation.
 			throw new InvalidArgumentException($this->l10n->t('Scheduled campaigns require a start date.'));
