@@ -33,7 +33,7 @@ foreach ($db->createSchema()->getTables() as $table) {
 	}
 	$indexes = [];
 	foreach ($table->getIndexes() as $index) {
-		$indexes[$index->getName()] = [
+		$indexes[$index->isPrimary() ? 'primary' : $index->getName()] = [
 			'columns' => $index->getColumns(),
 			'unique' => $index->isUnique(),
 			'primary' => $index->isPrimary(),
