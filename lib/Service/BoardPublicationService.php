@@ -479,7 +479,6 @@ final class BoardPublicationService {
 	 * currently claimed or retryable messages consume a send slot.
 	 */
 	private function allowedForEvent(array $campaign, string $uid, string $channel, int $now, int $eventId):bool {
-		$frequency = $campaign['frequency'];
 		$qb = $this->db->getQueryBuilder();
 		$rs = $qb->select('event_id', 'created_at', 'sent_at', 'status')->from(self::SENT)
 			->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter((int)$campaign['id'], IQueryBuilder::PARAM_INT)))
@@ -499,23 +498,7 @@ final class BoardPublicationService {
 				$times[] = (int)($row['sent_at'] ?? $row['created_at']);
 			}
 		}
-		if ($campaign['max_total'] > 0 && count($times) >= $campaign['max_total']) {
-			return false;
-		}
-		if ($campaign['max_per_day'] > 0
-	  && count(array_filter($times, static fn (int $stamp):bool => $stamp >= $now - 86400)) >= $campaign['max_per_day']) {
-			return false;
-		}
-		if ($times === []) {
-			return true;
-		}
-		$minimum = match($frequency) {
-			'once' => PHP_INT_MAX,
-			'daily' => 86400,'weekly' => 604800,
-			'custom' => $campaign['min_interval_minutes'] * 60,
-			default => 0,
-		};
-		return $now - max($times) >= $minimum;
+		return DeliveryFrequencyPolicy::allows($campaign, $times, $now);
 	}
 
 	/** Timed cron: retry only submissions known safe to repeat. Unknown is final. */

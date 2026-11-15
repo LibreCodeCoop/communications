@@ -197,7 +197,6 @@ class DeliveryStore {
 	}
 
 	private function isWithinFrequency(array $campaign, string $uid, int $deliveryId, int $now): bool {
-		$frequency = $campaign['frequency'];
 		$id = (int)$campaign['id'];
 		$rows = $this->mapper->frequencyRows($uid, $id, $deliveryId);
 		$views = [];
@@ -209,28 +208,7 @@ class DeliveryStore {
 				$views[] = (int)$row['impression_at'];
 			}
 		}
-		if ($frequency === 'once' && count($views) > 0) {
-			return false;
-		}
-		if ($campaign['max_total'] > 0 && count($views) >= $campaign['max_total']) {
-			return false;
-		}
-		if ($campaign['max_per_day'] > 0
-	  && count(array_filter($views, fn (int $at): bool => $at >= $now - 86400)) >= $campaign['max_per_day']) {
-			return false;
-		}
-		if ($views !== []) {
-			$last = max($views);
-			$minimum = match ($frequency) {
-				'daily' => 86400, 'weekly' => 604800,
-				'custom' => $campaign['min_interval_minutes'] * 60,
-				default => 0,
-			};
-			if ($minimum > 0 && $now - $last < $minimum) {
-				return false;
-			}
-		}
-		return true;
+		return DeliveryFrequencyPolicy::allows($campaign, $views, $now);
 	}
 
 	public function claim(string $uid, string $app, bool $newVisit, string $pagePath = ''): ?array {
