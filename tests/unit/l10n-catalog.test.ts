@@ -62,3 +62,22 @@ test('JSON and browser registration contain the same catalog', () => {
 	expect(registered?.pluralForm).toBe(catalog.pluralForm)
 	expect(registered?.entries).toEqual(catalog.translations)
 })
+
+test('dynamic source messages explain each placeholder to translators', () => {
+	const missing: string[] = []
+	const translations =
+		/\bt\(\s*'communications'\s*,\s*'([^']*\{[A-Za-z_][A-Za-z0-9_]*\}[^']*)'/g
+	for (const filename of sources('src')) {
+		if (!/\.(?:vue|ts|js)$/.test(filename)) continue
+		const code = readFileSync(filename, 'utf8')
+		const lines = code.split(/\r?\n/)
+		for (const match of code.matchAll(translations)) {
+			const line = code.slice(0, match.index).split(/\r?\n/).length
+			const previous = lines[line - 2]?.trim() ?? ''
+			if (!/^(?:\/\/|<!--)\s*TRANSLATORS\b/.test(previous)) {
+				missing.push(`${filename}:${line}: ${match[1]}`)
+			}
+		}
+	}
+	expect(missing, 'Place a TRANSLATORS hint directly before each placeholder translation').toEqual([])
+})
