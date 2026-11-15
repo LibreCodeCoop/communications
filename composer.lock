@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1cd22f03b74f2e1626300b7abafc1fc6",
+    "content-hash": "2026709d586c92cdba10aa25f15e94b9",
     "packages": [],
     "packages-dev": [
         {
@@ -67,16 +67,16 @@
         },
         {
             "name": "nextcloud/ocp",
-            "version": "v35.0.3",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nextcloud-deps/ocp.git",
-                "reference": "a7babe4273fc6e5c7359e92843ef2613b7555f76"
+                "reference": "4e32fef5f700a427600de6586fdcac0acd511d23"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nextcloud-deps/ocp/zipball/a7babe4273fc6e5c7359e92843ef2613b7555f76",
-                "reference": "a7babe4273fc6e5c7359e92843ef2613b7555f76",
+                "url": "https://api.github.com/repos/nextcloud-deps/ocp/zipball/4e32fef5f700a427600de6586fdcac0acd511d23",
+                "reference": "4e32fef5f700a427600de6586fdcac0acd511d23",
                 "shasum": ""
             },
             "require": {
@@ -91,10 +91,11 @@
                 "symfony/polyfill-php85": "^1.41",
                 "symfony/polyfill-php86": "^1.41"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-stable35": "35.0.0-dev"
+                    "dev-master": "36.0.0-dev"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -114,9 +115,9 @@
             "description": "Composer package containing Nextcloud's public OCP API and the unstable NCU API",
             "support": {
                 "issues": "https://github.com/nextcloud-deps/ocp/issues",
-                "source": "https://github.com/nextcloud-deps/ocp/tree/v35.0.3"
+                "source": "https://github.com/nextcloud-deps/ocp/tree/master"
             },
-            "time": "2026-11-06T04:03:15+00:00",
+            "time": "2026-11-13T03:58:55+00:00",
             "published-time": "2026-11-13T03:59:03+00:00"
         },
         {
@@ -763,7 +764,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "nextcloud/ocp": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {},
