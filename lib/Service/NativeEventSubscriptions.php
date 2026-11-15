@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace OCA\Communications\Service;
 
+use OCA\Communications\Db\CampaignMapper;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
-use OCA\Communications\Db\CampaignMapper;
 
 /**
  * Compiled subscriptions are refreshed on CAMPAIGN WRITES. Normal Nextcloud
