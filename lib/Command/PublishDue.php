@@ -44,7 +44,7 @@ final class PublishDue extends Command {
 				// campaigns use EventChannelDeliveryJob per trusted user and occurrence.
 				if (!in_array($c['trigger_key'], ['nextcloud.board.published','nextcloud.time.window'], true)
 					|| (!$c['board_visible'] && !$c['notify_users'] && !$c['notify_activity']
-					 && !$c['notify_email'] && $c['gateway_channels'] === [])
+						&& !$c['notify_email'] && $c['gateway_channels'] === [])
 					|| $c['status'] !== 'active' || $c['published_at'] <= 0
 					|| ($c['starts_at'] !== null && $c['starts_at'] > $now)
 					|| ($c['ends_at'] !== null && $c['ends_at'] <= $now)) {

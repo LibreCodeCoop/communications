@@ -84,8 +84,8 @@ class CampaignController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->deliveries->transition($uid, $deliveryId, $claimToken, 'impression')
-		 ? new JSONResponse(['recorded' => true])
-		 : new JSONResponse(['error' => $this->l10n->t('Delivery not found or reservation expired.')], 409);
+			? new JSONResponse(['recorded' => true])
+			: new JSONResponse(['error' => $this->l10n->t('Delivery not found or reservation expired.')], 409);
 	}
 
 	#[NoAdminRequired]
@@ -102,8 +102,8 @@ class CampaignController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$ok = $deliveryId > 0 && $claimToken !== ''
-		 ? $this->deliveries->transition($uid, $deliveryId, $claimToken, 'dismiss')
-		 : ($campaignId > 0 && $eventId !== '' && $this->deliveries->legacyAcknowledge($uid, $campaignId, $eventId));
+			? $this->deliveries->transition($uid, $deliveryId, $claimToken, 'dismiss')
+			: ($campaignId > 0 && $eventId !== '' && $this->deliveries->legacyAcknowledge($uid, $campaignId, $eventId));
 		return $ok ? new JSONResponse(['acknowledged' => true]) : new JSONResponse(['error' => $this->l10n->t('Invalid delivery.')], 409);
 	}
 
@@ -116,8 +116,8 @@ class CampaignController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->deliveries->transition($uid, $deliveryId, $claimToken, 'click')
-		 ? new JSONResponse(['recorded' => true])
-		 : new JSONResponse(['error' => $this->l10n->t('Invalid delivery.')], 409);
+			? new JSONResponse(['recorded' => true])
+			: new JSONResponse(['error' => $this->l10n->t('Invalid delivery.')], 409);
 	}
 
 	#[NoAdminRequired]

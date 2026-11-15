@@ -77,7 +77,7 @@ class Application extends App implements IBootstrap {
 		// authenticated campaign engine. Only enable on browser-visible public pages.
 		$path = $server->get(IRequest::class)->getPathInfo();
 		if ($user === null && (preg_match('~^/(?:index\.php/)?login/?$~', $path)
-	  || preg_match('~^/(?:index\.php/)?(?:s|f)/[A-Za-z0-9_-]{8,120}/?$~', $path))) {
+			|| preg_match('~^/(?:index\.php/)?(?:s|f)/[A-Za-z0-9_-]{8,120}/?$~', $path))) {
 			Util::addTranslations('communications');
 			Util::addScript('communications', 'guest');
 			Util::addStyle('communications', 'guest');

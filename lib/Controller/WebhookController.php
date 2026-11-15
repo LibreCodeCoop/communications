@@ -53,7 +53,7 @@ class WebhookController extends Controller {
 		$timestamp = $this->request->getHeader('X-CC-Timestamp');
 		$provided = $this->request->getHeader('X-CC-Signature');
 		if (!ctype_digit($timestamp) || abs(time() - (int)$timestamp) > 300
-	  || !preg_match('/^sha256=[a-f0-9]{64}$/', $provided)) {
+			|| !preg_match('/^sha256=[a-f0-9]{64}$/', $provided)) {
 			return new JSONResponse(['error' => $this->l10n->t('Invalid signature.')], 401);
 		}
 		$expected = 'sha256=' . hash_hmac('sha256', $timestamp . '.' . $raw, $secret);
@@ -72,7 +72,7 @@ class WebhookController extends Controller {
 		$externalEventId = $payload['eventId'] ?? null;
 		$campaignId = $payload['campaignId'] ?? null;
 		if (!is_string($uid) || $uid === '' || mb_strlen($uid) > 64 || $this->users->get($uid) === null
-	  || !is_string($externalEventId) || $externalEventId === '' || strlen($externalEventId) > 128) {
+			|| !is_string($externalEventId) || $externalEventId === '' || strlen($externalEventId) > 128) {
 			return new JSONResponse(['error' => $this->l10n->t('Invalid recipient or event.')], 422);
 		}
 		if (filter_var($campaignId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
@@ -81,7 +81,7 @@ class WebhookController extends Controller {
 		$campaignId = (int)$campaignId;
 		$campaign = $this->campaigns->find($campaignId);
 		if ($campaign === null || $campaign['trigger_key'] !== 'external.webhook'
-	  || $campaign['status'] !== 'active') {
+			|| $campaign['status'] !== 'active') {
 			return new JSONResponse(['error' => $this->l10n->t('Campaign does not exist, is inactive, or is not configured for webhooks.')], 422);
 		}
 		try {

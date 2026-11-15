@@ -42,7 +42,7 @@ class CampaignManagementController extends Controller {
 	}
 	private function denied():?JSONResponse {
 		return $this->editorAccess->canEdit($this->uid()) ? null
-		 : new JSONResponse(['error' => $this->l10n->t('Editorial permission required.')], 403);
+			: new JSONResponse(['error' => $this->l10n->t('Editorial permission required.')], 403);
 	}
 
 	#[NoCSRFRequired]
@@ -102,7 +102,7 @@ class CampaignManagementController extends Controller {
 			return $deny;
 		}
 		if (!preg_match('/^[a-z0-9_-]{2,32}$/', $app) || !$this->triggerCatalog->supportsPlacement($app)
-	  || $app === 'any' || $app === 'settings') {
+			|| $app === 'any' || $app === 'settings') {
 			return new JSONResponse(['error' => $this->l10n->t('App has no available web pages.')], 422);
 		}
 		return new JSONResponse(['app' => $app, 'routes' => $this->webRoutes->routesFor($app)]);

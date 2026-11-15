@@ -41,7 +41,7 @@ class BoardController extends Controller {
 	public function index(int $page = 1, string $search = '', string $filter = 'all'):JSONResponse {
 		$uid = $this->uid();
 		return $uid === null ? new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401)
-		 : new JSONResponse($this->board->list($uid, $page, $search, $filter === 'unread'?'unread':'all'));
+			: new JSONResponse($this->board->list($uid, $page, $search, $filter === 'unread'?'unread':'all'));
 	}
 
 	#[NoAdminRequired]
@@ -55,7 +55,7 @@ class BoardController extends Controller {
 		}
 		$item = $this->board->view($uid, $id);
 		return $item ? new JSONResponse(['announcement' => $item])
-		 : new JSONResponse(['error' => $this->l10n->t('Announcement not found.')], 404);
+			: new JSONResponse(['error' => $this->l10n->t('Announcement not found.')], 404);
 	}
 
 	#[NoAdminRequired]
@@ -67,8 +67,8 @@ class BoardController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->board->markRead($uid, $id)
-		 ? new JSONResponse(['read' => true])
-		 : new JSONResponse(['error' => $this->l10n->t('Publication not found.')], 404);
+			? new JSONResponse(['read' => true])
+			: new JSONResponse(['error' => $this->l10n->t('Publication not found.')], 404);
 	}
 
 	#[NoAdminRequired]
@@ -82,7 +82,7 @@ class BoardController extends Controller {
 		}
 		$items = $this->board->comments($uid, $id, max(0, $before));
 		return $items ? new JSONResponse($items)
-		 : new JSONResponse(['error' => $this->l10n->t('Announcement not found.')], 404);
+			: new JSONResponse(['error' => $this->l10n->t('Announcement not found.')], 404);
 	}
 
 	#[NoAdminRequired]
@@ -124,7 +124,7 @@ class BoardController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->board->deleteComment($uid, $id, $commentId)
-		 ? new JSONResponse(['deleted' => true])
-		 : new JSONResponse(['error' => $this->l10n->t('Comment not found or unavailable.')], 404);
+			? new JSONResponse(['deleted' => true])
+			: new JSONResponse(['error' => $this->l10n->t('Comment not found or unavailable.')], 404);
 	}
 }

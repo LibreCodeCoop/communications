@@ -30,7 +30,7 @@ class LoginListener implements IEventListener {
 		}
 		// Do not count API/WebDAV Basic authentication as interactive login.
 		if ($this->request->getMethod() !== 'POST'
-	  || !str_ends_with($this->request->getPathInfo(), '/login')) {
+			|| !str_ends_with($this->request->getPathInfo(), '/login')) {
 			return;
 		}
 		try {
