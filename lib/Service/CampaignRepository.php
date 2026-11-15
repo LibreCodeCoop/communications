@@ -55,6 +55,7 @@ class CampaignRepository {
 		private IGroupManager $groupManager,
 		private IUserManager $userManager,
 		private CampaignInputValidator $inputValidator,
+		private CampaignOrderPlanner $orderPlanner,
 		private NativeEventSubscriptions $nativeSubscriptions,
 		private \OCP\IL10N $l10n,
 	) {
@@ -337,51 +338,9 @@ class CampaignRepository {
 	 * Keyboard buttons and drag-and-drop share this API.
 	 */
 	public function move(int $id, string $direction, ?int $targetId = null):?array {
-		if (!in_array($direction, ['up','down','before','after'], true)) {
-			throw new InvalidArgumentException($this->l10n->t('Invalid reordering operation.'));
-		}
-		$rows = array_values(array_filter($this->all(),
-			static fn (array $c):bool => $c['status'] !== 'archived'));
-		usort($rows, static fn (array $a, array $b):int
-			=> ($a['manual_order'] <=> $b['manual_order'])
-	?:($b['priority'] <=> $a['priority'])
-	?:($b['id'] <=> $a['id']));
-		$index = null;
-		foreach ($rows as $i => $c) {
-			if ((int)$c['id'] === $id) {
-				$index = $i;
-				break;
-			}
-		}
-		if ($index === null) {
+		$rows = $this->orderPlanner->plan($this->all(), $id, $direction, $targetId);
+		if ($rows === null) {
 			return null;
-		}
-		if ($direction === 'up' || $direction === 'down') {
-			$neighbor = $index + ($direction === 'up'?-1:1);
-			if ($neighbor < 0 || $neighbor >= count($rows)) {
-				return $rows;
-			}
-			[$rows[$index],$rows[$neighbor]] = [$rows[$neighbor],$rows[$index]];
-		} else {
-			if ($targetId === null || $targetId < 1) {
-				throw new InvalidArgumentException($this->l10n->t('Select the destination campaign.'));
-			}
-			if ($targetId === $id) {
-				return $rows;
-			}
-			$current = $rows[$index];
-			array_splice($rows, $index, 1);
-			$position = null;
-			foreach ($rows as $i => $row) {
-				if ((int)$row['id'] === $targetId) {
-					$position = $i;
-					break;
-				}
-			}
-			if ($position === null) {
-				throw new InvalidArgumentException($this->l10n->t('Destination campaign unavailable.'));
-			}
-			array_splice($rows, $position + ($direction === 'after'?1:0), 0, [$current]);
 		}
 		$this->db->beginTransaction();
 		try {
