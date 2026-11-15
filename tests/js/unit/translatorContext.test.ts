@@ -20,9 +20,9 @@ function withoutHints(filename: string, start: string, end: string): string[] {
 test('short status, visual-theme and icon choices explain their UI context', () => {
 	const missing = [
 		...withoutHints(
-			'src/CampaignAdmin.vue',
+			'src/components/CampaignOverview.vue',
 			'const statuses = [',
-			'const audienceOptions',
+			'const search',
 		),
 		...withoutHints(
 			'src/CampaignAdmin.vue',
