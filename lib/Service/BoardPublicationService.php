@@ -238,54 +238,66 @@ final class BoardPublicationService {
 	/** Each job handles only 100 accounts and then queues its successor. */
 	public function broadcast(int $id, int $version, int $offset = 0):array {
 		$status = ['processed' => 0,'queued' => false,'done' => false];
-		$c = $this->campaigns->find($id);
+		$campaign = $this->campaigns->find($id);
 		$offset = max(0, $offset);
-		if ($c === null || (int)$c['published_at'] !== $version || !PublicationDuePolicy::allows($c, time())) {
+		if ($campaign === null || (int)$campaign['published_at'] !== $version
+			|| !PublicationDuePolicy::allows($campaign, time())) {
 			$this->outbox->markPublication($id, $version, 'broadcast_done', 1);
 			return $status;
 		}
+
 		$accounts = $this->users->search('', self::BATCH, $offset);
 		foreach ($accounts as $user) {
-			if (!$user->isEnabled() || !$this->campaigns->isEligible($c, $user->getUID(), time())) {
+			if (!$this->recipientEligible($campaign, $user, time())) {
 				continue;
 			}
-			if ($c['category'] === 'sponsored'
-				&& $this->config->getUserValue($user->getUID(), self::APP, 'sponsored_optout', '0') === '1') {
-				continue;
-			}
-			foreach (['notify_users' => 'notifications','notify_activity' => 'activity','notify_email' => 'email'] as $key => $channel) {
-				if (!$c[$key]) {
-					continue;
-				}
-				if ($user->getUID() === $c['created_by'] && $channel !== 'activity') {
-					continue;
-				}
-				$this->deliver($c, $user, $version, $channel);
-			}
-			// A creator can receive these only through their own opt-in.
-			foreach ($c['gateway_channels'] as $gatewayId) {
-				if (!isset(GatewayTransport::LABELS[$gatewayId])) {
-					continue;
-				}
-				if ($this->gatewayPreferences->destinationFor($user->getUID(), $gatewayId, $c['category']) === null) {
-					continue;
-				}
-				$this->deliver($c, $user, $version, 'gateway:' . $gatewayId);
-			}
+			$this->deliverChannels($campaign, $user, $version, false);
 			$status['processed']++;
 		}
 		if (count($accounts) === self::BATCH) {
 			$this->jobs->add(BoardBroadcastJob::class,
 				['id' => $id,'version' => $version,'offset' => $offset + self::BATCH]);
 			$status['queued'] = true;
-		} else {
-			$pending = $this->outbox->pendingCount($id, $version);
-			if ($pending === 0) {
-				$this->outbox->markPublication($id, $version, 'broadcast_done', 1);
-				$status['done'] = true;
-			}
+		} elseif ($this->outbox->pendingCount($id, $version) === 0) {
+			$this->outbox->markPublication($id, $version, 'broadcast_done', 1);
+			$status['done'] = true;
 		}
 		return $status;
+	}
+
+	/** Check all recipient restrictions at the point of delivery. */
+	private function recipientEligible(array $campaign, IUser $user, int $now): bool {
+		$uid = $user->getUID();
+		return $user->isEnabled()
+			&& $this->campaigns->isEligible($campaign, $uid, $now)
+			&& !($campaign['category'] === 'sponsored'
+				&& $this->config->getUserValue($uid, self::APP, 'sponsored_optout', '0') === '1');
+	}
+
+	/** Only explicit gateway preferences can add a direct transport. */
+	private function channelsFor(array $campaign, string $uid, bool $event): array {
+		$consented = [];
+		foreach ($campaign['gateway_channels'] as $gatewayId) {
+			if (isset(GatewayTransport::LABELS[$gatewayId])
+				&& $this->gatewayPreferences->destinationFor($uid, $gatewayId, $campaign['category']) !== null) {
+				$consented[] = $gatewayId;
+			}
+		}
+		return PublicationChannelPolicy::channels($campaign, $uid, $consented, $event);
+	}
+
+	/** The outbox owns idempotency; callers select channels, never retry directly. */
+	private function deliverChannels(array $campaign, IUser $user, int $version, bool $event, int $eventId = 0, int $now = 0): int {
+		$uid = $user->getUID();
+		$selected = 0;
+		foreach ($this->channelsFor($campaign, $uid, $event) as $channel) {
+			if ($event && !$this->allowedForEvent($campaign, $uid, $channel, $now, $eventId)) {
+				continue;
+			}
+			$this->deliver($campaign, $user, $version, $channel, $eventId);
+			$selected++;
+		}
+		return $selected;
 	}
 
 	/**
@@ -307,49 +319,14 @@ final class BoardPublicationService {
 		}
 		$now = time();
 		foreach ($this->campaigns->activeForTrigger($event['trigger_key']) as $campaign) {
-			$id = (int)$campaign['id'];
-			$version = (int)$campaign['published_at'];
-			if ($version <= 0 || $event['created_at'] < max((int)$campaign['created_at'], $version)
-				|| ($campaign['starts_at'] !== null && $event['created_at'] < (int)$campaign['starts_at'])
-				|| ($campaign['ends_at'] !== null && $event['created_at'] >= (int)$campaign['ends_at'])
-				|| !$this->campaigns->isEligible($campaign, $uid, $now)) {
-				continue;
-			}
-			if (in_array($event['trigger_key'], ['external.webhook','nextcloud.flow.matched','nextcloud.page.opened'], true)
-				&& $event['context_app'] !== 'campaign_' . $id) {
-				continue;
-			}
-			if ($campaign['category'] === 'sponsored'
-				&& $this->config->getUserValue($uid, self::APP, 'sponsored_optout', '0') === '1') {
+			if (!PublicationChannelPolicy::matchesEvent($campaign, $event)
+				|| !$this->recipientEligible($campaign, $user, $now)) {
 				continue;
 			}
 			$result['matched']++;
-			$channels = [];
-			if ($campaign['board_visible']) {
-				$channels[] = 'inbox';
-			}
-			if ($campaign['notify_users'] && $uid !== $campaign['created_by']) {
-				$channels[] = 'notifications';
-			}
-			if ($campaign['notify_activity']) {
-				$channels[] = 'activity';
-			}
-			if ($campaign['notify_email'] && $uid !== $campaign['created_by']) {
-				$channels[] = 'email';
-			}
-			foreach ($campaign['gateway_channels'] as $idOfGateway) {
-				if (isset(GatewayTransport::LABELS[$idOfGateway])
-					&& $this->gatewayPreferences->destinationFor($uid, $idOfGateway, $campaign['category']) !== null) {
-					$channels[] = 'gateway:' . $idOfGateway;
-				}
-			}
-			foreach ($channels as $channel) {
-				if (!$this->allowedForEvent($campaign, $uid, $channel, $now, $eventId)) {
-					continue;
-				}
-				$this->deliver($campaign, $user, $version, $channel, $eventId);
-				$result['channels']++;
-			}
+			$result['channels'] += $this->deliverChannels(
+				$campaign, $user, (int)$campaign['published_at'], true, $eventId, $now
+			);
 		}
 		return $result;
 	}
