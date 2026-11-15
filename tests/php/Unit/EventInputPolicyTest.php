@@ -34,7 +34,7 @@ final class EventInputPolicyTest extends TestCase {
 	}
 
 	public function testAcceptsCampaignScopedEvent(): void {
+		$this->expectNotToPerformAssertions();
 		EventInputPolicy::assertValid('alice', 'external.webhook', 'campaign_42');
-		self::assertTrue(true);
 	}
 }

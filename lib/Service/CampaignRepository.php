@@ -10,9 +10,8 @@ declare(strict_types=1);
 namespace OCA\Communications\Service;
 
 use InvalidArgumentException;
+use OCA\Communications\Db\CampaignConflictException;
 use OCA\Communications\Db\CampaignMapper;
-use OCP\DB\QueryBuilder\IQueryBuilder;
-use OCP\IDBConnection;
 use OCP\IGroupManager;
 use OCP\IUserManager;
 
@@ -52,7 +51,6 @@ class CampaignRepository {
 	];
 
 	public function __construct(
-		private IDBConnection $db,
 		private CampaignMapper $mapper,
 		private IGroupManager $groupManager,
 		private IUserManager $userManager,
@@ -255,15 +253,7 @@ class CampaignRepository {
 		$validated['created_at'] = $now;
 		$validated['published_at'] = $validated['status'] === 'active' ? $now : 0;
 		$validated['updated_at'] = $now;
-		$qb = $this->db->getQueryBuilder();
-		$values = [];
-		foreach ($validated as $column => $value) {
-			$type = is_int($value) ? IQueryBuilder::PARAM_INT : IQueryBuilder::PARAM_STR;
-			$values[$column] = $qb->createNamedParameter($value, $type);
-		}
-		$qb->insert(self::TABLE)->values($values)->executeStatement();
-		// Capture the ID before refreshing subscriptions, which may write app config.
-		$id = $this->db->lastInsertId(self::TABLE);
+		$id = $this->mapper->insert($validated);
 		if (str_starts_with($validated['trigger_key'], 'php_event.') && $validated['status'] === 'active') {
 			$this->nativeSubscriptions->refresh();
 		}
@@ -284,13 +274,7 @@ class CampaignRepository {
 		$validated['updated_at'] = time();
 		$validated['published_at'] = ($original['status'] !== 'active' && $validated['status'] === 'active')
 			? time() : $original['published_at'];
-		$qb = $this->db->getQueryBuilder();
-		$qb->update(self::TABLE)
-			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
-		foreach ($validated as $column => $value) {
-			$qb->set($column, $qb->createNamedParameter($value, is_int($value) ? IQueryBuilder::PARAM_INT : IQueryBuilder::PARAM_STR));
-		}
-		$qb->executeStatement();
+		$this->mapper->update($id, $validated);
 		if (str_starts_with($original['trigger_key'], 'php_event.')
 			|| str_starts_with($validated['trigger_key'], 'php_event.')) {
 			$this->nativeSubscriptions->refresh();
@@ -318,24 +302,7 @@ class CampaignRepository {
 		if ($rows === null) {
 			return null;
 		}
-		$this->db->beginTransaction();
-		try {
-			foreach ($rows as $i => $c) {
-				$order = ($i + 1) * 10;
-				if ((int)$c['manual_order'] === $order) {
-					continue;
-				}
-				$qb = $this->db->getQueryBuilder();
-				$qb->update(self::TABLE)
-					->set('manual_order', $qb->createNamedParameter($order, IQueryBuilder::PARAM_INT))
-					->where($qb->expr()->eq('id', $qb->createNamedParameter((int)$c['id'], IQueryBuilder::PARAM_INT)))
-					->executeStatement();
-			}
-			$this->db->commit();
-		} catch (\Throwable $error) {
-			$this->db->rollBack();
-			throw $error;
-		}
+		$this->mapper->persistOrder($rows);
 		return $rows;
 	}
 
@@ -356,28 +323,10 @@ class CampaignRepository {
 		if ($confirmName === '' || !hash_equals($original['name'], $confirmName)) {
 			throw new InvalidArgumentException($this->l10n->t('Enter the exact internal name to permanently delete the publication.'));
 		}
-		$this->db->beginTransaction();
 		try {
-			foreach (['cc_board_comments','cc_board_pub','cc_board_sent',
-				'cc_inbox_reads','cc_deliveries','cc_leases'] as $table) {
-				$qb = $this->db->getQueryBuilder();
-				$qb->delete($table)
-					->where($qb->expr()->eq('campaign_id',
-						$qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-					->executeStatement();
-			}
-			$qb = $this->db->getQueryBuilder();
-			$deleted = $qb->delete(self::TABLE)
-				->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-				->andWhere($qb->expr()->eq('status', $qb->createNamedParameter('archived')))
-				->executeStatement();
-			if ($deleted !== 1) {
-				throw new \RuntimeException($this->l10n->t('Concurrent deletion or changed state.'));
-			}
-			$this->db->commit();
-		} catch (\Throwable $error) {
-			$this->db->rollBack();
-			throw $error;
+			$this->mapper->purgeArchived($id);
+		} catch (CampaignConflictException $error) {
+			throw new \RuntimeException($this->l10n->t('Concurrent deletion or changed state.'), 0, $error);
 		}
 		if (str_starts_with($original['trigger_key'], 'php_event.')) {
 			$this->nativeSubscriptions->refresh();
@@ -394,16 +343,7 @@ class CampaignRepository {
 			return null;
 		}
 		$this->nativeSubscriptions->assertCapacity($original['trigger_key'], $status, $id);
-		$qb = $this->db->getQueryBuilder();
-		$qb->update(self::TABLE)
-			->set('status', $qb->createNamedParameter($status))
-			->set('updated_at', $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT));
-		if ($status === 'active') {
-			$qb->set('published_at', $qb->createNamedParameter(time(), IQueryBuilder::PARAM_INT));
-		}
-		$qb
-			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
-			->executeStatement();
+		$this->mapper->setStatus($id, $status, time());
 		if (str_starts_with($original['trigger_key'], 'php_event.')) {
 			$this->nativeSubscriptions->refresh();
 		}

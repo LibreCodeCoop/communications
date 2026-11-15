@@ -76,4 +76,79 @@ class CampaignMapper {
 		$result->closeCursor();
 		return $rows;
 	}
+
+	public function insert(array $validated): int {
+		$qb = $this->db->getQueryBuilder();
+		$values = [];
+		foreach ($validated as $column => $value) {
+			$values[$column] = $qb->createNamedParameter($value, is_int($value) ? IQueryBuilder::PARAM_INT : IQueryBuilder::PARAM_STR);
+		}
+		$qb->insert(self::TABLE)->values($values)->executeStatement();
+		return (int)$this->db->lastInsertId(self::TABLE);
+	}
+
+	public function update(int $id, array $validated): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update(self::TABLE)->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		foreach ($validated as $column => $value) {
+			$qb->set($column, $qb->createNamedParameter($value, is_int($value) ? IQueryBuilder::PARAM_INT : IQueryBuilder::PARAM_STR));
+		}
+		$qb->executeStatement();
+	}
+
+	public function persistOrder(array $rows): void {
+		$this->db->beginTransaction();
+		try {
+			foreach ($rows as $i => $campaign) {
+				$order = ($i + 1) * 10;
+				if ((int)$campaign['manual_order'] === $order) {
+					continue;
+				}
+				$qb = $this->db->getQueryBuilder();
+				$qb->update(self::TABLE)
+					->set('manual_order', $qb->createNamedParameter($order, IQueryBuilder::PARAM_INT))
+					->where($qb->expr()->eq('id', $qb->createNamedParameter((int)$campaign['id'], IQueryBuilder::PARAM_INT)))
+					->executeStatement();
+			}
+			$this->db->commit();
+		} catch (\Throwable $error) {
+			$this->db->rollBack();
+			throw $error;
+		}
+	}
+
+	public function purgeArchived(int $id): void {
+		$this->db->beginTransaction();
+		try {
+			foreach (['cc_board_comments', 'cc_board_pub', 'cc_board_sent', 'cc_inbox_reads', 'cc_deliveries', 'cc_leases'] as $table) {
+				$qb = $this->db->getQueryBuilder();
+				$qb->delete($table)
+					->where($qb->expr()->eq('campaign_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
+					->executeStatement();
+			}
+			$qb = $this->db->getQueryBuilder();
+			$deleted = $qb->delete(self::TABLE)
+				->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->eq('status', $qb->createNamedParameter('archived')))
+				->executeStatement();
+			if ($deleted !== 1) {
+				throw new CampaignConflictException('Campaign was modified during archival deletion');
+			}
+			$this->db->commit();
+		} catch (\Throwable $error) {
+			$this->db->rollBack();
+			throw $error;
+		}
+	}
+
+	public function setStatus(int $id, string $status, int $now): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update(self::TABLE)
+			->set('status', $qb->createNamedParameter($status))
+			->set('updated_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT));
+		if ($status === 'active') {
+			$qb->set('published_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT));
+		}
+		$qb->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))->executeStatement();
+	}
 }
