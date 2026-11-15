@@ -1,0 +1,82 @@
+--- a/.github/workflows/playwright.yml
++++ b/.github/workflows/playwright.yml
+@@ -81,18 +81,22 @@
+ 
+   playwright-tests:
+     needs: [playwright-setup]
+-    timeout-minutes: 30
+-    name: Playwright tests ${{ matrix.shardIndex }} / ${{ matrix.shardTotal }}
++    timeout-minutes: 45
++    name: Nextcloud / ${{ matrix.database }}
+     runs-on: ubuntu-latest
+     strategy:
+       fail-fast: false
+       matrix:
+-        shardIndex: [1, 2] # adjust to your needs
+-        shardTotal: [2]
++        database: [sqlite, pgsql, mariadb]
++        shardIndex: [1]
++        shardTotal: [1]
+     outputs:
+       node-version: ${{ steps.versions.outputs.node-version }}
+       package-manager-version: ${{ steps.versions.outputs.package-manager-version }}
+ 
++    env:
++      NC_CI_DB: ${{ matrix.database }}
++
+     steps:
+     - name: Restore context
+       id: cache
+@@ -127,23 +131,40 @@
+     - name: Install Playwright browsers
+       run: npm run playwright:install-ci --if-present
+ 
++    - name: Provision disposable Nextcloud, database and generic LibreSign test fixture
++      run: bash scripts/ci/bootstrap.sh '${{ matrix.database }}'
++      env:
++        INSTALL_LIBRESIGN: ${{ matrix.database == 'sqlite' && '1' || '0' }}
++
++    - name: Validate controller route attributes
++      run: docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/ci/assert-routes.php
++
++    - name: Verify initial database schema contract
++      run: docker exec -u www-data "$NC_CONTAINER" php /var/www/html/custom_apps/communications/tests/integration/fixtures/schema_snapshot.php
++
+     - name: Run Playwright tests
+-      run: npm run playwright -- --shard='${{ matrix.shardIndex }}/${{ matrix.shardTotal }}'
++      run: npm run playwright -- --shard='${{ matrix.shardIndex }}/${{ matrix.shardTotal }}' --reporter=blob
+ 
+     - name: Upload blob report to GitHub Actions Artifacts
+       if: ${{ !cancelled() }}
+       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+       with:
+-        name: blob-report-${{ matrix.shardIndex }}
++        name: blob-report-${{ matrix.database }}-${{ matrix.shardIndex }}
+         path: blob-report
+         retention-days: 1
+ 
++    - name: Shutdown disposable test environment
++      if: always()
++      run: docker compose -f tests/ci/compose.yml -p communications-ci --profile postgresql --profile mariadb down --volumes --remove-orphans
++      env:
++        NC_TEST_PASSWORD: ephemeral-cleanup-only
++
+   merge-reports:
+     # Merge reports after playwright-tests, even if some shards have failed
+     if: ${{ !cancelled() }}
+     needs: [playwright-tests]
+ 
+-    runs-on: ubuntu-latest-low
++    runs-on: ubuntu-latest
+     steps:
+     - name: Restore context
+       id: cache
+@@ -196,7 +217,7 @@
+   summary:
+     permissions:
+       contents: none
+-    runs-on: ubuntu-latest-low
++    runs-on: ubuntu-latest
+     needs: [playwright-tests]
+ 
+     if: always()

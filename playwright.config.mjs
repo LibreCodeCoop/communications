@@ -4,6 +4,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: process.env.NC_CI_DB && process.env.NC_CI_DB !== 'sqlite' ? ['**/libresign-event.spec.mjs'] : [],
   timeout: 180_000,
   expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,

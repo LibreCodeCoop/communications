@@ -37,7 +37,8 @@
     ],
     "cs:check": "php-cs-fixer fix --dry-run --diff --using-cache=no",
     "cs:fix": "php-cs-fixer fix --using-cache=no",
-    "mutation:test": "infection lib/Service/CtaUrl.php --threads=2 --no-progress --no-interaction"
+    "mutation:test": "infection lib/Service/CtaUrl.php --threads=2 --no-progress --no-interaction",
+    "test:unit": "phpunit --configuration phpunit.xml.dist"
   },
   "config": {
     "sort-packages": true,

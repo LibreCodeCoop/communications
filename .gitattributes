@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: MIT
+# Generated unified-diff context contains necessary single-space blank lines.
+.github/workflows/*.yml.patch whitespace=-blank-at-eol

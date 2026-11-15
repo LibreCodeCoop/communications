@@ -171,8 +171,31 @@ jobs:
           target: target
           catalog-commit: ${{ steps.catalog-revision.outputs.sha }}
 
+      - name: Checkout official Nextcloud workflow templates
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          repository: nextcloud/.github
+          path: nextcloud-upstream
+
+      - name: Record official Nextcloud template revision
+        id: upstream-revision
+        working-directory: nextcloud-upstream
+        shell: bash
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Synchronize official PHPStan, PHPUnit and Playwright workflows
+        id: upstream-sync
+        uses: ./source/actions/sync-workflows
+        with:
+          source: nextcloud-upstream/workflow-templates
+          target: target
+          lock-file: .github/nextcloud-actions-lock.txt
+          catalog-commit: ${{ steps.upstream-revision.outputs.sha }}
+          include: phpstan.yml,phpunit-sqlite.yml,phpunit-mariadb.yml,phpunit-pgsql.yml,playwright.yml
+
       - name: Create Pull Request
-        if: ${{ steps.sync.outputs.changed == 'true' }}
+        if: ${{ steps.sync.outputs.changed == 'true' || steps.upstream-sync.outputs.changed == 'true' }}
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.auth-token.outputs.token }}
@@ -184,10 +207,12 @@ jobs:
           branch: 'automated/noid/${{ matrix.branches }}-update-workflows'
           title: '[${{ matrix.branches }}] ci(actions): Update workflow templates from organization template repository'
           draft: ${{ steps.sync.outputs.patch_failed == 'true' }}
-          add-paths: .github/workflows/*.yml,.github/actions-lock.txt
+          add-paths: .github/workflows/*.yml,.github/workflows/*.patch,.github/actions-lock.txt,.github/nextcloud-actions-lock.txt
           body: |
             Automated update of workflow templates from [LibreCodeCoop/.github](https://github.com/LibreCodeCoop/.github)
             ${{ steps.sync.outputs.summary }}
+            Official Nextcloud workflow templates:
+            ${{ steps.upstream-sync.outputs.summary }}
           labels: |
             dependencies
             3. to review

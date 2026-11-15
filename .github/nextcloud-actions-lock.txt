@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: MIT
+
+# workflow-lock-schema: 3
+
+{"workflow":"phpstan.yml","sha256":"3737c57183fb37a41d0fa4cf2efa55245e7fc8348dbad43faf9ee6197440edae","catalog_commit":"c2798fc61844a6420779add9f5e1b51f8aabfd87"}
+{"workflow":"phpunit-mariadb.yml","sha256":"706800a7d01034c9c4a657585a1b8c955259eb86869dadabafba046081fa1446","catalog_commit":"c2798fc61844a6420779add9f5e1b51f8aabfd87"}
+{"workflow":"phpunit-pgsql.yml","sha256":"e0a15c5d99b0ad092a5560660f712712b1cdcf0ede6e22fca15c8b591402eec3","catalog_commit":"c2798fc61844a6420779add9f5e1b51f8aabfd87"}
+{"workflow":"phpunit-sqlite.yml","sha256":"06642c0d4ee358baa079716426a2ae24d387d3cb04b00c88f50ea46f8da1a1e8","catalog_commit":"c2798fc61844a6420779add9f5e1b51f8aabfd87"}
+{"workflow":"playwright.yml","sha256":"26106f8ae4bef2a191c445fb3a246ae6e1ab3f43348b8940feaf356768091a38","catalog_commit":"c2798fc61844a6420779add9f5e1b51f8aabfd87"}
