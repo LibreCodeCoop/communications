@@ -23,7 +23,7 @@ const selected = computed({
 const options = computed(() =>
 	campaigns.value.map((c) => ({
 		value: String(c.id),
-		label: c.name + (c.status === 'active' ? '' : ' — ' + c.status),
+		label: c.name + (c.status === 'active' ? '' : ' (' + c.status + ')'),
 	})),
 )
 const reduce = (option: FlowCampaignOption) => option.value

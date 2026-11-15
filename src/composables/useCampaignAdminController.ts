@@ -424,7 +424,7 @@ export function useCampaignAdminController(
 	// TRANSLATORS Name of a contextual visual delivery format: modal dialog.
 	const adminModalDialogLabel = t('communications', 'Modal dialog')
 	// TRANSLATORS Short label for an option or field in the publications management screen.
-	const adminPriority0100Label = t('communications', 'Priority (0–100)')
+	const adminPriority0100Label = t('communications', 'Priority (0 to 100)')
 	// TRANSLATORS Short label for an option or field in the publications management screen.
 	const adminWhereToDisplayLabel = t('communications', 'Where to display')
 	// TRANSLATORS Short label for an option or field in the publications management screen.

@@ -111,7 +111,7 @@ const {
 					<NcTextField
 						id="cc-priority"
 						v-model="form.priority"
-						:label="t('communications', 'Priority (0–100)')"
+						:label="t('communications', 'Priority (0 to 100)')"
 						type="number"
 						label-outside />
 				</div>

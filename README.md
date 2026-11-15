@@ -3,19 +3,19 @@
 
 # Communications
 
-**The right message, in the right place, at the right time — inside Nextcloud.**
+**Reach the right people at the right time, directly in Nextcloud.**
 
 Communications is a **free and open-source application for Nextcloud** that helps organizations reach their people without scattering important announcements across unrelated tools. Compose a publication once, choose who should see it and when, then deliver it through the channels that fit the message.
 
 ## Communicate where people already work
 
-- **Contextual banners and dialogs** — show an announcement within Nextcloud, including relevant pages and applications, rather than waiting for people to check another inbox.
-- **A dedicated Inbox** — keep institutional publications accessible after the first notification, with reading and commenting features where enabled.
-- **Nextcloud-native channels** — use Notifications, Activity, and email independently or together, according to your configuration.
-- **Optional messaging channels** — connect supported providers through the separate Two-Factor Gateway app when installed, configured, and allowed by recipient preferences.
-- **Scheduled or event-driven publications** — publish immediately, within a defined period, or in response to registered Nextcloud application events.
-- **Audience and visibility controls** — target users and groups, exclude selected audiences, and define which applications or routes can display a contextual message.
-- **A single publication workspace** — write rich text, preview presentation, manage drafts and active notices, reorder publications, and follow estimated engagement metrics.
+- **Contextual banners and dialogs:** show an announcement within Nextcloud, including relevant pages and applications, rather than waiting for people to check another inbox.
+- **A dedicated Inbox:** keep institutional publications accessible after the first notification, with reading and commenting features where enabled.
+- **Nextcloud-native channels:** use Notifications, Activity, and email independently or together, according to your configuration.
+- **Optional messaging channels:** connect supported providers through the separate Two-Factor Gateway app when installed, configured, and allowed by recipient preferences.
+- **Scheduled or event-driven publications:** publish immediately, within a defined period, or in response to registered Nextcloud application events.
+- **Audience and visibility controls:** target users and groups, exclude selected audiences, and define which applications or routes can display a contextual message.
+- **A single publication workspace:** write rich text, preview presentation, manage drafts and active notices, reorder publications, and follow estimated engagement metrics.
 
 ## From everyday notices to automated communication
 
@@ -37,6 +37,4 @@ If you need help with hosting, deployment, integrations, accessibility, maintena
 - [API and integration reference](docs/API.md)
 - [Contribute to the project](CONTRIBUTING.md)
 
-The project grows through code, translations, testing, design, documentation, and financial support. You can help sustain development through [GitHub Sponsors](https://github.com/sponsors/vitormattos) or contact [LibreCode Coop](mailto:contact@librecode.coop) for professional services.
-
-> **Development preview:** Communications is not yet released or certified for production. Current validation uses Nextcloud 36 development builds and disposable test environments. Features and integration contracts may change before the first release.
+The project grows through code, translations, testing, design, documentation, and financial support. You can help sustain development through [GitHub Sponsors](https://github.com/sponsors/libresign) or contact [LibreCode Coop](mailto:contact@librecode.coop) for professional services.

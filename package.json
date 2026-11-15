@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:libresign": "playwright test tests/e2e/libresign-event.spec.mjs",
     "lint": "eslint src tests scripts eslint.config.mjs vite*.ts vitest.config.ts playwright.config.mjs && npm run format:vue && npm run format:ts && npm run format:mjs",
-    "audit": "npm audit --audit-level=high",
+    "audit": "npm audit --audit-level=moderate",
     "test": "npm run test:unit",
     "test:coverage": "vitest run --coverage",
     "ts:check": "vue-tsc --noEmit",
@@ -69,6 +69,10 @@
     "vite": "7.3.8",
     "vitest": "4.1.12",
     "vue-tsc": "3.3.13"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1",
+    "qs": "^6.16.1"
   },
   "engines": {
     "node": "^24.0.0",
