@@ -94,6 +94,7 @@ function updateOpen(open: boolean): void {
 		<span v-if="preview" class="cc-preview-screenreader-note">{{
 			t('communications', 'Test mode. No interaction is recorded.')
 		}}</span>
+		<!-- TRANSLATORS Label identifying a promotional announcement. -->
 		<p v-if="sponsored" class="cc-sponsored-label">
 			{{ t('communications', 'Sponsored content') }}
 		</p>
@@ -114,6 +115,7 @@ function updateOpen(open: boolean): void {
 				variant="tertiary"
 				:text="t('communications', 'Hide sponsored content')"
 				@click="optout" />
+			<!-- TRANSLATORS Button dismissing a contextual announcement after the recipient reads it. -->
 			<NcButton
 				v-if="campaign.dismissible !== false"
 				variant="primary"
@@ -134,6 +136,7 @@ function updateOpen(open: boolean): void {
 			dir="auto"
 			:data-theme="theme"
 			:style="[{ ...appearance.style }, textStyle]">
+			<!-- TRANSLATORS Label identifying a promotional announcement. -->
 			<p v-if="sponsored" class="cc-sponsored-label">
 				{{ t('communications', 'Sponsored content') }}
 			</p>
@@ -154,6 +157,7 @@ function updateOpen(open: boolean): void {
 					variant="tertiary"
 					:text="t('communications', 'Hide sponsored content')"
 					@click="optout" />
+				<!-- TRANSLATORS Button dismissing a contextual announcement after the recipient reads it. -->
 				<NcButton
 					variant="primary"
 					:text="t('communications', 'Got it')"

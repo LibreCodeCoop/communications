@@ -58,10 +58,12 @@ const unreadCountAriaLabel = computed(() => {
 		count: unreadCount.value ?? 0,
 	})
 })
+// TRANSLATORS Tab for communications delivered to the current user, not Nextcloud Mail.
+const inboxTabTitle = t('communications', 'Inbox')
+// TRANSLATORS Tab for creating and managing institutional announcements.
+const publicationsTabTitle = t('communications', 'Publications')
 const hubTitle = computed(() =>
-	section.value === 'inbox'
-		? t('communications', 'Inbox')
-		: t('communications', 'Publications'),
+	section.value === 'inbox' ? inboxTabTitle : publicationsTabTitle,
 )
 onMounted(() => {
 	applyHistory()
@@ -75,6 +77,7 @@ onUnmounted(() => window.removeEventListener('popstate', applyHistory))
 		<div class="cc-hub-shell">
 			<header class="cc-hub-top">
 				<div class="cc-hub-brand">
+					<!-- TRANSLATORS Name of the app shown in the main page heading. -->
 					<h1>{{ t('communications', 'Communications') }}</h1>
 					<p>
 						{{
@@ -111,6 +114,7 @@ onUnmounted(() => window.removeEventListener('popstate', applyHistory))
 					<template #icon
 						><NcIconSvgWrapper :path="mdiInboxOutline" :size="19"
 					/></template>
+					<!-- TRANSLATORS Tab for communications delivered to the current user, not Nextcloud Mail. -->
 					<span>{{ t('communications', 'Inbox') }}</span>
 					<span
 						v-if="unreadCount !== null && unreadCount > 0"
@@ -131,6 +135,7 @@ onUnmounted(() => window.removeEventListener('popstate', applyHistory))
 							:path="mdiFileDocumentEditOutline"
 							:size="19"
 					/></template>
+					<!-- TRANSLATORS Tab for creating and managing institutional announcements. -->
 					<span>{{ t('communications', 'Publications') }}</span>
 				</NcButton>
 			</nav>

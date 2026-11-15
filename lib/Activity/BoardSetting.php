@@ -26,6 +26,7 @@ final class BoardSetting extends ActivitySettings {
 		return 'other';
 	}
 	public function getGroupName():string {
+		// TRANSLATORS Name of the miscellaneous category in the Nextcloud Activity app.
 		return $this->l10n->t('Other activities');
 	}
 	public function getPriority():int {

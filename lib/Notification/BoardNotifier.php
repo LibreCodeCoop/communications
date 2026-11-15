@@ -48,6 +48,7 @@ final class BoardNotifier implements INotifier {
 				throw new AlreadyProcessedException();
 			}
 			$author = $this->users->getDisplayName($item['actor']) ?: $item['actor'];
+			// TRANSLATORS Continuation after the name of the user who mentioned the recipient.
 			$notification->setParsedSubject($author . $localized->t(' mentioned you on the announcement board'))
 				->setParsedMessage($localized->t('Open the announcement to read and reply.'));
 			$id = $item['campaignId'];
@@ -57,6 +58,7 @@ final class BoardNotifier implements INotifier {
 			if ($item === null) {
 				throw new AlreadyProcessedException();
 			}
+			// TRANSLATORS Prefix before an announcement title in an Activity or notification entry.
 			$notification->setParsedSubject($localized->t('New announcement: ') . $item['headline'])
 				->setParsedMessage(mb_substr(trim(strip_tags($item['message'])), 0, 350));
 		} else {

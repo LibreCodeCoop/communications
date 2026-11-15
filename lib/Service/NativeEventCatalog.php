@@ -227,6 +227,7 @@ final class NativeEventCatalog {
 				$key = self::triggerKey($class);
 				$out[$class] = [
 					'key' => $key, 'appId' => $appId, 'class' => $class,
+					// TRANSLATORS Prefix before the short class name of a discovered PHP event.
 					'label' => $this->l10n->t('PHP event: ') . $short,
 					'description' => $description,
 					'webhook' => $webhook, 'phase' => $phase,

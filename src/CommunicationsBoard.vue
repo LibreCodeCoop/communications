@@ -327,10 +327,12 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 </script>
 
 <template>
+	<!-- TRANSLATORS The Communications app message Inbox, separate from the Mail app. -->
 	<section class="cc-board-app" :aria-label="t('communications', 'Inbox')">
 		<main class="cc-board-main">
 			<header ref="heading" class="cc-board-heading">
 				<div>
+					<!-- TRANSLATORS Heading above messages delivered to the current Nextcloud account. -->
 					<h2>{{ t('communications', 'Your messages') }}</h2>
 					<p>
 						{{
@@ -341,6 +343,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						}}
 					</p>
 				</div>
+				<!-- TRANSLATORS Settings for direct publication notification delivery. -->
 				<NcButton
 					variant="tertiary"
 					class="cc-gateway-preferences-button"
@@ -352,6 +355,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					/></template>
 				</NcButton>
 			</header>
+			<!-- TRANSLATORS Settings for optional third-party messaging channels. -->
 			<section
 				v-if="gatewaySettingsOpen"
 				class="cc-gateway-preferences"
@@ -394,6 +398,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							:disabled="!channel.available && !channel.enabled">
 							{{ channel.label }}
 						</NcCheckboxRadioSwitch>
+						<!-- TRANSLATORS Messaging provider is set up and available for this user. -->
 						<span>{{
 							channel.available
 								? t('communications', 'Configured')
@@ -460,6 +465,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						type="search"
 						:label="t('communications', 'Search messages')"
 						@keyup.enter="doSearch" />
+					<!-- TRANSLATORS Button that searches messages in the Communications Inbox. -->
 					<NcButton
 						:text="t('communications', 'Search')"
 						@click="doSearch">
@@ -472,6 +478,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					class="cc-inbox-filters"
 					role="group"
 					:aria-label="t('communications', 'Message filter')">
+					<!-- TRANSLATORS Inbox filter showing read and unread messages. -->
 					<NcButton
 						:pressed="filter === 'all'"
 						:variant="filter === 'all' ? 'primary' : 'tertiary'"
@@ -503,6 +510,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						:class="{ 'cc-board-unread': !item.readAt }"
 						:style="{ textAlign: item.textAlign || 'left' }">
 						<div class="cc-board-metadata">
+							<!-- TRANSLATORS Badge marking an Inbox message as not yet read. -->
 							<strong v-if="!item.readAt" class="cc-unread-label">{{
 								t('communications', 'Unread')
 							}}</strong>
@@ -513,6 +521,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 								"
 								>{{ dateText(item.publishedAt) }}</time
 							>
+							<!-- TRANSLATORS Label before the expiration date of a publication. -->
 							<span v-if="item.endsAt" class="cc-board-chip"
 								>{{ t('communications', 'Until') }}
 								{{ dateText(item.endsAt) }}</span
@@ -522,6 +531,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 								class="cc-board-chip"
 								>{{ t('communications', 'Contextual notice') }}</span
 							>
+							<!-- TRANSLATORS Badge marking a promotional publication. -->
 							<span
 								v-if="item.category === 'sponsored'"
 								class="cc-board-chip"
@@ -534,6 +544,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							:use-markdown="true"
 							:reference-limit="0" />
 						<footer class="cc-board-article-actions">
+							<!-- TRANSLATORS Open the full announcement and its comments. -->
 							<NcButton
 								:text="t('communications', 'Open message')"
 								@click="openItem(item.id)">
@@ -543,6 +554,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 										:size="18"
 								/></template>
 							</NcButton>
+							<!-- TRANSLATORS Label following the number of comments on a message. -->
 							<span v-if="item.commentsEnabled"
 								>{{ item.commentCount }}
 								{{ t('communications', 'comment(s)') }}</span
@@ -554,15 +566,18 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					v-if="total > 10"
 					class="cc-board-pagination"
 					:aria-label="t('communications', 'Message navigation')">
+					<!-- TRANSLATORS Pagination button for the preceding page of Inbox messages. -->
 					<NcButton
 						:text="t('communications', 'Previous')"
 						:disabled="page <= 1"
 						@click="changePage(-1)" />
+					<!-- TRANSLATORS Label before the current Inbox page number. -->
 					<span
 						>{{ t('communications', 'Page') }} {{ page }}
 						{{ t('communications', 'of') }}
 						{{ Math.ceil(total / 10) }}</span
 					>
+					<!-- TRANSLATORS Pagination button for the following page of Inbox messages. -->
 					<NcButton
 						:text="t('communications', 'Next')"
 						:disabled="!hasMore"
@@ -570,6 +585,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 				</nav>
 			</template>
 			<template v-else>
+				<!-- TRANSLATORS Return from an announcement detail to the Inbox list. -->
 				<NcButton
 					:text="t('communications', 'Back to Inbox')"
 					variant="tertiary"
@@ -600,6 +616,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							"
 							>{{ dateText(selected.publishedAt) }}</time
 						>
+						<!-- TRANSLATORS Label before the expiration date of a publication. -->
 						<span v-if="selected.endsAt" class="cc-board-chip"
 							>{{ t('communications', 'Until') }}
 							{{ dateText(selected.endsAt) }}</span
@@ -622,6 +639,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					v-if="selected.commentsEnabled"
 					class="cc-board-comments"
 					:aria-label="commentsAriaLabel(selected.headline)">
+					<!-- TRANSLATORS Heading prefix before the number of comments on a message. -->
 					<h2>
 						{{ t('communications', 'Comments (')
 						}}{{ selected.commentCount }})
@@ -638,6 +656,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 									'Write your comment. Use @identifier to mention someone.',
 								)
 							" />
+						<!-- TRANSLATORS Submit a new comment to the announcement. -->
 						<NcButton
 							variant="primary"
 							:text="t('communications', 'Post comment')"
@@ -661,6 +680,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 								"
 								>{{ dateText(comment.createdAt) }}</time
 							>
+							<!-- TRANSLATORS Action removing the selected Inbox comment. -->
 							<NcButton
 								v-if="comment.canDelete"
 								size="small"

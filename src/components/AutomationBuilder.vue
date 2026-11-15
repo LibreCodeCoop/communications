@@ -433,9 +433,13 @@ function sourceIcon(id: string): string {
 	return sourceIcons[id] || mdiPuzzleOutline
 }
 const routeOperatorOptions = [
+	// TRANSLATORS Route filter operator accepting any value for the URL variable.
 	{ value: 'any', label: t('communications', 'Any value') },
+	// TRANSLATORS Route filter operator requiring an exact URL-variable value.
 	{ value: 'equals', label: t('communications', 'Equals') },
+	// TRANSLATORS Route filter operator matching a URL-variable prefix.
 	{ value: 'prefix', label: t('communications', 'Starts with') },
+	// TRANSLATORS Route filter operator accepting only digits in a URL variable.
 	{ value: 'digits', label: t('communications', 'Numbers only') },
 ]
 const selectRouteOperatorValue = (option: { value: string }): string => option.value
@@ -624,6 +628,7 @@ function flowLink(): string {
 									:label="
 										t('communications', 'An application event')
 									" />
+								<!-- TRANSLATORS Trigger type activated by visiting an eligible application page. -->
 								<NcRadioGroupButton
 									value="visit"
 									:label="t('communications', 'Page visit')" />
@@ -737,6 +742,7 @@ function flowLink(): string {
 								v-for="variable in routeVariables"
 								:key="variable"
 								class="cc-route-filter">
+								<!-- TRANSLATORS Name of a parameter in the selected URL route. -->
 								<label :for="'cc-route-operator-' + variable"
 									>{{ t('communications', 'Variable') }}
 									{{ '{' + variable + '}' }}</label
@@ -759,6 +765,7 @@ function flowLink(): string {
 											pageFilters[variable]?.operator,
 										)
 									">
+									<!-- TRANSLATORS Label preceding the name of the route variable being filtered. -->
 									<label :for="'cc-route-value-' + variable"
 										>{{ t('communications', 'Value for') }}
 										{{ variable }}</label
@@ -771,7 +778,13 @@ function flowLink(): string {
 											pageFilters[variable]?.value || ''
 										"
 										:label="routeVariableLabel(variable)"
-										:placeholder="routeExampleLabel(variable === 'view' ? 'recent' : '123')"
+										:placeholder="
+											routeExampleLabel(
+												variable === 'view'
+													? 'recent'
+													: '123',
+											)
+										"
 										@update:model-value="
 											setRouteValue(variable, $event)
 										" />

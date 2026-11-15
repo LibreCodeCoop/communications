@@ -45,6 +45,10 @@ final class WebRouteCatalog {
 		// might not yet have been loaded in this request.
 		$this->apps->loadApp($app);
 		$this->router->loadRoutes($app);
+		// TRANSLATORS Label for the entry point (/) of an application's pages.
+		$mainPageLabel = $this->l10n->t('Main page');
+		// TRANSLATORS Prefix before a route path, e.g. 'Page /settings/user'.
+		$pagePrefix = $this->l10n->t('Page ');
 		$routes = [];
 		foreach ($this->router->getRouteCollection()->all() as $name => $route) {
 			if (!str_starts_with($route->getPath(), '/apps/' . $app . '/')) {
@@ -63,7 +67,7 @@ final class WebRouteCatalog {
 			$description = $pattern;
 			$routes[$pattern] = [
 				'value' => $pattern,
-				'label' => $tail === '/' ? $this->l10n->t('Main page') : $this->l10n->t('Page ') . $tail,
+				'label' => $tail === '/' ? $mainPageLabel : $pagePrefix . $tail,
 				'description' => $description,
 			];
 			if (count($routes) >= 100) {

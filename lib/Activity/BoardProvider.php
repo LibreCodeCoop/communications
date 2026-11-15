@@ -48,6 +48,7 @@ final class BoardProvider implements IProvider {
 			throw new UnknownActivityException('Announcement is unavailable');
 		}
 		return $event
+			// TRANSLATORS Prefix before an announcement title in an Activity or notification entry.
 			->setParsedSubject($localized->t('New announcement: ') . $post['headline'])
 			->setParsedMessage(mb_substr(trim(strip_tags($post['message'])), 0, 350))
 			->setLink(PublicationLink::absolute($this->urls, (int)$post['id']))

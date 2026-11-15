@@ -88,16 +88,25 @@ import {
 } from '@mdi/js'
 
 const statuses = [
+	// TRANSLATORS Filter option showing publications regardless of lifecycle status.
 	{ label: t('communications', 'All statuses'), value: 'all' },
+	// TRANSLATORS State of a publication that can currently be displayed or delivered.
 	{ label: t('communications', 'Active'), value: 'active' },
+	// TRANSLATORS State of a publication whose start date is in the future.
 	{ label: t('communications', 'Scheduled'), value: 'scheduled' },
+	// TRANSLATORS State of a publication whose availability window has expired.
 	{ label: t('communications', 'Ended'), value: 'ended' },
+	// TRANSLATORS List filter for publications that have not been activated.
 	{ label: t('communications', 'Drafts'), value: 'draft' },
+	// TRANSLATORS Publication temporarily disabled by an editor.
 	{ label: t('communications', 'Paused'), value: 'paused' },
+	// TRANSLATORS Publication removed from the active management list.
 	{ label: t('communications', 'Archived'), value: 'archived' },
 ]
 const audienceOptions = [
+	// TRANSLATORS Audience scope covering all authenticated Nextcloud accounts.
 	{ label: t('communications', 'All signed-in users'), value: 'all' },
+	// TRANSLATORS Audience scope restricted to Nextcloud administrators.
 	{ label: t('communications', 'Administrators only'), value: 'admins' },
 	{ label: t('communications', 'One or more Nextcloud groups'), value: 'group' },
 	{ label: t('communications', 'Specific users'), value: 'users' },
@@ -119,8 +128,10 @@ const placementOptions = computed(() =>
 			{ label: t('communications', 'Any supported page'), value: 'any' },
 			{ label: 'Files', value: 'files' },
 			{ label: 'Dashboard', value: 'dashboard' },
+			// TRANSLATORS Location inside the Nextcloud user settings pages.
 			{ label: t('communications', 'Personal settings'), value: 'settings' },
 			{
+				// TRANSLATORS Location inside the Nextcloud administrator settings.
 				label: t('communications', 'Administration settings'),
 				value: 'admin_settings',
 			},
@@ -147,6 +158,7 @@ const frequencyOptions = [
 	{ label: t('communications', 'Once per publication and user'), value: 'once' },
 	{ label: t('communications', 'At most once every 24 hours'), value: 'daily' },
 	{ label: t('communications', 'At most once every 7 days'), value: 'weekly' },
+	// TRANSLATORS Frequency option with a user-defined minimum delay.
 	{ label: t('communications', 'Custom interval'), value: 'custom' },
 ]
 const excludedMatchOptions = [
@@ -165,42 +177,58 @@ const groupMatchOptions = [
 ]
 const categoryOptions = [
 	{
+		// TRANSLATORS Type of announcement sent by an organization, not a paid promotion.
 		label: t('communications', 'Institutional announcement'),
 		value: 'institutional',
 	},
+	// TRANSLATORS Label for promotional announcements that may require recipient consent.
 	{ label: t('communications', 'Sponsored content'), value: 'sponsored' },
 ]
 const themeOptions = [
+	// TRANSLATORS Visual theme matching the Nextcloud instance styling.
 	{ label: t('communications', 'Nextcloud default'), value: 'default' },
+	// TRANSLATORS Visual theme that emphasizes organizational announcements.
 	{ label: t('communications', 'Institutional highlight'), value: 'primary' },
+	// TRANSLATORS Informational visual theme or notification style, not a menu command.
 	{ label: t('communications', 'Information'), value: 'info' },
+	// TRANSLATORS Visual theme used for a successful or positive announcement.
 	{ label: t('communications', 'Success'), value: 'success' },
+	// TRANSLATORS Visual theme used for an important cautionary announcement.
 	{ label: t('communications', 'Warning'), value: 'warning' },
+	// TRANSLATORS Visual theme for a problem or failure notice.
 	{ label: t('communications', 'Error'), value: 'error' },
+	// TRANSLATORS Visual theme without a particular status or emphasis.
 	{ label: t('communications', 'Neutral'), value: 'neutral' },
+	// TRANSLATORS Visual theme configurable by the editor.
 	{ label: t('communications', 'Custom'), value: 'custom' },
 ]
 // Match the native NcNoteCard variants and icons used by Nextcloud.
 const bannerTypes = [
 	{
 		value: 'info',
+		// TRANSLATORS Informational visual theme or notification style, not a menu command.
 		label: t('communications', 'Information'),
 		icon: mdiInformation,
 	},
 	{
 		value: 'success',
+		// TRANSLATORS Visual theme used for a successful or positive announcement.
 		label: t('communications', 'Success'),
 		icon: mdiCheckboxMarkedCircle,
 	},
+	// TRANSLATORS Visual theme used for an important cautionary announcement.
 	{ value: 'warning', label: t('communications', 'Warning'), icon: mdiAlert },
+	// TRANSLATORS Visual theme for a problem or failure notice.
 	{ value: 'error', label: t('communications', 'Error'), icon: mdiAlertDecagram },
 	{
 		value: 'neutral',
+		// TRANSLATORS Visual theme without a particular status or emphasis.
 		label: t('communications', 'Neutral'),
 		icon: mdiMinusCircleOutline,
 	},
 	{
 		value: 'custom',
+		// TRANSLATORS Visual theme configurable by the editor.
 		label: t('communications', 'Custom'),
 		icon: mdiPaletteOutline,
 	},
@@ -226,18 +254,21 @@ const wizardSteps = [
 	{
 		number: 1,
 		label: t('communications', 'When to publish'),
+		// TRANSLATORS Short title of the wizard step for when a publication is delivered.
 		shortLabel: t('communications', 'Timing'),
 		icon: mdiApps,
 	},
 	{
 		number: 2,
 		label: t('communications', 'Message and audience'),
+		// TRANSLATORS Short title of the wizard step for message text and recipients.
 		shortLabel: t('communications', 'Message'),
 		icon: mdiMessageTextOutline,
 	},
 	{
 		number: 3,
 		label: t('communications', 'Review and publish'),
+		// TRANSLATORS Short title of the wizard review and activation step.
 		shortLabel: t('communications', 'Publish'),
 		icon: mdiCheckCircleOutline,
 	},
@@ -430,6 +461,7 @@ const deliveryChannelDefinitions: Array<{
 	{
 		id: 'notifications',
 		field: 'notify_users',
+		// TRANSLATORS Delivery channel using the Nextcloud notification bell.
 		label: t('communications', 'Nextcloud Notifications'),
 		description: t(
 			'communications',
@@ -439,6 +471,7 @@ const deliveryChannelDefinitions: Array<{
 	{
 		id: 'activity',
 		field: 'notify_activity',
+		// TRANSLATORS Delivery channel recording an entry in the Nextcloud Activity app.
 		label: t('communications', 'Activity feed'),
 		description: t(
 			'communications',
@@ -508,10 +541,12 @@ const gatewayOptions = computed(() =>
 			? 'guest'
 			: meta?.availability || 'loading'
 		const status = form.value.guest_visible
-			? t('communications', 'No recipients')
+			? // TRANSLATORS Status of a delivery channel without an eligible audience.
+				t('communications', 'No recipients')
 			: selected && !ready
 				? t('communications', 'Selected · unavailable')
-				: meta?.status || t('communications', 'Checking…')
+				: // TRANSLATORS Status while delivery-channel availability is being checked.
+					meta?.status || t('communications', 'Checking…')
 		const help = form.value.guest_visible
 			? t(
 					'communications',
@@ -553,7 +588,8 @@ const deliveryChannelOptions = computed(() =>
 			: meta?.availability || 'loading'
 		let status = form.value.guest_visible
 			? t('communications', 'No individual delivery')
-			: meta?.status || t('communications', 'Checking…')
+			: // TRANSLATORS Status while delivery-channel availability is being checked.
+				meta?.status || t('communications', 'Checking…')
 		if (selected && !ready && !form.value.guest_visible)
 			status = t('communications', 'Selected · unavailable')
 		const help = form.value.guest_visible
@@ -644,6 +680,7 @@ const noticeEmail = computed({
 const visualDeliveryOptions = computed(() => [
 	{
 		id: 'banner',
+		// TRANSLATORS Display mode showing a message inline on a Nextcloud page.
 		label: t('communications', 'Contextual banner'),
 		description: t(
 			'communications',
@@ -654,8 +691,10 @@ const visualDeliveryOptions = computed(() => [
 		availability: 'ready',
 		status:
 			form.value.presentation === 'banner'
-				? t('communications', 'Selected')
-				: t('communications', 'Available'),
+				? // TRANSLATORS Status of a delivery method or visual destination selected by the editor.
+					t('communications', 'Selected')
+				: // TRANSLATORS Status of a delivery method or visual destination that can be used.
+					t('communications', 'Available'),
 		help: t(
 			'communications',
 			'The banner appears during navigation. Selecting it disables the modal but keeps other channels.',
@@ -663,6 +702,7 @@ const visualDeliveryOptions = computed(() => [
 	},
 	{
 		id: 'modal',
+		// TRANSLATORS Display mode showing a message in an overlay.
 		label: t('communications', 'Modal dialog'),
 		description: t(
 			'communications',
@@ -674,8 +714,10 @@ const visualDeliveryOptions = computed(() => [
 		status: form.value.guest_visible
 			? t('communications', 'Not available to guests')
 			: form.value.presentation === 'modal'
-				? t('communications', 'Selected')
-				: t('communications', 'Available'),
+				? // TRANSLATORS Status of a delivery method or visual destination selected by the editor.
+					t('communications', 'Selected')
+				: // TRANSLATORS Status of a delivery method or visual destination that can be used.
+					t('communications', 'Available'),
 		help: t(
 			'communications',
 			'Modal and banner are alternatives. Selecting one disables the other; email, history, and notifications remain.',
@@ -684,6 +726,7 @@ const visualDeliveryOptions = computed(() => [
 ])
 const inboxDeliveryOption = computed(() => ({
 	id: 'inbox',
+	// TRANSLATORS The Communications app message Inbox, distinct from the Nextcloud Mail app.
 	label: t('communications', 'Inbox'),
 	description: t(
 		'communications',
@@ -695,8 +738,10 @@ const inboxDeliveryOption = computed(() => ({
 	status: form.value.guest_visible
 		? t('communications', 'Not available to guests')
 		: inboxCopy.value
-			? t('communications', 'Selected')
-			: t('communications', 'Available'),
+			? // TRANSLATORS Status of a delivery method or visual destination selected by the editor.
+				t('communications', 'Selected')
+			: // TRANSLATORS Status of a delivery method or visual destination that can be used.
+				t('communications', 'Available'),
 	help: t(
 		'communications',
 		'Inbox is an independent destination. If disabled, messages sent through other channels open only their authorized details.',
@@ -706,14 +751,19 @@ const inboxDeliveryOption = computed(() => ({
 const deliveryReview = computed(() => {
 	const surfaces = []
 	if (form.value.presentation === 'banner')
+		// TRANSLATORS Display mode showing a message inline on a Nextcloud page.
 		surfaces.push(t('communications', 'Contextual banner'))
 	if (form.value.presentation === 'modal')
+		// TRANSLATORS Display mode showing a message in an overlay.
 		surfaces.push(t('communications', 'Modal dialog'))
+	// TRANSLATORS The Communications app message Inbox, distinct from the Nextcloud Mail app.
 	if (inboxCopy.value) surfaces.push(t('communications', 'Inbox'))
 
 	if (form.value.notify_users)
+		// TRANSLATORS Delivery channel using the Nextcloud notification bell.
 		surfaces.push(t('communications', 'Nextcloud Notifications'))
 	if (form.value.notify_activity)
+		// TRANSLATORS Delivery channel recording an entry in the Nextcloud Activity app.
 		surfaces.push(t('communications', 'Activity feed'))
 	if (form.value.notify_email) surfaces.push('E-mail')
 	for (const id of form.value.gateway_channels || []) {
@@ -772,8 +822,11 @@ const selectedTextColor = computed({
 	},
 })
 const alignments = [
+	// TRANSLATORS Text alignment option for the announcement banner.
 	{ value: 'left', label: t('communications', 'Left') },
+	// TRANSLATORS Text alignment option for the announcement banner.
 	{ value: 'center', label: t('communications', 'Center') },
+	// TRANSLATORS Text alignment option for the announcement banner.
 	{ value: 'right', label: t('communications', 'Right') },
 ]
 const automationReady = computed(() => {
@@ -922,11 +975,17 @@ function effectiveStatus(c: CampaignRecord): string {
 	return 'active'
 }
 const labels: Record<string, string> = {
+	// TRANSLATORS State of a publication that can currently be displayed or delivered.
 	active: t('communications', 'Active'),
+	// TRANSLATORS Publication that has not yet been activated.
 	draft: t('communications', 'Draft'),
+	// TRANSLATORS Publication temporarily disabled by an editor.
 	paused: t('communications', 'Paused'),
+	// TRANSLATORS Publication removed from the active management list.
 	archived: t('communications', 'Archived'),
+	// TRANSLATORS State of a publication whose start date is in the future.
 	scheduled: t('communications', 'Scheduled'),
+	// TRANSLATORS State of a publication whose availability window has expired.
 	ended: t('communications', 'Ended'),
 }
 const currentCampaigns = computed(() =>
@@ -943,17 +1002,20 @@ const stats = computed(() => [
 			.length,
 	},
 	{
+		// TRANSLATORS State of a publication whose start date is in the future.
 		label: t('communications', 'Scheduled'),
 		count: currentCampaigns.value.filter(
 			(c) => effectiveStatus(c) === 'scheduled',
 		).length,
 	},
 	{
+		// TRANSLATORS List filter for publications that have not been activated.
 		label: t('communications', 'Drafts'),
 		count: currentCampaigns.value.filter((c) => effectiveStatus(c) === 'draft')
 			.length,
 	},
 	{
+		// TRANSLATORS Publication temporarily disabled by an editor.
 		label: t('communications', 'Paused'),
 		count: currentCampaigns.value.filter((c) => effectiveStatus(c) === 'paused')
 			.length,
@@ -1055,6 +1117,7 @@ function dateDisplay(ts: number | null): string {
 		: new Date(ts * 1000).toLocaleDateString(getLanguage().replace('_', '-'))
 }
 function period(c: CampaignRecord): string {
+	// TRANSLATORS Publication with neither a start nor an end date restriction.
 	if (!c.starts_at && !c.ends_at) return t('communications', 'No deadline')
 	if (c.starts_at && c.ends_at)
 		return dateDisplay(c.starts_at) + ' – ' + dateDisplay(c.ends_at)
@@ -1075,18 +1138,23 @@ function groupLabel(c: CampaignRecord): string {
 					(id) =>
 						groupOptions.value.find((g) => g.value === id)?.label || id,
 				)
+				// TRANSLATORS No audience group has been selected for the publication.
 				.join(', ') || t('communications', 'No group')
 		)
 	}
 	if (c.audience_type === 'users') {
 		const users = c.audience_users || []
 		return users.length === 1
-			? t('communications', 'User: ') + users[0]
-			: users.length + t('communications', ' specific users')
+			? // TRANSLATORS Prefix before the identifier of a single selected recipient.
+				t('communications', 'User: ') + users[0]
+			: // TRANSLATORS Suffix after a count of individually selected recipient accounts.
+				users.length + t('communications', ' specific users')
 	}
 	return c.audience_type === 'admins'
-		? t('communications', 'Administrators only')
-		: t('communications', 'All users')
+		? // TRANSLATORS Audience scope restricted to Nextcloud administrators.
+			t('communications', 'Administrators only')
+		: // TRANSLATORS Audience scope including every eligible user.
+			t('communications', 'All users')
 }
 function triggerLabel(c: CampaignRecord): string {
 	return (
@@ -1097,6 +1165,7 @@ function triggerLabel(c: CampaignRecord): string {
 const summaryAction = computed(
 	() =>
 		triggerOptions.value.find((t) => t.value === form.value.trigger_key)?.label
+		// TRANSLATORS Instruction to choose a triggering event for the publication.
 		|| t('communications', 'Select an action'),
 )
 const sourceForReview = computed(() =>
@@ -1105,6 +1174,7 @@ const sourceForReview = computed(() =>
 	),
 )
 const summaryWhen = computed(() => {
+	// TRANSLATORS The publication trigger or delivery channel has not been configured.
 	if (!form.value.trigger_key) return t('communications', 'Not configured')
 	if (form.value.trigger_key === 'nextcloud.page.opened') {
 		const place =
@@ -1118,7 +1188,9 @@ const summaryWhen = computed(() => {
 					+ '} '
 					+ ({
 						equals: '=',
+						// TRANSLATORS Operator for matching a URL route variable by its prefix.
 						prefix: t('communications', 'starts with'),
+						// TRANSLATORS Operator restricting a route variable to digits.
 						digits: t('communications', 'numeric'),
 					}[rule.operator] || rule.operator)
 					+ ' '
@@ -1126,11 +1198,13 @@ const summaryWhen = computed(() => {
 			)
 			.join('; ')
 		return (
+			// TRANSLATORS Prefix before a destination page label in the publication review.
 			t('communications', 'Open ')
 			+ place
 			+ (form.value.page_route
 				? ' · ' + form.value.page_route
-				: t('communications', ' · any page'))
+				: // TRANSLATORS Suffix meaning any page of the selected application will match.
+					t('communications', ' · any page'))
 			+ (filters ? ' · ' + filters : '')
 		)
 	}
@@ -1142,6 +1216,7 @@ const audienceReview = computed(() => {
 	if (form.value.audience_type === 'users')
 		return (
 			selectedUsers.value.map((u) => u.displayName || u.id).join(', ')
+			// TRANSLATORS Audience review when no individual account is selected.
 			|| t('communications', 'No user selected')
 		)
 	if (form.value.audience_type === 'group') {
@@ -1149,20 +1224,26 @@ const audienceReview = computed(() => {
 		return ids.length
 			? ids.join(
 					form.value.group_match === 'all'
-						? t('communications', ' AND ')
-						: t('communications', ' OR '),
+						? // TRANSLATORS Logical operator joining required audience groups.
+							t('communications', ' AND ')
+						: // TRANSLATORS Logical operator joining alternative audience groups.
+							t('communications', ' OR '),
 				)
-			: t('communications', 'No group selected')
+			: // TRANSLATORS Audience review when no group is selected.
+				t('communications', 'No group selected')
 	}
+	// TRANSLATORS Audience scope covering all authenticated Nextcloud accounts.
 	return t('communications', 'All signed-in users')
 })
 const locationReview = computed(() =>
 	form.value.presentation === 'none'
 		? inboxCopy.value
 			? t('communications', 'Inbox only; no banner or dialog')
-			: t('communications', 'No on-screen display')
+			: // TRANSLATORS Publication that does not show a banner or modal.
+				t('communications', 'No on-screen display')
 		: form.value.presentation === 'board'
-			? t('communications', 'Inbox')
+			? // TRANSLATORS The Communications app message Inbox, distinct from the Nextcloud Mail app.
+				t('communications', 'Inbox')
 			: placementOptions.value.find((x) => x.value === form.value.placement)
 					?.label || form.value.placement,
 )
@@ -1189,8 +1270,10 @@ const frequencyReview = computed(() => {
 		|| form.value.frequency
 	const caps = [
 		form.value.max_total > 0
-			? t('communications', 'maximum ')
+			? // TRANSLATORS Prefix of a maximum total delivery limit.
+				t('communications', 'maximum ')
 				+ form.value.max_total
+				// TRANSLATORS Suffix of a maximum total delivery limit for each recipient.
 				+ t('communications', ' per user')
 			: '',
 		form.value.max_per_day > 0
@@ -1211,11 +1294,16 @@ const scheduleReview = computed(() => {
 			? form.value.ends_at.toLocaleDateString(getLanguage().replace('_', '-'))
 			: ''
 	return from || until
-		? t('communications', 'From ')
+		? // TRANSLATORS Prefix before the start date of the publication window.
+			t('communications', 'From ')
+				// TRANSLATORS Beginning of the publication window at the current time.
 				+ (from || t('communications', 'now'))
+				// TRANSLATORS Separator before the publication end date.
 				+ t('communications', ' until ')
+				// TRANSLATORS Publication window without an expiration date.
 				+ (until || t('communications', 'no end date'))
-		: t('communications', 'No date limit')
+		: // TRANSLATORS Publication with an unlimited availability window.
+			t('communications', 'No date limit')
 })
 
 async function saveEditorGroups() {
@@ -1604,7 +1692,9 @@ onMounted(async () => {
 									<th>{{ t('communications', 'Trigger') }}</th>
 									<th>{{ t('communications', 'Audience') }}</th>
 									<th>{{ t('communications', 'Period') }}</th>
+									<!-- TRANSLATORS Column indicating the publication lifecycle state. -->
 									<th>{{ t('communications', 'Status') }}</th>
+									<!-- TRANSLATORS Column containing management actions for a publication. -->
 									<th>{{ t('communications', 'Actions') }}</th>
 								</tr>
 							</thead>
@@ -1636,12 +1726,17 @@ onMounted(async () => {
 									</td>
 									<td class="cc-native-table-actions">
 										<div class="cc-native-row-actions">
+											<!-- TRANSLATORS Open the publication editor for this item. -->
 											<NcButton
 												size="small"
 												:text="t('communications', 'Edit')"
 												@click="openEdit(campaign)" />
 											<NcActions
-												:aria-label="campaignActionsLabel(campaign.name)"
+												:aria-label="
+													campaignActionsLabel(
+														campaign.name,
+													)
+												"
 												:open="
 													rowMenuOpen[campaign.id] || false
 												"
@@ -1707,6 +1802,7 @@ onMounted(async () => {
 														)
 													}}
 												</NcActionButton>
+												<!-- TRANSLATORS Stop presenting or delivering an active publication. -->
 												<NcActionButton
 													v-if="
 														campaign.status
@@ -1743,6 +1839,7 @@ onMounted(async () => {
 																)
 													}}
 												</NcActionButton>
+												<!-- TRANSLATORS Restore an archived publication to the editable list. -->
 												<NcActionButton
 													v-else
 													@click="
@@ -1804,6 +1901,7 @@ onMounted(async () => {
 														)
 													}}
 												</NcActionButton>
+												<!-- TRANSLATORS Remove a publication from normal active management without deleting it. -->
 												<NcActionButton
 													v-if="
 														campaign.status
@@ -1833,6 +1931,7 @@ onMounted(async () => {
 						v-if="pageCount > 1"
 						class="cc-native-pagination"
 						:aria-label="t('communications', 'Publication pages')">
+						<!-- TRANSLATORS Separator between current and total page counts. -->
 						<span
 							>{{ t('communications', 'Showing') }}
 							{{ (currentPage - 1) * PAGE_SIZE + 1 }}–{{
@@ -1841,14 +1940,17 @@ onMounted(async () => {
 							{{ t('communications', 'of') }}
 							{{ visible.length }}</span
 						>
+						<!-- TRANSLATORS Navigate to the previous page of the publication list. -->
 						<NcButton
 							:text="t('communications', 'Previous')"
 							:disabled="currentPage <= 1"
 							@click="page = currentPage - 1" />
+						<!-- TRANSLATORS Label preceding the current number in paginated publications. -->
 						<span
 							>{{ t('communications', 'Page') }} {{ currentPage }}
 							{{ t('communications', 'of') }} {{ pageCount }}</span
 						>
+						<!-- TRANSLATORS Navigate to the next page of the publication list. -->
 						<NcButton
 							:text="t('communications', 'Next')"
 							:disabled="currentPage >= pageCount"
@@ -1998,11 +2100,13 @@ onMounted(async () => {
 									{{ t('communications', 'Availability period') }}
 								</h3>
 								<div class="cc-native-pair">
+									<!-- TRANSLATORS Required starting date of publication availability. -->
 									<NcDateTimePickerNative
 										v-model="form.starts_at"
 										:label="t('communications', 'Start *')"
 										type="datetime-local"
 										clearable />
+									<!-- TRANSLATORS Optional end date of publication availability. -->
 									<NcDateTimePickerNative
 										v-model="form.ends_at"
 										:label="
@@ -2985,6 +3089,7 @@ onMounted(async () => {
 										"
 										type="datetime-local"
 										clearable />
+									<!-- TRANSLATORS Optional end date of publication availability. -->
 									<NcDateTimePickerNative
 										v-model="form.ends_at"
 										:label="
@@ -3021,11 +3126,13 @@ onMounted(async () => {
 						</div>
 
 						<div class="cc-native-editor-footer cc-wizard-footer">
+							<!-- TRANSLATORS Dismiss the current editor or confirmation dialog without saving. -->
 							<NcButton
 								:text="t('communications', 'Cancel')"
 								variant="secondary"
 								@click="cancelEdit" />
 							<div class="cc-wizard-footer-actions">
+								<!-- TRANSLATORS Return to the previous step in the publication editor. -->
 								<NcButton
 									v-if="wizardStep > 1"
 									:text="t('communications', 'Back')"
@@ -3078,6 +3185,7 @@ onMounted(async () => {
 									<NcIconSvgWrapper
 										:path="mdiLightningBoltOutline"
 										:size="17" />
+									<!-- TRANSLATORS Section showing the selected trigger and schedule. -->
 									<dt>{{ t('communications', 'When') }}</dt>
 									<dd>{{ summaryWhen }}</dd>
 								</div>
@@ -3092,6 +3200,7 @@ onMounted(async () => {
 									<NcIconSvgWrapper
 										:path="mdiMapMarkerOutline"
 										:size="17" />
+									<!-- TRANSLATORS Section showing placement and presentation of the publication. -->
 									<dt>{{ t('communications', 'Context') }}</dt>
 									<dd>{{ locationReview }}</dd>
 								</div>
@@ -3099,11 +3208,13 @@ onMounted(async () => {
 									<NcIconSvgWrapper
 										:path="mdiBullhornOutline"
 										:size="17" />
+									<!-- TRANSLATORS Section summarizing channels selected for sending. -->
 									<dt>{{ t('communications', 'Delivery') }}</dt>
 									<dd>{{ deliveryReview }}</dd>
 								</div>
 								<div>
 									<NcIconSvgWrapper :path="mdiRepeat" :size="17" />
+									<!-- TRANSLATORS Section summarizing how often messages may be shown or sent. -->
 									<dt>{{ t('communications', 'Frequency') }}</dt>
 									<dd>{{ frequencyReview }}</dd>
 								</div>
@@ -3125,6 +3236,7 @@ onMounted(async () => {
 						</section>
 
 						<section class="cc-wizard-preview">
+							<!-- TRANSLATORS Open a non-delivering preview of a publication. -->
 							<h2>
 								<NcIconSvgWrapper :path="mdiEyeOutline" :size="19" />
 								{{
@@ -3303,6 +3415,7 @@ onMounted(async () => {
 				:use-markdown="true" />
 		</div>
 		<template #actions>
+			<!-- TRANSLATORS Close the current preview or dialog. -->
 			<NcButton
 				variant="primary"
 				:text="t('communications', 'Close')"
@@ -3345,6 +3458,7 @@ onMounted(async () => {
 					}}</span>
 				</section>
 			</div>
+			<!-- TRANSLATORS Close the current preview or dialog. -->
 			<NcButton
 				:text="t('communications', 'Close')"
 				@click="metricsOpen = false" />
@@ -3377,6 +3491,7 @@ onMounted(async () => {
 				:label="t('communications', 'Internal name for confirmation')" />
 		</div>
 		<template #actions>
+			<!-- TRANSLATORS Dismiss the current editor or confirmation dialog without saving. -->
 			<NcButton
 				:text="t('communications', 'Cancel')"
 				@click="confirmDeleteOpen = false" />
@@ -3403,9 +3518,11 @@ onMounted(async () => {
 			}}
 		</p>
 		<template #actions>
+			<!-- TRANSLATORS Dismiss the current editor or confirmation dialog without saving. -->
 			<NcButton
 				:text="t('communications', 'Cancel')"
 				@click="confirmArchiveOpen = false" />
+			<!-- TRANSLATORS Remove a publication from normal active management without deleting it. -->
 			<NcButton
 				variant="error"
 				:text="t('communications', 'Archive')"

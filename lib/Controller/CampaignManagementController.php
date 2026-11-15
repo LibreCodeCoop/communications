@@ -193,6 +193,7 @@ class CampaignManagementController extends Controller {
 		if ($original === null) {
 			return new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 		}
+		// TRANSLATORS Suffix appended to the internal name of a duplicated publication.
 		$original['name'] = mb_substr($original['name'], 0, 145) . $this->l10n->t(' (copy)');
 		$original['status'] = 'draft';
 		// A scheduled campaign requires its start date even in draft mode.

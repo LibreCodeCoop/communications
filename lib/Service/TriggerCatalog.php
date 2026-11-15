@@ -54,6 +54,7 @@ final class TriggerCatalog {
 		$sources = [
 			[
 				'id' => 'files', 'appId' => 'files', 'intent' => 'action',
+				// TRANSLATORS Name of the Nextcloud Files app as an event source category.
 				'label' => $this->l10n->t('Files'), 'description' => $this->l10n->t('File creation, update or deletion in Files'),
 				'keywords' => ['file','document','send','upload','modify','delete','folder'],
 				'actions' => [
@@ -64,6 +65,7 @@ final class TriggerCatalog {
 			],
 			[
 				'id' => 'sharing', 'appId' => 'files_sharing', 'intent' => 'action',
+				// TRANSLATORS Event source category for file and folder sharing.
 				'label' => $this->l10n->t('Shares'), 'description' => $this->l10n->t('Share creation or acceptance'),
 				'keywords' => ['share','share','accept','recipient','permission'],
 				'actions' => [
@@ -82,6 +84,7 @@ final class TriggerCatalog {
 			],
 			[
 				'id' => 'comments', 'appId' => 'comments', 'intent' => 'action',
+				// TRANSLATORS Event source category for Nextcloud file comments.
 				'label' => $this->l10n->t('Comments'), 'description' => $this->l10n->t('Messages posted in Nextcloud comments'),
 				'keywords' => ['comment','comment','message'],
 				'actions' => [
@@ -90,6 +93,7 @@ final class TriggerCatalog {
 			],
 			[
 				'id' => 'navigation', 'appId' => 'core', 'intent' => 'visit',
+				// TRANSLATORS Event source category for visits to application pages.
 				'label' => $this->l10n->t('Navigation'), 'description' => $this->l10n->t('Display on entry to a supported app'),
 				'keywords' => ['open','enter','visit','files','dashboard','page','app'],
 				'actions' => [
@@ -108,6 +112,7 @@ final class TriggerCatalog {
 			],
 			[
 				'id' => 'scheduler', 'appId' => 'core', 'intent' => 'schedule',
+				// TRANSLATORS Event source category for time-window publication triggers.
 				'label' => $this->l10n->t('Scheduling'), 'description' => $this->l10n->t('Available during the publication period'),
 				'keywords' => ['data','scheduled','period','hour','schedule'],
 				'actions' => [
@@ -254,8 +259,11 @@ final class TriggerCatalog {
 	 */
 	public function placements(): array {
 		$options = [
+			// TRANSLATORS Application page placement option without a route restriction.
 			['value' => 'any','label' => $this->l10n->t('Any compatible page')],
+			// TRANSLATORS Page inside the signed-in user settings area.
 			['value' => 'settings','label' => $this->l10n->t('Personal settings')],
+			// TRANSLATORS Page inside the administrator settings area.
 			['value' => 'admin_settings','label' => $this->l10n->t('Administration settings')],
 		];
 		$seen = ['any' => true,'settings' => true,'admin_settings' => true];
@@ -368,12 +376,18 @@ final class TriggerCatalog {
 		$notifications = $this->apps->isEnabledForAnyone('notifications');
 		$activity = $this->apps->isEnabledForAnyone('activity');
 		$gateway = $this->gatewayTransport->installed();
+		// TRANSLATORS Status of a publication delivery channel that is available to use.
+		$availableStatus = $this->l10n->t('Available');
+		// TRANSLATORS Status of a delivery channel whose optional Nextcloud app is missing.
+		$notInstalledStatus = $this->l10n->t('Not installed');
+		// TRANSLATORS Status of a messaging channel that has no configured provider yet.
+		$notConfiguredStatus = $this->l10n->t('Not configured');
 		$sources = [
 			[
 				'id' => 'notifications', 'label' => $this->l10n->t('Nextcloud Notifications'),
 				'installed' => $notifications, 'ready' => $notifications,
 				'availability' => $notifications ? 'ready' : 'missing_app',
-				'status' => $notifications ? $this->l10n->t('Available') : $this->l10n->t('Not installed'),
+				'status' => $notifications ? $availableStatus : $notInstalledStatus,
 				'help' => $notifications
 					? $this->l10n->t('Sends a bell notification to each authorized recipient with a restricted link, without requiring an Inbox copy.')
 					: $this->l10n->t('Notifications is not enabled in this Nextcloud. An administrator must install and enable the Notifications app before using bell notifications. The notify_push service does not replace Notifications.'),
@@ -382,7 +396,7 @@ final class TriggerCatalog {
 				'id' => 'activity', 'label' => 'Activity do Nextcloud',
 				'installed' => $activity, 'ready' => $activity,
 				'availability' => $activity ? 'ready' : 'missing_app',
-				'status' => $activity ? $this->l10n->t('Available') : $this->l10n->t('Not installed'),
+				'status' => $activity ? $availableStatus : $notInstalledStatus,
 				'help' => $activity
 					? $this->l10n->t('Records an Activity entry for the authorized recipient with a restricted details link. No Inbox copy required.')
 					: $this->l10n->t('Activity is not enabled in this Nextcloud. Install and enable Activity before recording notifications through that channel.'),
@@ -390,6 +404,7 @@ final class TriggerCatalog {
 			[
 				'id' => 'email', 'label' => 'E-mail',
 				'installed' => true, 'ready' => true, 'availability' => 'requires_configuration',
+				// TRANSLATORS Setup status requiring an administrator to check outgoing email (SMTP).
 				'status' => $this->l10n->t('Check SMTP'),
 				'help' => $this->l10n->t('The email adapter is available. Real delivery requires a mail server configured by the Nextcloud administrator and valid recipient addresses. This catalog does not verify SMTP availability.'),
 			],
@@ -397,7 +412,8 @@ final class TriggerCatalog {
 				'id' => 'twofactor_gateway','label' => 'Two-Factor Gateway',
 				'installed' => $gateway,'ready' => false,
 				'availability' => $gateway ? 'configured_per_provider' : 'missing_app',
-				'status' => $gateway ? $this->l10n->t('View channels') : $this->l10n->t('Not installed'),
+				// TRANSLATORS Action to inspect available providers inside Two-Factor Gateway.
+				'status' => $gateway ? $this->l10n->t('View channels') : $notInstalledStatus,
 				'help' => $gateway
 					? $this->l10n->t('Uses the native direct-provider service of Two-Factor Gateway. Configure providers and require explicit recipient consent in notification preferences.')
 					: $this->l10n->t('Install and configure Two-Factor Gateway for SMS, Signal, Telegram, WhatsApp or XMPP. Delivery requires a provider and recipient consent.'),
@@ -409,7 +425,7 @@ final class TriggerCatalog {
 				'id' => 'gateway:' . $id,'label' => $label,
 				'installed' => $gateway,'ready' => $ready,
 				'availability' => !$gateway ? 'missing_app' : ($ready ? 'ready' : 'missing_configuration'),
-				'status' => !$gateway ? $this->l10n->t('Not installed') : ($ready ? $this->l10n->t('Available') : $this->l10n->t('Not configured')),
+				'status' => !$gateway ? $notInstalledStatus : ($ready ? $availableStatus : $notConfiguredStatus),
 				'help' => !$gateway
 					? $this->l10n->t('Two-Factor Gateway must be installed. This channel remains inactive and sends no messages.')
 					: ($ready
