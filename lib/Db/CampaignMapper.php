@@ -9,10 +9,12 @@ declare(strict_types=1);
 
 namespace OCA\Communications\Db;
 
+use OCP\AppFramework\Db\TTransactional;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class CampaignMapper {
+	use TTransactional;
 	public const TABLE = 'cc_campaigns';
 
 	public function __construct(
@@ -97,8 +99,7 @@ class CampaignMapper {
 	}
 
 	public function persistOrder(array $rows): void {
-		$this->db->beginTransaction();
-		try {
+		$this->atomic(function () use ($rows): void {
 			foreach ($rows as $i => $campaign) {
 				$order = ($i + 1) * 10;
 				if ((int)$campaign['manual_order'] === $order) {
@@ -110,16 +111,11 @@ class CampaignMapper {
 					->where($qb->expr()->eq('id', $qb->createNamedParameter((int)$campaign['id'], IQueryBuilder::PARAM_INT)))
 					->executeStatement();
 			}
-			$this->db->commit();
-		} catch (\Throwable $error) {
-			$this->db->rollBack();
-			throw $error;
-		}
+		}, $this->db);
 	}
 
 	public function purgeArchived(int $id): void {
-		$this->db->beginTransaction();
-		try {
+		$this->atomic(function () use ($id): void {
 			foreach (['cc_board_comments', 'cc_board_pub', 'cc_board_sent', 'cc_inbox_reads', 'cc_deliveries', 'cc_leases'] as $table) {
 				$qb = $this->db->getQueryBuilder();
 				$qb->delete($table)
@@ -134,11 +130,7 @@ class CampaignMapper {
 			if ($deleted !== 1) {
 				throw new CampaignConflictException('Campaign was modified during archival deletion');
 			}
-			$this->db->commit();
-		} catch (\Throwable $error) {
-			$this->db->rollBack();
-			throw $error;
-		}
+		}, $this->db);
 	}
 
 	public function setStatus(int $id, string $status, int $now): void {
