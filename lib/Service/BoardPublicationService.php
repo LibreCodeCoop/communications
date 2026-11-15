@@ -57,12 +57,12 @@ final class BoardPublicationService {
 
 	private function due(array $c, int $now): bool {
 		return $c['status'] === 'active'
-		 && in_array($c['trigger_key'], ['nextcloud.board.published','nextcloud.time.window'], true)
-		 && ($c['board_visible'] || $c['notify_users'] || $c['notify_activity']
-	   || $c['notify_email'] || $c['gateway_channels'] !== [])
-		 && $c['published_at'] > 0
-		 && ($c['starts_at'] === null || $c['starts_at'] <= $now)
-		 && ($c['ends_at'] === null || $c['ends_at'] > $now);
+			&& in_array($c['trigger_key'], ['nextcloud.board.published','nextcloud.time.window'], true)
+			&& ($c['board_visible'] || $c['notify_users'] || $c['notify_activity']
+			|| $c['notify_email'] || $c['gateway_channels'] !== [])
+			&& $c['published_at'] > 0
+			&& ($c['starts_at'] === null || $c['starts_at'] <= $now)
+			&& ($c['ends_at'] === null || $c['ends_at'] > $now);
 	}
 
 	/** @return array<string, mixed>|null */
@@ -201,7 +201,7 @@ final class BoardPublicationService {
 			$row = $this->sentRow($id, $version, $uid, $channel, $eventId);
 		}
 		if ($row === null || in_array($row['status'], ['sent','skipped','failed','unknown'], true)
-	  || (int)$row['attempts'] >= 5 || (int)$row['claim_until'] > $now) {
+			|| (int)$row['attempts'] >= 5 || (int)$row['claim_until'] > $now) {
 			return null;
 		}
 		// If a worker died after contacting SMTP or an external provider, retrying
@@ -248,7 +248,7 @@ final class BoardPublicationService {
 				'email' => $this->email($c, $user),
 				'inbox' => true,
 				default => str_starts_with($channel, 'gateway:')
-				 ? $this->gateway($c, $user, substr($channel, 8)) : false,
+					? $this->gateway($c, $user, substr($channel, 8)) : false,
 			};
 			$this->state((int)$row['id'], $sent?'sent':'skipped');
 		} catch (DeliveryOutcomeUnknownException $e) {
@@ -363,7 +363,7 @@ final class BoardPublicationService {
 				continue;
 			}
 			if ($c['category'] === 'sponsored'
-	   && $this->config->getUserValue($user->getUID(), self::APP, 'sponsored_optout', '0') === '1') {
+				&& $this->config->getUserValue($user->getUID(), self::APP, 'sponsored_optout', '0') === '1') {
 				continue;
 			}
 			foreach (['notify_users' => 'notifications','notify_activity' => 'activity','notify_email' => 'email'] as $key => $channel) {
@@ -430,17 +430,17 @@ final class BoardPublicationService {
 			$id = (int)$campaign['id'];
 			$version = (int)$campaign['published_at'];
 			if ($version <= 0 || $event['created_at'] < max((int)$campaign['created_at'], $version)
-	   || ($campaign['starts_at'] !== null && $event['created_at'] < (int)$campaign['starts_at'])
-	   || ($campaign['ends_at'] !== null && $event['created_at'] >= (int)$campaign['ends_at'])
-	   || !$this->campaigns->isEligible($campaign, $uid, $now)) {
+				|| ($campaign['starts_at'] !== null && $event['created_at'] < (int)$campaign['starts_at'])
+				|| ($campaign['ends_at'] !== null && $event['created_at'] >= (int)$campaign['ends_at'])
+				|| !$this->campaigns->isEligible($campaign, $uid, $now)) {
 				continue;
 			}
 			if (in_array($event['trigger_key'], ['external.webhook','nextcloud.flow.matched','nextcloud.page.opened'], true)
-	   && $event['context_app'] !== 'campaign_' . $id) {
+				&& $event['context_app'] !== 'campaign_' . $id) {
 				continue;
 			}
 			if ($campaign['category'] === 'sponsored'
-	   && $this->config->getUserValue($uid, self::APP, 'sponsored_optout', '0') === '1') {
+				&& $this->config->getUserValue($uid, self::APP, 'sponsored_optout', '0') === '1') {
 				continue;
 			}
 			$result['matched']++;

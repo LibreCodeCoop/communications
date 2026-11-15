@@ -13,7 +13,9 @@ use OCA\Communications\Db\DeliveryMapper;
 use OCP\IConfig;
 
 /**
- * Durable campaign occurrences and per-tab lease. The server owns audience, schedule, frequency and state transitions; browser-reported impressions are labelled estimates and must not be used for billing without auditing.
+ * Durable campaign occurrences and per-tab lease. The server owns audience, schedule,
+ * frequency and state transitions; browser-reported impressions are labelled estimates and
+ * must not be used for billing without auditing.
  */
 class DeliveryStore {
 	public const TABLE = DeliveryMapper::TABLE;
@@ -53,9 +55,9 @@ class DeliveryStore {
 		// ephemeral UI occurrences for a channel-only/inbox-only publication.
 		foreach ($this->campaigns->activeForTrigger('nextcloud.board.published') as $campaign) {
 			if (!in_array($campaign['presentation'], ['banner','modal'], true)
-	   || !$this->campaigns->isEligible($campaign, $uid, time())
-	   || ($campaign['category'] === 'sponsored' && $this->sponsoredOptout($uid))
-	   || !$this->matchesPlace($campaign, $app, $pagePath)) {
+				|| !$this->campaigns->isEligible($campaign, $uid, time())
+				|| ($campaign['category'] === 'sponsored' && $this->sponsoredOptout($uid))
+				|| !$this->matchesPlace($campaign, $app, $pagePath)) {
 				continue;
 			}
 			$key = 'immediate:' . $campaign['id'] . ':' . $campaign['published_at'] . ':' . gmdate('Y-m-d');
@@ -64,7 +66,7 @@ class DeliveryStore {
 		}
 		foreach ($this->campaigns->activeForTrigger('nextcloud.time.window') as $campaign) {
 			if ($campaign['presentation'] !== 'none'
-	   && $this->campaigns->isEligible($campaign, $uid, time()) && $this->matchesPlace($campaign, $app)) {
+				&& $this->campaigns->isEligible($campaign, $uid, time()) && $this->matchesPlace($campaign, $app)) {
 				$key = 'window:' . $campaign['id'] . ':' . $campaign['updated_at'] . ':' . gmdate('Y-m-d');
 				$this->events->record($uid, 'nextcloud.time.window', $app, $key);
 			}
@@ -145,7 +147,7 @@ class DeliveryStore {
 		foreach ($rows as $delivery) {
 			$campaign = $this->campaigns->find((int)$delivery['campaign_id']);
 			if ($campaign === null || $campaign['presentation'] === 'none'
-	   || !$this->campaigns->isEligible($campaign, $uid, $now)) {
+				|| !$this->campaigns->isEligible($campaign, $uid, $now)) {
 				continue;
 			}
 			// A campaign may have been edited after an event was queued. Never
@@ -177,7 +179,7 @@ class DeliveryStore {
 		// With equal priority, prefer recent events: a large backlog must never
 		// starve a newly triggered campaign outside the bounded response.
 		usort($out, static fn (array $a, array $b): int
-		 => ($a['manual_order'] <=> $b['manual_order']) ?: ($b['priority'] <=> $a['priority']) ?: ($b['deliveryId'] <=> $a['deliveryId']));
+			=> ($a['manual_order'] <=> $b['manual_order']) ?: ($b['priority'] <=> $a['priority']) ?: ($b['deliveryId'] <=> $a['deliveryId']));
 		// Return only the newest eligible occurrence per campaign in this scan.
 		// Otherwise hundreds of queued events from one high-priority campaign can
 		// fill the response and indefinitely hide other active campaigns.
@@ -305,7 +307,7 @@ class DeliveryStore {
 		// recorded as shown, the same token may still close/click it; this cannot
 		// be reclaimed by another tab because 'shown' is not a pending state.
 		if ((int)$row['claim_until'] < $now
-	  && !($row['state'] === 'shown' && in_array($action, ['dismiss', 'click'], true))) {
+			&& !($row['state'] === 'shown' && in_array($action, ['dismiss', 'click'], true))) {
 			return false;
 		}
 		if ($action === 'impression') {

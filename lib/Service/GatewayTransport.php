@@ -50,7 +50,7 @@ class GatewayTransport {
 		}
 		$service = $this->container->get(self::SERVICE);
 		if (!is_object($service) || !is_callable([$service,'ensureAvailable'])
-	  || !is_callable([$service,'isGatewayComplete']) || !is_callable([$service,'send'])) {
+			|| !is_callable([$service,'isGatewayComplete']) || !is_callable([$service,'send'])) {
 			throw new \RuntimeException('Two-Factor Gateway direct integration is unavailable');
 		}
 		return $service;

@@ -59,13 +59,13 @@ final class NativeEventSubscriptions {
 		$classes = [];
 		foreach ($decoded as $class => $meta) {
 			if (!is_string($class) || !is_array($meta)
-	   || !preg_match('/^(?:OCP|OCA)\\\\[A-Za-z_][A-Za-z0-9_]*(?:\\\\[A-Za-z_][A-Za-z0-9_]*)*Event$/D', $class)
-	   || !is_string($meta['key'] ?? null)
-	   || !hash_equals(NativeEventCatalog::triggerKey($class), $meta['key'])) {
+				|| !preg_match('/^(?:OCP|OCA)\\\\[A-Za-z_][A-Za-z0-9_]*(?:\\\\[A-Za-z_][A-Za-z0-9_]*)*Event$/D', $class)
+				|| !is_string($meta['key'] ?? null)
+				|| !hash_equals(NativeEventCatalog::triggerKey($class), $meta['key'])) {
 				continue;
 			}
 			if (in_array(strtoupper($httpMethod), ['GET', 'HEAD', 'OPTIONS'], true)
-	   && self::eventIsMutationByName($class)) {
+				&& self::eventIsMutationByName($class)) {
 				continue;
 			}
 			$classes[] = $class;
@@ -88,9 +88,9 @@ final class NativeEventSubscriptions {
 		$active = [];
 		foreach ($raw as $class => $meta) {
 			if (!is_string($class) || !is_array($meta) || !is_string($meta['key'] ?? null)
-	   || !is_string($meta['appId'] ?? null)
-	   || !hash_equals(NativeEventCatalog::triggerKey($class), $meta['key'])
-	   || !preg_match('/^[a-z0-9_-]{2,32}$/D', $meta['appId'])) {
+				|| !is_string($meta['appId'] ?? null)
+				|| !hash_equals(NativeEventCatalog::triggerKey($class), $meta['key'])
+				|| !preg_match('/^[a-z0-9_-]{2,32}$/D', $meta['appId'])) {
 				continue;
 			}
 			if ($meta['appId'] !== 'core' && !$this->apps->isEnabledForAnyone($meta['appId'])) {

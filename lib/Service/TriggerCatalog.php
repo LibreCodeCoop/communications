@@ -16,7 +16,9 @@ use OCP\IAppConfig;
 use OCP\INavigationManager;
 
 /**
- * A capability catalog, not a dump of every PHP event or installed app. Applications appear only when they have an implemented adapter and are enabled. Future integrations can register bounded capabilities via Event.
+ * A capability catalog, not a dump of every PHP event or installed app. Applications appear
+ * only when they have an implemented adapter and are enabled. Future integrations can register
+ * bounded capabilities via Event.
  */
 final class TriggerCatalog {
 	public function __construct(
@@ -214,7 +216,7 @@ final class TriggerCatalog {
 			return false;
 		}
 		if (!is_string($source['label']) || mb_strlen($source['label']) > 80
-	  || !is_string($source['description']) || mb_strlen($source['description']) > 240) {
+			|| !is_string($source['description']) || mb_strlen($source['description']) > 240) {
 			return false;
 		}
 		if (!is_array($source['actions']) || count($source['actions']) === 0 || count($source['actions']) > 30) {
@@ -222,9 +224,9 @@ final class TriggerCatalog {
 		}
 		foreach ($source['actions'] as $action) {
 			if (!is_array($action) || !isset($action['key'],$action['label'],$action['description'])
-	   || !is_string($action['key']) || !preg_match('/^' . preg_quote($source['appId'], '/') . '\.[a-z0-9_.-]{1,40}$/', $action['key'])
-	   || !is_string($action['label']) || mb_strlen($action['label']) > 80
-	   || !is_string($action['description']) || mb_strlen($action['description']) > 240) {
+				|| !is_string($action['key']) || !preg_match('/^' . preg_quote($source['appId'], '/') . '\.[a-z0-9_.-]{1,40}$/', $action['key'])
+				|| !is_string($action['label']) || mb_strlen($action['label']) > 80
+				|| !is_string($action['description']) || mb_strlen($action['description']) > 240) {
 				return false;
 			}
 		}
@@ -284,7 +286,7 @@ final class TriggerCatalog {
 		}
 		usort($options, static function (array $a, array $b): int {
 			return ($a['value'] === 'any' ? -1 : ($b['value'] === 'any' ? 1 : 0))
-	   ?: strcasecmp($a['label'], $b['label']);
+				?: strcasecmp($a['label'], $b['label']);
 		});
 		return $options;
 	}
@@ -358,8 +360,8 @@ final class TriggerCatalog {
 				'availability' => $notifications ? 'ready' : 'missing_app',
 				'status' => $notifications ? $this->l10n->t('Available') : $this->l10n->t('Not installed'),
 				'help' => $notifications
-				 ? $this->l10n->t('Sends a bell notification to each authorized recipient with a restricted link, without requiring an Inbox copy.')
-				 : $this->l10n->t('Notifications is not enabled in this Nextcloud. An administrator must install and enable the Notifications app before using bell notifications. The notify_push service does not replace Notifications.'),
+					? $this->l10n->t('Sends a bell notification to each authorized recipient with a restricted link, without requiring an Inbox copy.')
+					: $this->l10n->t('Notifications is not enabled in this Nextcloud. An administrator must install and enable the Notifications app before using bell notifications. The notify_push service does not replace Notifications.'),
 			],
 			[
 				'id' => 'activity', 'label' => 'Activity do Nextcloud',
@@ -367,8 +369,8 @@ final class TriggerCatalog {
 				'availability' => $activity ? 'ready' : 'missing_app',
 				'status' => $activity ? $this->l10n->t('Available') : $this->l10n->t('Not installed'),
 				'help' => $activity
-				 ? $this->l10n->t('Records an Activity entry for the authorized recipient with a restricted details link. No Inbox copy required.')
-				 : $this->l10n->t('Activity is not enabled in this Nextcloud. Install and enable Activity before recording notifications through that channel.'),
+					? $this->l10n->t('Records an Activity entry for the authorized recipient with a restricted details link. No Inbox copy required.')
+					: $this->l10n->t('Activity is not enabled in this Nextcloud. Install and enable Activity before recording notifications through that channel.'),
 			],
 			[
 				'id' => 'email', 'label' => 'E-mail',
@@ -382,8 +384,8 @@ final class TriggerCatalog {
 				'availability' => $gateway ? 'configured_per_provider' : 'missing_app',
 				'status' => $gateway ? $this->l10n->t('View channels') : $this->l10n->t('Not installed'),
 				'help' => $gateway
-				 ? $this->l10n->t('Uses the native direct-provider service of Two-Factor Gateway. Configure providers and require explicit recipient consent in notification preferences.')
-				 : $this->l10n->t('Install and configure Two-Factor Gateway for SMS, Signal, Telegram, WhatsApp or XMPP. Delivery requires a provider and recipient consent.'),
+					? $this->l10n->t('Uses the native direct-provider service of Two-Factor Gateway. Configure providers and require explicit recipient consent in notification preferences.')
+					: $this->l10n->t('Install and configure Two-Factor Gateway for SMS, Signal, Telegram, WhatsApp or XMPP. Delivery requires a provider and recipient consent.'),
 			],
 		];
 		foreach (GatewayTransport::LABELS as $id => $label) {
@@ -394,10 +396,10 @@ final class TriggerCatalog {
 				'availability' => !$gateway ? 'missing_app' : ($ready ? 'ready' : 'missing_configuration'),
 				'status' => !$gateway ? $this->l10n->t('Not installed') : ($ready ? $this->l10n->t('Available') : $this->l10n->t('Not configured')),
 				'help' => !$gateway
-				 ? $this->l10n->t('Two-Factor Gateway must be installed. This channel remains inactive and sends no messages.')
-				 : ($ready
-				   ? $this->l10n->t('Direct gateway configured. Each recipient must supply an identifier and authorize this channel in Inbox → Notification preferences; sponsored content requires additional consent.')
-				   : $this->l10n->t('This provider has no fully configured direct gateway in Two-Factor Gateway. Configure it under Administration → Security before selecting it.')),
+					? $this->l10n->t('Two-Factor Gateway must be installed. This channel remains inactive and sends no messages.')
+					: ($ready
+					? $this->l10n->t('Direct gateway configured. Each recipient must supply an identifier and authorize this channel in Inbox → Notification preferences; sponsored content requires additional consent.')
+					: $this->l10n->t('This provider has no fully configured direct gateway in Two-Factor Gateway. Configure it under Administration → Security before selecting it.')),
 			];
 		}
 		return $sources;

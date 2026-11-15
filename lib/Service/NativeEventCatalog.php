@@ -87,7 +87,7 @@ final class NativeEventCatalog {
 		}
 		$events = array_values($events);
 		usort($events, static fn (array $a, array $b): int
-		 => strcmp($a['appId'], $b['appId']) ?: strcmp($a['class'], $b['class']));
+			=> strcmp($a['appId'], $b['appId']) ?: strcmp($a['class'], $b['class']));
 		// Write the complete index before the revision marker so an interrupted
 		// write cannot make an incomplete catalog appear current.
 		$this->config->setValueString(self::APP_ID, self::INDEX_KEY, json_encode($events, JSON_THROW_ON_ERROR));
@@ -135,7 +135,7 @@ final class NativeEventCatalog {
 						break 2;
 					}
 					if (!$file->isFile() || $file->isLink()
-					 || !str_ends_with($file->getFilename(), 'Event.php')) {
+						|| !str_ends_with($file->getFilename(), 'Event.php')) {
 						continue;
 					}
 					$rel = $folder . '/' . substr($file->getPathname(), strlen($root) + 1);
@@ -213,10 +213,10 @@ final class NativeEventCatalog {
 				$phase = str_starts_with($short, 'Before') ? 'before' : 'unknown';
 				$webhook = is_a($class, \OCP\EventDispatcher\IWebhookCompatibleEvent::class, true);
 				$description = ($phase === 'before' ? $this->l10n->t('Before the operation; does not confirm completion. ')
-				  : $this->l10n->t('The timing of this event depends on the app and does not prove the operation completed. '))
+					: $this->l10n->t('The timing of this event depends on the app and does not prove the operation completed. '))
 				  . $this->l10n->t('Recipient: the authenticated user of this request, not necessarily the affected user. ')
 				  . (NativeEventSubscriptions::eventIsMutationByName($class)
-					 ? $this->l10n->t('To keep page requests fast, this trigger ignores GET, HEAD and OPTIONS. ') : '')
+					? $this->l10n->t('To keep page requests fast, this trigger ignores GET, HEAD and OPTIONS. ') : '')
 				  . ($webhook ? $this->l10n->t('Compatible with Webhook Listeners.') : $this->l10n->t('Internal PHP event.'));
 				$key = self::triggerKey($class);
 				$out[$class] = [

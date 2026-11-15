@@ -29,17 +29,17 @@ final class GatewayRecipientPreferences {
 
 	public static function validDestination(string $gateway, string $destination): bool {
 		if (!isset(GatewayTransport::LABELS[$gateway]) || $destination !== trim($destination)
-	  || strlen($destination) > 190) {
+			|| strlen($destination) > 190) {
 			return false;
 		}
 		return match ($gateway) {
 			'sms','signal','gowhatsapp','whatsappbusiness'
-	 => preg_match('/^\+[1-9][0-9]{6,14}$/D', $destination) === 1,
+				=> preg_match('/^\+[1-9][0-9]{6,14}$/D', $destination) === 1,
 			'telegram'
-	 => preg_match('/^[1-9][0-9]{4,19}$/D', $destination) === 1,
+				=> preg_match('/^[1-9][0-9]{4,19}$/D', $destination) === 1,
 			'xmpp'
-	 => preg_match('/^[A-Za-z0-9_.+-]{1,64}@[A-Za-z0-9.-]{3,120}$/D', $destination) === 1
-	   && str_contains(substr($destination, strpos($destination, '@') + 1), '.'),
+				=> preg_match('/^[A-Za-z0-9_.+-]{1,64}@[A-Za-z0-9.-]{3,120}$/D', $destination) === 1
+				&& str_contains(substr($destination, strpos($destination, '@') + 1), '.'),
 			default => false,
 		};
 	}
@@ -57,8 +57,8 @@ final class GatewayRecipientPreferences {
 		$result = [];
 		foreach ($decoded as $gateway => $entry) {
 			if (is_string($gateway) && isset(GatewayTransport::LABELS[$gateway])
-	 && is_array($entry) && is_string($entry['destination'] ?? null)
-	 && self::validDestination($gateway, $entry['destination'])) {
+				&& is_array($entry) && is_string($entry['destination'] ?? null)
+				&& self::validDestination($gateway, $entry['destination'])) {
 				$result[$gateway] = [
 					'destination' => $entry['destination'],
 					'sponsored' => ($entry['sponsored'] ?? false) === true,
@@ -76,13 +76,13 @@ final class GatewayRecipientPreferences {
 		$saved = [];
 		foreach ($entries as $gateway => $entry) {
 			if (!is_string($gateway) || !isset(GatewayTransport::LABELS[$gateway])
-	  || !is_array($entry) || array_is_list($entry) || array_diff(array_keys($entry), ['enabled','destination','sponsored']) !== []) {
+				|| !is_array($entry) || array_is_list($entry) || array_diff(array_keys($entry), ['enabled','destination','sponsored']) !== []) {
 				throw new \InvalidArgumentException('Invalid messaging gateway preference');
 			}
 			$enabled = $entry['enabled'] ?? false;
 			$sponsored = $entry['sponsored'] ?? false;
 			if (!is_bool($enabled) || !is_bool($sponsored)
-	   || !is_string($entry['destination'] ?? null)) {
+				|| !is_string($entry['destination'] ?? null)) {
 				throw new \InvalidArgumentException('Messaging consent must be explicit');
 			}
 			if (!$enabled) {

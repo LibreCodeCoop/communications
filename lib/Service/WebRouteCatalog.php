@@ -15,7 +15,10 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\TemplateResponse;
 
 /**
- * Discover UI routes from Nextcloud's already-defined router, including PHP #[FrontpageRoute] attributes. OCS / API / AJAX / response endpoints are not browser pages and must never be offered as campaign triggers. The router collection API is currently internal to Nextcloud. Keep that dependency isolated here; it can be swapped if upstream exposes an API.
+ * Discover UI routes from Nextcloud's already-defined router, including PHP #[FrontpageRoute]
+ * attributes. OCS / API / AJAX / response endpoints are not browser pages and must never be
+ * offered as campaign triggers. The router collection API is currently internal to Nextcloud.
+ * Keep that dependency isolated here; it can be swapped if upstream exposes an API.
  */
 final class WebRouteCatalog {
 	public function __construct(
@@ -33,8 +36,8 @@ final class WebRouteCatalog {
 	 */
 	public function routesFor(string $app): array {
 		if (!preg_match('/^[a-z0-9_-]{2,32}$/', $app)
-	  || $app === 'communications'
-	  || !$this->apps->isEnabledForAnyone($app)) {
+			|| $app === 'communications'
+			|| !$this->apps->isEnabledForAnyone($app)) {
 			return [];
 		}
 
@@ -53,7 +56,7 @@ final class WebRouteCatalog {
 			}
 			$pattern = $route->getPath();
 			if (!self::isWebRoute($pattern, $app, (string)$name)
-	   || !$this->isAuthenticatedHtmlRoute($app, $route)) {
+				|| !$this->isAuthenticatedHtmlRoute($app, $route)) {
 				continue;
 			}
 			$tail = substr($pattern, strlen('/apps/' . $app));
@@ -136,8 +139,8 @@ final class WebRouteCatalog {
 	 */
 	public function safePagePath(string $app, string $path): string {
 		if (!preg_match('/^[a-z0-9_-]{2,32}$/', $app) || strlen($path) > 360 || strlen($path) < 4
-	  || preg_match('~[?#\x00-\x1f\x7f\\\\]~', $path)
-	  || str_contains($path, '..') || str_contains($path, '//')) {
+			|| preg_match('~[?#\x00-\x1f\x7f\\\\]~', $path)
+			|| str_contains($path, '..') || str_contains($path, '//')) {
 			return '';
 		}
 		if (str_contains($path, '/index.php/apps/')) {

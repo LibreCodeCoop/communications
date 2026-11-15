@@ -42,11 +42,11 @@ class BoardService {
 			return false;
 		}
 		if (!in_array($c['trigger_key'], ['nextcloud.board.published','nextcloud.time.window'], true)
-	  && !isset($eventInbox[(int)$c['id'] . ':' . (int)$c['published_at']])) {
+			&& !isset($eventInbox[(int)$c['id'] . ':' . (int)$c['published_at']])) {
 			return false;
 		}
 		return !($c['category'] === 'sponsored'
-		 && $this->config->getUserValue($uid, 'communications', 'sponsored_optout', '0') === '1');
+			&& $this->config->getUserValue($uid, 'communications', 'sponsored_optout', '0') === '1');
 	}
 
 	/** Recorded event-triggered Inbox receipt, indexed by campaign and epoch. */
@@ -170,9 +170,9 @@ class BoardService {
 			$found[] = $c;
 		}
 		usort($found, fn (array $a, array $b):int
-		 => (($b['published_at'] ?: ($receipts[(int)$b['id']] ?? $b['created_at']))
+			=> (($b['published_at'] ?: ($receipts[(int)$b['id']] ?? $b['created_at']))
 	  <=> ($a['published_at'] ?: ($receipts[(int)$a['id']] ?? $a['created_at'])))
-		 ?: ($b['id'] <=> $a['id']));
+		?: ($b['id'] <=> $a['id']));
 		$total = count($found);
 		$size = 10;
 		$slice = array_slice($found, ($page - 1) * $size, $size);
@@ -189,9 +189,9 @@ class BoardService {
 	 */
 	private function outboundFor(string $uid, array $c):bool {
 		if ($c['status'] !== 'active' || $c['published_at'] <= 0
-	 || !$this->campaigns->isEligible($c, $uid, time())
-	 || ($c['category'] === 'sponsored'
-	   && $this->config->getUserValue($uid, 'communications', 'sponsored_optout', '0') === '1')) {
+			|| !$this->campaigns->isEligible($c, $uid, time())
+			|| ($c['category'] === 'sponsored'
+			&& $this->config->getUserValue($uid, 'communications', 'sponsored_optout', '0') === '1')) {
 			return false;
 		}
 		$qb = $this->db->getQueryBuilder();
@@ -214,7 +214,7 @@ class BoardService {
 		}
 		$receipts = $this->deliveredAt($uid);
 		if (!$this->eligible($c, $uid, $this->eventInboxReceipts($uid))
-	  && !$this->outboundFor($uid, $c)) {
+			&& !$this->outboundFor($uid, $c)) {
 			return null;
 		}
 		$reads = $this->readAt($uid);
@@ -286,7 +286,7 @@ class BoardService {
 		}
 		$search = trim($search);
 		if (mb_strlen($search) < 2 || mb_strlen($search) > 40
-		 || !preg_match('/^[A-Za-z0-9_.-]{2,40}$/D', $search)) {
+			|| !preg_match('/^[A-Za-z0-9_.-]{2,40}$/D', $search)) {
 			return [];
 		}
 		$campaign = $this->campaigns->find($id);
@@ -299,8 +299,8 @@ class BoardService {
 			foreach ($matches as $user) {
 				$candidate = $user->getUID();
 				if ($candidate === $uid || isset($results[$candidate])
-				  || !$this->campaigns->isEligible($campaign, $candidate, time())
-				  || ($campaign['category'] === 'sponsored'
+					|| !$this->campaigns->isEligible($campaign, $candidate, time())
+					|| ($campaign['category'] === 'sponsored'
 					&& $this->config->getUserValue($candidate, 'communications', 'sponsored_optout', '0') === '1')) {
 					continue;
 				}
@@ -358,7 +358,7 @@ class BoardService {
 		preg_match_all('/(?<![\w@])@([A-Za-z0-9_.-]{2,64})/u', $message, $match);
 		foreach (array_slice(array_unique($match[1]), 0, 10) as $uid) {
 			if ($uid === $actor || $this->users->get($uid) === null
-	   || $this->view($uid, $campaignId) === null) {
+				|| $this->view($uid, $campaignId) === null) {
 				continue;
 			}
 			try {

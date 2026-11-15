@@ -87,7 +87,7 @@ class CampaignRepository {
 	public function all():array {
 		$rows = iterator_to_array($this->scan(), false);
 		usort($rows, static fn (array $a, array $b):int
-		 => ($b['updated_at'] <=> $a['updated_at']) ?: ($b['id'] <=> $a['id']));
+			=> ($b['updated_at'] <=> $a['updated_at']) ?: ($b['id'] <=> $a['id']));
 		return $rows;
 	}
 
@@ -118,8 +118,8 @@ class CampaignRepository {
 				continue;
 			}
 			if ($c['placement'] !== 'any'
-	  || !in_array($c['app_target_mode'], ['legacy','all'], true)
-	  || $c['board_visible']) {
+				|| !in_array($c['app_target_mode'], ['legacy','all'], true)
+				|| $c['board_visible']) {
 				continue;
 			}
 			$out[] = [
@@ -318,7 +318,7 @@ class CampaignRepository {
 		$this->nativeSubscriptions->assertCapacity($validated['trigger_key'], $validated['status'], $id);
 		$validated['updated_at'] = time();
 		$validated['published_at'] = ($original['status'] !== 'active' && $validated['status'] === 'active')
-		 ? time() : $original['published_at'];
+			? time() : $original['published_at'];
 		$qb = $this->db->getQueryBuilder();
 		$qb->update(self::TABLE)
 			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
@@ -327,7 +327,7 @@ class CampaignRepository {
 		}
 		$qb->executeStatement();
 		if (str_starts_with($original['trigger_key'], 'php_event.')
-	  || str_starts_with($validated['trigger_key'], 'php_event.')) {
+			|| str_starts_with($validated['trigger_key'], 'php_event.')) {
 			$this->nativeSubscriptions->refresh();
 		}
 		return $this->find($id);
@@ -345,7 +345,7 @@ class CampaignRepository {
 		$rows = array_values(array_filter($this->all(),
 			static fn (array $c):bool => $c['status'] !== 'archived'));
 		usort($rows, static fn (array $a, array $b):int
-		 => ($a['manual_order'] <=> $b['manual_order'])
+			=> ($a['manual_order'] <=> $b['manual_order'])
 	?:($b['priority'] <=> $a['priority'])
 	?:($b['id'] <=> $a['id']));
 		$index = null;

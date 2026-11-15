@@ -114,9 +114,9 @@ final class CampaignInputValidator {
 			throw new InvalidArgumentException($this->l10n->t('Invalid target audience.'));
 		}
 		$groups = $audience === 'group'
-		 ? $this->targets($payload, 'audience_groups', 'audience_group', true) : [];
+			? $this->targets($payload, 'audience_groups', 'audience_group', true) : [];
 		$users = $audience === 'users'
-		 ? $this->targets($payload, 'audience_users', '', true) : [];
+			? $this->targets($payload, 'audience_users', '', true) : [];
 		foreach ($groups as $group) {
 			if ($this->groupManager->get($group) === null) {
 				throw new InvalidArgumentException($this->l10n->t('Selected group does not exist: ') . $group);
@@ -219,10 +219,10 @@ final class CampaignInputValidator {
 		}
 		$guestVisible = $guestVisible === true || $guestVisible === 1;
 		if ($guestVisible && ($audienceType !== 'all'
-	  || $presentation !== 'banner' || $trigger !== 'nextcloud.time.window'
-	  || $category !== 'institutional' || $placement !== 'any'
-	  || !in_array($appTargetMode, ['legacy','all'], true)
-	  || $boardVisible)) {
+			|| $presentation !== 'banner' || $trigger !== 'nextcloud.time.window'
+			|| $category !== 'institutional' || $placement !== 'any'
+			|| !in_array($appTargetMode, ['legacy','all'], true)
+			|| $boardVisible)) {
 			throw new InvalidArgumentException($this->l10n->t('Anonymous visitors require a time-scheduled institutional banner for everyone without app restrictions.'));
 		}
 		$notificationFlags = [];
@@ -275,7 +275,7 @@ final class CampaignInputValidator {
 		$safeTranslations = [];
 		foreach ($translated as $locale => $item) {
 			if (!is_string($locale) || !preg_match('/^[a-z]{2}(?:_[A-Z]{2})?$/D', $locale)
-	   || !is_array($item) || array_is_list($item) || count($item) > 3) {
+				|| !is_array($item) || array_is_list($item) || count($item) > 3) {
 				throw new InvalidArgumentException($this->l10n->t('Invalid translation format.'));
 			}
 			if (array_diff(array_keys($item), ['headline','message','cta_label']) !== []) {
