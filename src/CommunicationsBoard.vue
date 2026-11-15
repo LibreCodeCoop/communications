@@ -712,16 +712,16 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	align-items: center;
 	gap: 17px;
 	margin-bottom: 26px;
-}
 
-.cc-board-heading h1 {
-	font-size: clamp(25px, 2.5vw, 34px);
-	margin: 0 0 6px;
-}
+	h1 {
+		font-size: clamp(25px, 2.5vw, 34px);
+		margin: 0 0 6px;
+	}
 
-.cc-board-heading p {
-	margin: 0;
-	color: var(--color-text-maxcontrast);
+	p {
+		margin: 0;
+		color: var(--color-text-maxcontrast);
+	}
 }
 
 .cc-board-search {
@@ -729,10 +729,10 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	align-items: flex-end;
 	gap: 12px;
 	margin: 0 0 22px;
-}
 
-.cc-board-search > div {
-	flex: 1;
+	> div {
+		flex: 1;
+	}
 }
 
 .cc-board-article {
@@ -742,16 +742,16 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	margin-bottom: 16px;
 	min-width: 0;
 	overflow-wrap: anywhere;
-}
 
-.cc-board-article h2 {
-	font-size: 21px;
-	margin: 12px 0 15px;
-}
+	h2 {
+		font-size: 21px;
+		margin: 12px 0 15px;
+	}
 
-.cc-board-article :deep(.rich-text--wrapper img) {
-	max-width: 100%;
-	height: auto;
+	:deep(.rich-text--wrapper img) {
+		max-width: 100%;
+		height: auto;
+	}
 }
 
 .cc-board-metadata {
@@ -778,11 +778,11 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	margin-top: 18px;
 	padding-top: 12px;
 	border-top: 1px solid var(--color-border);
-}
 
-.cc-board-article-actions > span {
-	font-size: 12px;
-	color: var(--color-text-maxcontrast);
+	> span {
+		font-size: 12px;
+		color: var(--color-text-maxcontrast);
+	}
 }
 
 .cc-board-pagination {
@@ -795,31 +795,31 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 
 .cc-board-comments {
 	margin-top: 28px;
-}
 
-.cc-board-comments h2 {
-	font-size: 20px;
-	margin: 0 0 18px;
-}
+	h2 {
+		font-size: 20px;
+		margin: 0 0 18px;
+	}
 
-.cc-board-comments form {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	margin-bottom: 20px;
-}
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-bottom: 20px;
+	}
 
-.cc-board-comments form > button {
-	align-self: flex-end;
+	form > button {
+		align-self: flex-end;
+	}
 }
 
 .cc-board-comment {
 	padding: 17px 0;
 	border-bottom: 1px solid var(--color-border);
-}
 
-.cc-board-comment :deep(.rich-text--wrapper) {
-	margin-top: 10px;
+	:deep(.rich-text--wrapper) {
+		margin-top: 10px;
+	}
 }
 
 .cc-board-cta {
@@ -841,9 +841,9 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	}
 	.cc-board-search {
 		flex-wrap: wrap;
-	}
-	.cc-board-search > button {
-		width: 100%;
+		> button {
+			width: 100%;
+		}
 	}
 }
 
@@ -873,10 +873,10 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	gap: 5px;
 	padding: 6px 0 12px;
 	border-bottom: 1px solid var(--color-border);
-}
 
-.cc-mention-choices button {
-	max-width: 100%;
+	button {
+		max-width: 100%;
+	}
 }
 
 /* Recipient-side opt-in stays within the Inbox rather than a third app area. */
@@ -895,17 +895,17 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	padding: 18px 20px;
 	margin: -8px 0 22px;
 	background: var(--color-main-background);
-}
 
-.cc-gateway-preferences h3 {
-	font-size: 16px;
-	margin: 0 0 7px;
-}
+	h3 {
+		font-size: 16px;
+		margin: 0 0 7px;
+	}
 
-.cc-gateway-preferences > p {
-	font-size: 13px;
-	color: var(--color-text-maxcontrast);
-	margin: 0 0 14px;
+	> p {
+		font-size: 13px;
+		color: var(--color-text-maxcontrast);
+		margin: 0 0 14px;
+	}
 }
 
 .cc-gateway-preference {
@@ -919,20 +919,22 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	justify-content: space-between;
 	align-items: center;
 	gap: 12px;
+
+	> span {
+		font-size: 12px;
+		color: var(--color-text-maxcontrast);
+		text-align: end;
+	}
 }
 
-.cc-gateway-preference-heading > span {
-	font-size: 12px;
-	color: var(--color-text-maxcontrast);
-	text-align: end;
-}
+.cc-gateway-preference {
+	> div:not(.cc-gateway-preference-heading) {
+		margin: 8px 0;
+	}
 
-.cc-gateway-preference > div:not(.cc-gateway-preference-heading) {
-	margin: 8px 0;
-}
-
-.cc-gateway-preference :deep(.checkbox-radio-switch) {
-	margin: 7px 0;
+	:deep(.checkbox-radio-switch) {
+		margin: 7px 0;
+	}
 }
 
 .cc-gateway-preferences-hint {
@@ -945,9 +947,9 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	.cc-gateway-preference-heading {
 		flex-wrap: wrap;
 		align-items: flex-start;
-	}
-	.cc-gateway-preference-heading > span {
-		margin-inline-start: auto;
+		> span {
+			margin-inline-start: auto;
+		}
 	}
 }
 
@@ -956,12 +958,14 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	margin: 12px 0;
 }
 
-.cc-hub-board .cc-board-main {
-	padding-top: 24px;
-}
+.cc-hub-board {
+	.cc-board-main {
+		padding-top: 24px;
+	}
 
-.cc-hub-board .cc-board-heading {
-	margin-bottom: 18px;
+	.cc-board-heading {
+		margin-bottom: 18px;
+	}
 }
 
 .cc-hub-board .cc-board-heading h2 {
@@ -975,24 +979,28 @@ const boardWriteACommentLabel = t('communications', 'Write a comment')
 	overflow: visible;
 }
 
-.cc-hub-board .cc-board-main {
-	max-width: 1200px;
-	width: 100%;
-	margin: 0;
-	padding: 20px clamp(14px, 3vw, 48px) 54px;
+.cc-hub-board {
+	.cc-board-main {
+		max-width: 1200px;
+		width: 100%;
+		margin: 0;
+		padding: 20px clamp(14px, 3vw, 48px) 54px;
+	}
+
+	.cc-board-heading {
+		margin-bottom: 16px;
+	}
 }
 
-.cc-hub-board .cc-board-heading {
-	margin-bottom: 16px;
-}
+.cc-hub-board {
+	.cc-board-heading h2 {
+		margin: 0 0 5px;
+		font-size: 18px;
+	}
 
-.cc-hub-board .cc-board-heading h2 {
-	margin: 0 0 5px;
-	font-size: 18px;
-}
-
-.cc-hub-board .cc-board-heading p {
-	font-size: 13px;
+	.cc-board-heading p {
+		font-size: 13px;
+	}
 }
 
 @media (max-width: 640px) {

@@ -154,11 +154,11 @@ const selectApplication = (application: NativeApplication): string => applicatio
 	flex-direction: column;
 	gap: 6px;
 	min-width: 0;
-}
 
-.cc-automation-field label {
-	font-size: 13px;
-	font-weight: 650;
+	label {
+		font-size: 13px;
+		font-weight: 650;
+	}
 }
 
 .cc-field-label {
@@ -170,11 +170,11 @@ const selectApplication = (application: NativeApplication): string => applicatio
 .cc-app-help-popover {
 	display: inline-flex;
 	align-items: center;
-}
 
-.cc-app-help-popover button {
-	min-width: 32px;
-	min-height: 32px;
+	button {
+		min-width: 32px;
+		min-height: 32px;
+	}
 }
 
 .cc-help-content {
@@ -198,16 +198,18 @@ const selectApplication = (application: NativeApplication): string => applicatio
 	min-width: 0;
 }
 
-.cc-automation-option > span:last-child {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	min-width: 0;
-}
+.cc-automation-option {
+	> span:last-child {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
 
-.cc-automation-option strong {
-	font-size: 13px;
-	font-weight: 650;
+	strong {
+		font-size: 13px;
+		font-weight: 650;
+	}
 }
 
 .cc-automation-option small,

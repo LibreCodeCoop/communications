@@ -568,12 +568,12 @@ const selectActionValue = (action: { value: string }): string => action.value
 	justify-content: flex-start !important;
 	gap: 8px;
 	white-space: normal;
-}
 
-.cc-automation-intent-card[aria-pressed='true'] {
-	border-color: var(--color-primary-element) !important;
-	background: var(--color-background-hover) !important;
-	color: var(--color-main-text) !important;
+	&[aria-pressed='true'] {
+		border-color: var(--color-primary-element) !important;
+		background: var(--color-background-hover) !important;
+		color: var(--color-main-text) !important;
+	}
 }
 
 .cc-automation-intent-card
@@ -596,10 +596,10 @@ const selectActionValue = (action: { value: string }): string => action.value
 	font-weight: 650;
 	line-height: 1.2;
 	font-size: 14px;
-}
 
-.cc-automation-intent-title strong {
-	font-weight: 650;
+	strong {
+		font-weight: 650;
+	}
 }
 
 .cc-automation-intent-description {
@@ -630,16 +630,16 @@ const selectActionValue = (action: { value: string }): string => action.value
 
 .cc-automation-field {
 	gap: 6px;
-}
 
-.cc-automation-field label {
-	font-size: 13px;
-	font-weight: 650;
-}
+	label {
+		font-size: 13px;
+		font-weight: 650;
+	}
 
-.cc-automation-field :deep(.v-select) {
-	width: 100%;
-	max-width: none;
+	:deep(.v-select) {
+		width: 100%;
+		max-width: none;
+	}
 }
 
 .cc-automation-option {
@@ -647,18 +647,18 @@ const selectActionValue = (action: { value: string }): string => action.value
 	align-items: center;
 	gap: 9px;
 	min-width: 0;
-}
 
-.cc-automation-option > span {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	min-width: 0;
-}
+	> span {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
 
-.cc-automation-option strong {
-	font-size: 13px;
-	font-weight: 650;
+	strong {
+		font-size: 13px;
+		font-weight: 650;
+	}
 }
 
 .cc-automation-option small,
@@ -681,11 +681,11 @@ const selectActionValue = (action: { value: string }): string => action.value
 	display: flex;
 	gap: 9px;
 	flex-wrap: wrap;
-}
 
-.cc-automation-mode-options > * {
-	flex: 0 1 auto;
-	min-width: 175px;
+	> * {
+		flex: 0 1 auto;
+		min-width: 175px;
+	}
 }
 
 .cc-automation-result {
@@ -701,11 +701,11 @@ const selectActionValue = (action: { value: string }): string => action.value
 	gap: 8px;
 	align-items: center;
 	min-width: 0;
-}
 
-.cc-automation-result-label strong {
-	font-size: 13px;
-	overflow-wrap: anywhere;
+	strong {
+		font-size: 13px;
+		overflow-wrap: anywhere;
+	}
 }
 
 .cc-automation-result p {
@@ -725,10 +725,10 @@ const selectActionValue = (action: { value: string }): string => action.value
 
 	.cc-automation-mode-options {
 		flex-direction: column;
-	}
 
-	.cc-automation-mode-options > * {
-		min-width: 0;
+		> * {
+			min-width: 0;
+		}
 	}
 }
 </style>

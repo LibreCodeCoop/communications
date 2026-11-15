@@ -124,22 +124,24 @@ const noGroupBroadcastLabel = t(
 
 .cc-automation-configuration {
 	max-width: 760px;
+
+	h3 {
+		font-size: 15px;
+		font-weight: 650;
+		margin: 0;
+	}
 }
 
-.cc-automation-configuration h3 {
-	font-size: 15px;
-	font-weight: 650;
-	margin: 0;
-}
+.cc-automation-field {
+	label {
+		font-size: 13px;
+		font-weight: 650;
+	}
 
-.cc-automation-field label {
-	font-size: 13px;
-	font-weight: 650;
-}
-
-.cc-automation-field :deep(.v-select) {
-	width: 100%;
-	max-width: none;
+	:deep(.v-select) {
+		width: 100%;
+		max-width: none;
+	}
 }
 
 .cc-automation-webhook {
@@ -170,9 +172,9 @@ const noGroupBroadcastLabel = t(
 	gap: 8px;
 	align-items: center;
 	padding-top: 8px;
-}
 
-.cc-automation-flow p {
-	width: 100%;
+	p {
+		width: 100%;
+	}
 }
 </style>

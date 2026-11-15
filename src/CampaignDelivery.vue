@@ -247,16 +247,16 @@ onUnmounted(() => {
 	gap: 12px;
 	overflow: auto;
 	scrollbar-gutter: stable;
-}
 
-.cc-live-stack :deep(.cc-live-banner) {
-	position: relative;
-	flex-shrink: 0;
-	top: auto;
-	inset-inline-start: auto;
-	transform: none;
-	width: 100%;
-	max-height: none;
-	overflow: visible;
+	:deep(.cc-live-banner) {
+		position: relative;
+		flex-shrink: 0;
+		top: auto;
+		inset-inline-start: auto;
+		transform: none;
+		width: 100%;
+		max-height: none;
+		overflow: visible;
+	}
 }
 </style>

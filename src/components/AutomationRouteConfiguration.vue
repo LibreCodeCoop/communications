@@ -195,16 +195,16 @@ function filterExample(variable: string): string {
 	flex-direction: column;
 	gap: 6px;
 	min-width: 0;
-}
 
-.cc-automation-field label {
-	font-size: 13px;
-	font-weight: 650;
-}
+	label {
+		font-size: 13px;
+		font-weight: 650;
+	}
 
-.cc-automation-field :deep(.v-select) {
-	width: 100%;
-	max-width: none;
+	:deep(.v-select) {
+		width: 100%;
+		max-width: none;
+	}
 }
 
 .cc-automation-option {
@@ -212,12 +212,12 @@ function filterExample(variable: string): string {
 	align-items: center;
 	gap: 9px;
 	min-width: 0;
-}
 
-.cc-automation-option > span {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	> span {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
 }
 
 .cc-automation-option strong,
@@ -246,10 +246,10 @@ function filterExample(variable: string): string {
 	grid-template-columns: minmax(100px, 1fr) minmax(170px, 1fr);
 	gap: 7px 12px;
 	align-items: center;
-}
 
-.cc-route-filter label {
-	font-size: 12px;
+	label {
+		font-size: 12px;
+	}
 }
 
 .cc-route-filter-select,

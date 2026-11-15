@@ -81,11 +81,11 @@ function channelStatusLabel(status: string): string {
 	min-width: 0;
 	padding: 11px 0;
 	border-bottom: 1px solid var(--color-border);
-}
 
-.cc-delivery-channel:last-child {
-	border-bottom: none;
-	padding-bottom: 0;
+	&:last-child {
+		border-bottom: none;
+		padding-bottom: 0;
+	}
 }
 
 .cc-delivery-channel-header {
@@ -100,15 +100,15 @@ function channelStatusLabel(status: string): string {
 	min-width: 0;
 	flex: 1 1 auto;
 	line-height: 1.35;
-}
 
-.cc-delivery-channel-control :deep(.checkbox-radio-switch) {
-	min-width: 0;
-	margin: 0;
-}
+	:deep(.checkbox-radio-switch) {
+		min-width: 0;
+		margin: 0;
+	}
 
-.cc-delivery-channel-control .checkbox-radio-switch__label {
-	overflow-wrap: anywhere;
+	.checkbox-radio-switch__label {
+		overflow-wrap: anywhere;
+	}
 }
 
 .cc-delivery-channel-unavailable {
@@ -126,11 +126,11 @@ function channelStatusLabel(status: string): string {
 	color: var(--color-text-maxcontrast);
 	flex: 0 0 auto;
 	max-width: 50%;
-}
 
-.cc-delivery-channel-status span {
-	text-align: end;
-	line-height: 1.3;
+	span {
+		text-align: end;
+		line-height: 1.3;
+	}
 }
 
 .cc-delivery-channel-help {
@@ -144,18 +144,18 @@ function channelStatusLabel(status: string): string {
 	min-width: 180px;
 	padding: 10px 12px;
 	line-height: 1.5;
-}
 
-.cc-delivery-channel-help-content strong {
-	display: block;
-	margin-bottom: 6px;
-}
+	strong {
+		display: block;
+		margin-bottom: 6px;
+	}
 
-.cc-delivery-channel-help-content p {
-	margin: 0;
-	white-space: normal;
-	overflow-wrap: anywhere;
-	font-size: 13px;
+	p {
+		margin: 0;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		font-size: 13px;
+	}
 }
 
 .cc-delivery-channel-description {
