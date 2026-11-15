@@ -6,6 +6,8 @@
   "scripts": {
     "build": "vite build && vite build --config vite.delivery.config.ts && vite build --config vite.flow.config.ts && node ./scripts/install-assets.mjs",
     "build:dev": "vite build --mode development && vite build --config vite.delivery.config.ts --mode development && vite build --config vite.flow.config.ts --mode development && node ./scripts/install-assets.mjs",
+    "package:app": "npm run build && node scripts/package-app.mjs",
+    "test:package": "node --test tests/build/*.test.mjs",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:libresign": "playwright test tests/e2e/libresign-event.spec.mjs",

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+
+// Both directories contain build output only; never preserve stale assets.
+for (const dir of ['js', 'css']) rmSync(dir, { recursive: true, force: true })
 
 for (const [dir, bundle, jsTarget, cssTarget] of [
   ['dist', 'management.js', 'js/management.js', 'css/management.css'],
@@ -16,6 +19,7 @@ for (const [dir, bundle, jsTarget, cssTarget] of [
   copyFileSync(dir+'/'+css, cssTarget)
   console.log('Installed '+jsTarget+' and '+cssTarget)
 }
+
 // These lightweight, dependency-free browser adapters are maintained in src/.
 // Keep their public filenames stable: Nextcloud registers 'guest' and 'loader'
 // directly, and loader.js locates campaigns.js relative to its own URL.

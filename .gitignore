@@ -8,6 +8,7 @@
 node_modules/
 /js/
 /css/
+/build/
 vendor/
 dist/
 dist-delivery/

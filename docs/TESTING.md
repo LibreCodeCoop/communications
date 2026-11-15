@@ -53,3 +53,9 @@ The component `<template>`, `<script setup>` and `<style scoped>` blocks are for
 `img/app.svg` uses white monochrome fill for the main Nextcloud navigation; `img/app-dark.svg` uses the identical geometry with `currentColor` for light backgrounds. Accent color comes from the instance theme, not a brand-specific SVG fill.
 
 `.tx/config` and `.l10nignore` prepare the app for Nextcloud's official Transifex extraction process. The existing `pt_BR.js`/`pt_BR.json` are preserved as translation fallbacks during development. **These files do not activate Transifex themselves.** Nextcloud community onboarding requires approval of the resource and `@nextcloud-bot` write access; after onboarding, the bot should own the generated catalogs and they should no longer be edited by hand. Do not drop the Portuguese catalogs before the bot is actually producing replacements, or installed releases will lose their translations.
+
+### Installable package verification
+
+The source tree deliberately does not track `js/` or `css/`. Both directories must be created by `npm run build` before an app can run in Nextcloud. The lightweight public guest and authenticated loader adapters are maintained in `src/` and copied at build time; their public asset names remain unchanged.
+
+Run `npm run test:package` to check both the generated asset installer and the packaging contract. The tests cover successful asset installation, stale-output removal, missing/empty entry points, archive structure, and exclusion of development source. `npm run package:app` builds the frontend and creates an unsigned `build/artifacts/communications-<version>.tar.gz`, verifying that the archive actually includes the five JavaScript and four CSS runtime files. The independent `Verify installable application package` GitHub workflow runs both checks and makes the test archive available as a CI artifact for inspection. This is not an App Store publication or production certification.

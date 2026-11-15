@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 LibreCode Coop and contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: Verify installable application package
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: communications-package-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Build and verify package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Use supported npm version
+        run: npm install --global npm@11
+      - name: Install locked dependencies
+        run: npm ci --include=dev --include=optional
+      - name: Test packaging and missing-asset rejection
+        run: npm run test:package
+      - name: Build and verify the installable archive
+        run: npm run package:app
+      - name: Verify generated files are not tracked
+        run: |
+          test -z "$(git ls-files js css)"
+          git check-ignore -q js/loader.js
+          git check-ignore -q css/guest.css
+          git diff --exit-code
+      - name: Upload unsigned package for review only
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: communications-test-package-${{ github.run_id }}
+          path: build/artifacts/communications-*.tar.gz
+          if-no-files-found: error
+          retention-days: 7
