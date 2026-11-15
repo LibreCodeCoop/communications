@@ -12,6 +12,7 @@ namespace OCA\Communications\Service;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\Event;
 use OCP\IAppConfig;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -31,7 +32,7 @@ final class NativeEventCatalog {
 	public function __construct(
 		private IAppManager $apps,
 		private IAppConfig $config,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 		private LoggerInterface $logger,
 	) {
 	}
@@ -218,11 +219,17 @@ final class NativeEventCatalog {
 				$short = $reflection->getShortName();
 				$phase = str_starts_with($short, 'Before') ? 'before' : 'unknown';
 				$webhook = is_a($class, \OCP\EventDispatcher\IWebhookCompatibleEvent::class, true);
+				// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
 				$description = ($phase === 'before' ? $this->l10n->t('Before the operation; does not confirm completion. ')
+					// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
 					: $this->l10n->t('The timing of this event depends on the app and does not prove the operation completed. '))
+					// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
 					. $this->l10n->t('Recipient: the authenticated user of this request, not necessarily the affected user. ')
 					. (NativeEventSubscriptions::eventIsMutationByName($class)
+					// TRANSLATORS Prefix followed by a dynamic value in the Nextcloud native-event catalog; preserve its trailing space.
 					? $this->l10n->t('To keep page requests fast, this trigger ignores GET, HEAD and OPTIONS. ') : '')
+					// TRANSLATORS Short label for an option or field in the Nextcloud native-event catalog.
+					// TRANSLATORS Short label for an option or field in the Nextcloud native-event catalog.
 					. ($webhook ? $this->l10n->t('Compatible with Webhook Listeners.') : $this->l10n->t('Internal PHP event.'));
 				$key = self::triggerKey($class);
 				$out[$class] = [

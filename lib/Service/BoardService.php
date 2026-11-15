@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use OCA\Communications\Db\BoardMapper;
 use OCP\IConfig;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IUserManager;
 use OCP\Notification\IManager as NotificationManager;
 use Psr\Log\LoggerInterface;
@@ -28,7 +29,7 @@ class BoardService {
 		private IConfig $config,
 		private NotificationManager $notifications,
 		private LoggerInterface $logger,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -210,17 +211,21 @@ class BoardService {
 	public function createComment(string $uid, int $id, string $message): array {
 		$c = $this->view($uid, $id);
 		if ($c === null) {
+			// TRANSLATORS Short label for an option or field in the BoardService service.
 			throw new InvalidArgumentException($this->l10n->t('Announcement unavailable.'));
 		}
 		if (!$c['commentsEnabled']) {
+			// TRANSLATORS Short label for an option or field in the BoardService service.
 			throw new InvalidArgumentException($this->l10n->t('Comments are disabled.'));
 		}
 		$message = trim($message);
 		if ($message === '' || mb_strlen($message) > 4000) {
+			// TRANSLATORS Action or instruction in the BoardService service.
 			throw new InvalidArgumentException($this->l10n->t('Enter a comment of at most 4,000 characters.'));
 		}
 		$now = time();
 		if ($this->mapper->hasRecentComment($id, $uid, $now - 5)) {
+			// TRANSLATORS Descriptive message shown in the BoardService service.
 			throw new InvalidArgumentException($this->l10n->t('Wait a few seconds before commenting again.'));
 		}
 		$commentId = $this->mapper->insertComment($id, $uid, $message, $now);

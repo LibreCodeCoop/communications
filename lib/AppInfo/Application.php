@@ -89,6 +89,7 @@ class Application extends App implements IBootstrap {
 					'app' => 'communications',
 					'type' => 'link',
 					'order' => 97,
+					// TRANSLATORS Short label for an option or field in the Communications app metadata.
 					'name' => $server->get(\OCP\IL10N::class)->t('Communications'),
 					'href' => $urls->linkToRoute('communications.page.index'),
 					'icon' => $urls->imagePath('communications', 'app.svg'),

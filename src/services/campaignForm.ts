@@ -103,15 +103,19 @@ export function validateCampaignPayload(
 	hasDestination: boolean,
 ): string | null {
 	if (!data.name.trim() || !data.headline.trim() || !data.message.trim()) {
+		// TRANSLATORS Descriptive message shown in the publication form validation.
 		return t('communications', 'Internal name, title, and message are required.')
 	}
 	if (!data.trigger_key) {
+		// TRANSLATORS Action or instruction in the publication form validation.
 		return t('communications', 'Choose when to deliver the publication.')
 	}
 	if (data.audience_type === 'group' && !data.audience_groups.length) {
+		// TRANSLATORS Action or instruction in the publication form validation.
 		return t('communications', 'Select at least one group.')
 	}
 	if (data.audience_type === 'users' && !data.audience_users.length) {
+		// TRANSLATORS Action or instruction in the publication form validation.
 		return t('communications', 'Select at least one user.')
 	}
 	if (
@@ -120,12 +124,15 @@ export function validateCampaignPayload(
 		&& data.trigger_key !== 'nextcloud.page.opened'
 		&& !data.app_target_apps.length
 	) {
+		// TRANSLATORS Action or instruction in the publication form validation.
 		return t('communications', 'Select at least one app for this display rule.')
 	}
 	if (Boolean(data.cta_label.trim()) !== Boolean(data.cta_url.trim())) {
+		// TRANSLATORS Descriptive message shown in the publication form validation.
 		return t('communications', 'To display a button, enter its text and URL.')
 	}
 	if (data.trigger_key === 'nextcloud.time.window' && data.starts_at === null) {
+		// TRANSLATORS Short label for an option or field in the publication form validation.
 		return t('communications', 'The schedule needs a start date.')
 	}
 	if (
@@ -133,9 +140,11 @@ export function validateCampaignPayload(
 		&& data.ends_at !== null
 		&& data.ends_at <= data.starts_at
 	) {
+		// TRANSLATORS Validation or failure message shown in the publication form validation.
 		return t('communications', 'The end date must be after the start date.')
 	}
 	if (!hasDestination) {
+		// TRANSLATORS Action or instruction in the publication form validation.
 		return t('communications', 'Select at least one delivery method.')
 	}
 
@@ -147,6 +156,7 @@ export function validateCampaignPayload(
 			|| data.notify_email
 			|| data.gateway_channels.length)
 	) {
+		// TRANSLATORS Descriptive message shown in the publication form validation.
 		return t(
 			'communications',
 			'Public banners cannot send individual notifications.',

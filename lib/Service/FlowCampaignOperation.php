@@ -13,6 +13,7 @@ use OCA\WorkflowEngine\Entity\File as FileEntity;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\Files\File;
+use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\WorkflowEngine\IManager;
 use OCP\WorkflowEngine\IRuleMatcher;
@@ -30,7 +31,7 @@ class FlowCampaignOperation implements ISpecificOperation {
 		private EventStore $events,
 		private IURLGenerator $urls,
 		private LoggerInterface $logger,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -38,9 +39,11 @@ class FlowCampaignOperation implements ISpecificOperation {
 		return FileEntity::class;
 	}
 	public function getDisplayName(): string {
+		// TRANSLATORS Short label for an option or field in the FlowCampaignOperation service.
 		return $this->l10n->t('Trigger contextual campaign');
 	}
 	public function getDescription(): string {
+		// TRANSLATORS Descriptive message shown in the FlowCampaignOperation service.
 		return $this->l10n->t('When a rule matches, display the campaign selected by name.');
 	}
 	public function getIcon(): string {
@@ -50,15 +53,18 @@ class FlowCampaignOperation implements ISpecificOperation {
 		return $scope === IManager::SCOPE_ADMIN;
 	}
 	public function getTriggerHint(): string {
+		// TRANSLATORS Descriptive message shown in the FlowCampaignOperation service.
 		return $this->l10n->t('A file event matches a campaign rule');
 	}
 
 	public function validateOperation(string $name, array $checks, string $operation): void {
 		if (!ctype_digit($operation) || (int)$operation <= 0) {
+			// TRANSLATORS Action or instruction in the FlowCampaignOperation service.
 			throw new \UnexpectedValueException($this->l10n->t('Enter the numeric campaign ID.'));
 		}
 		$campaign = $this->campaigns->find((int)$operation);
 		if ($campaign === null || $campaign['trigger_key'] !== 'nextcloud.flow.matched') {
+			// TRANSLATORS Validation or failure message shown in the FlowCampaignOperation service.
 			throw new \UnexpectedValueException($this->l10n->t('The campaign must exist and use the Nextcloud Flow trigger.'));
 		}
 	}

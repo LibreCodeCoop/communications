@@ -32,7 +32,10 @@ foreach ($iterator as $file) {
 			$docblock = true;
 		}
 		$reason = null;
-		if (preg_match('/^\t+ {1,3}(?:&&|\|\||\?|:|=>)/', $line)) {
+		if (preg_match('/\b(?:private|protected|public)\s+(?:readonly\s+)?([^\s]+)\s+\$[A-Za-z_]/', $line, $match)
+			&& str_contains($match[1], '\\')) {
+			$reason = 'class-typed properties and constructor arguments must use imported type names';
+		} elseif (preg_match('/^\t+ {1,3}(?:&&|\|\||\?|:|=>)/', $line)) {
 			$reason = 'mixed tabs/spaces before a continuation operator';
 		} elseif (preg_match('/^(\t+)(?:&&|\|\||\?|:|=>)/', $line, $match)
 			&& $previousIndent !== null && strlen($match[1]) < $previousIndent) {

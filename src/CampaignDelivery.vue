@@ -209,6 +209,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+	<!-- TRANSLATORS Short label for an option or field in the delivery interface. -->
 	<section
 		v-if="banners.length"
 		class="cc-live-stack"

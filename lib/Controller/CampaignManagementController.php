@@ -21,6 +21,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\UseSession;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -33,7 +34,7 @@ class CampaignManagementController extends Controller {
 		private WebRouteCatalog $webRoutes,
 		private IUserSession $userSession,
 		private EditorAccess $editorAccess,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 		parent::__construct('communications', $request);
 	}
@@ -42,6 +43,7 @@ class CampaignManagementController extends Controller {
 	}
 	private function denied():?JSONResponse {
 		return $this->editorAccess->canEdit($this->uid()) ? null
+			// TRANSLATORS Action or instruction in the CampaignManagementController API response.
 			: new JSONResponse(['error' => $this->l10n->t('Editorial permission required.')], 403);
 	}
 
@@ -65,6 +67,7 @@ class CampaignManagementController extends Controller {
 			return $deny;
 		}
 		$item = $this->campaigns->find($id);
+		// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 		return $item !== null ? new JSONResponse(['campaign' => $item]) : new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 	}
 
@@ -103,6 +106,7 @@ class CampaignManagementController extends Controller {
 		}
 		if (!preg_match('/^[a-z0-9_-]{2,32}$/', $app) || !$this->triggerCatalog->supportsPlacement($app)
 			|| $app === 'any' || $app === 'settings') {
+			// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 			return new JSONResponse(['error' => $this->l10n->t('App has no available web pages.')], 422);
 		}
 		return new JSONResponse(['app' => $app, 'routes' => $this->webRoutes->routesFor($app)]);
@@ -117,6 +121,7 @@ class CampaignManagementController extends Controller {
 			return $deny;
 		}
 		if ($this->campaigns->find($id) === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 		}
 		return new JSONResponse(['campaignId' => $id, 'metrics' => $this->deliveries->metrics($id), 'audited' => false]);
@@ -143,6 +148,7 @@ class CampaignManagementController extends Controller {
 		try {
 			$uid = $this->userSession->getUser()?->getUID();
 			if ($uid === null) {
+				// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 				return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 			}
 			$campaign = $this->campaigns->create($this->request->getParams(), $uid);
@@ -161,6 +167,7 @@ class CampaignManagementController extends Controller {
 		}
 		try {
 			$campaign = $this->campaigns->update($id, $this->request->getParams());
+			// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 			return $campaign !== null ? new JSONResponse(['campaign' => $campaign]) : new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 		} catch (InvalidArgumentException $error) {
 			return new JSONResponse(['error' => $error->getMessage()], 422);
@@ -176,6 +183,7 @@ class CampaignManagementController extends Controller {
 		}
 		try {
 			$campaign = $this->campaigns->setStatus($id, $status);
+			// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 			return $campaign !== null ? new JSONResponse(['campaign' => $campaign]) : new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 		} catch (InvalidArgumentException $error) {
 			return new JSONResponse(['error' => $error->getMessage()], 422);
@@ -191,6 +199,7 @@ class CampaignManagementController extends Controller {
 		}
 		$original = $this->campaigns->find($id);
 		if ($original === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 		}
 		// TRANSLATORS Suffix appended to the internal name of a duplicated publication.
@@ -206,6 +215,7 @@ class CampaignManagementController extends Controller {
 		try {
 			$uid = $this->userSession->getUser()?->getUID();
 			if ($uid === null) {
+				// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 				return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 			}
 			return new JSONResponse(['campaign' => $this->campaigns->create($original, $uid)], 201);
@@ -224,6 +234,7 @@ class CampaignManagementController extends Controller {
 		try {
 			$items = $this->campaigns->move($id, $direction, $target_id);
 			if ($items === null) {
+				// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 				return new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 			}
 			return new JSONResponse([
@@ -242,6 +253,7 @@ class CampaignManagementController extends Controller {
 			return $deny;
 		}
 		$campaign = $this->campaigns->setStatus($id, 'archived');
+		// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 		return $campaign !== null ? new JSONResponse(['campaign' => $campaign]) : new JSONResponse(['error' => $this->l10n->t('Campaign not found.')], 404);
 	}
 
@@ -254,6 +266,7 @@ class CampaignManagementController extends Controller {
 		}
 		try {
 			if (!$this->campaigns->purgeArchived($id, $confirmName)) {
+				// TRANSLATORS Short label for an option or field in the CampaignManagementController API response.
 				return new JSONResponse(['error' => $this->l10n->t('Publication not found.')], 404);
 			}
 			return new JSONResponse(['deleted' => true, 'id' => $id]);
@@ -268,6 +281,7 @@ class CampaignManagementController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/api/editor-groups')]
 	public function editorGroups(): JSONResponse {
 		if (!$this->editorAccess->isAdmin($this->uid())) {
+			// TRANSLATORS Descriptive message shown in the CampaignManagementController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Only administrators can view delegation settings.')], 403);
 		}
 		return new JSONResponse(['groups' => $this->editorAccess->groups()]);
@@ -278,10 +292,12 @@ class CampaignManagementController extends Controller {
 	#[FrontpageRoute(verb: 'POST', url: '/api/editor-groups')]
 	public function setEditorGroups(): JSONResponse {
 		if (!$this->editorAccess->isAdmin($this->uid())) {
+			// TRANSLATORS Descriptive message shown in the CampaignManagementController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Only administrators can delegate editing.')], 403);
 		}
 		$groups = $this->request->getParam('groups', []);
 		if (!is_array($groups)) {
+			// TRANSLATORS Validation or failure message shown in the CampaignManagementController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Invalid group list.')], 422);
 		}
 		try {

@@ -13,6 +13,7 @@ use OC\Route\Router;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\IL10N;
 
 /**
  * Discover UI routes from Nextcloud's already-defined router, including PHP #[FrontpageRoute]
@@ -24,7 +25,7 @@ final class WebRouteCatalog {
 	public function __construct(
 		private Router $router,
 		private IAppManager $apps,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -170,6 +171,7 @@ final class WebRouteCatalog {
 	public function normalizeFilters(string $pattern, array $rules): array {
 		if ($pattern === '') {
 			if ($rules !== []) {
+				// TRANSLATORS Action or instruction in the application route picker.
 				throw new \InvalidArgumentException($this->l10n->t('Select a route before filtering variables.'));
 			}
 			return [];
@@ -177,28 +179,34 @@ final class WebRouteCatalog {
 		preg_match_all('/\{([A-Za-z][A-Za-z0-9_]*)\}/', $pattern, $matches);
 		$variables = array_flip($matches[1]);
 		if (count($rules) > 8) {
+			// TRANSLATORS Short label for an option or field in the application route picker.
 			throw new \InvalidArgumentException($this->l10n->t('Maximum of eight route filters.'));
 		}
 		$normalized = [];
 		foreach ($rules as $name => $rule) {
 			if (!is_string($name) || !isset($variables[$name]) || !is_array($rule)) {
+				// TRANSLATORS Validation or failure message shown in the application route picker.
 				throw new \InvalidArgumentException($this->l10n->t('Unknown route filter.'));
 			}
 			$operator = $rule['operator'] ?? null;
 			$value = $rule['value'] ?? '';
 			if (!is_string($value) || mb_strlen($value) > 96) {
+				// TRANSLATORS Validation or failure message shown in the application route picker.
 				throw new \InvalidArgumentException($this->l10n->t('Invalid route filter value.'));
 			}
 			if ($operator === 'digits') {
 				if ($value !== '') {
+					// TRANSLATORS Descriptive message shown in the application route picker.
 					throw new \InvalidArgumentException($this->l10n->t('Numeric route filters do not accept a value.'));
 				}
 			} elseif (in_array($operator, ['equals', 'prefix'], true)) {
 				// Match a single safe URI segment, never a slash, query, fragment or PCRE.
 				if ($value === '' || !preg_match('/^[A-Za-z0-9._~-]{1,96}$/D', $value) || str_contains($value, '..')) {
+					// TRANSLATORS Action or instruction in the application route picker.
 					throw new \InvalidArgumentException($this->l10n->t('Enter a valid value without slashes or regular expressions.'));
 				}
 			} else {
+				// TRANSLATORS Validation or failure message shown in the application route picker.
 				throw new \InvalidArgumentException($this->l10n->t('Invalid route filter operator.'));
 			}
 			$normalized[$name] = ['operator' => $operator,'value' => $value];

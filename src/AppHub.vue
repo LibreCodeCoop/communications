@@ -80,6 +80,7 @@ onUnmounted(() => window.removeEventListener('popstate', applyHistory))
 					<!-- TRANSLATORS Name of the app shown in the main page heading. -->
 					<h1>{{ t('communications', 'Communications') }}</h1>
 					<p>
+						<!-- TRANSLATORS Action or instruction in the Communications navigation. -->
 						{{
 							t(
 								'communications',
@@ -88,6 +89,7 @@ onUnmounted(() => window.removeEventListener('popstate', applyHistory))
 						}}
 					</p>
 				</div>
+				<!-- TRANSLATORS Short label for an option or field in the Communications navigation. -->
 				<NcButton
 					v-if="
 						canEdit
@@ -102,6 +104,7 @@ onUnmounted(() => window.removeEventListener('popstate', applyHistory))
 					/></template>
 				</NcButton>
 			</header>
+			<!-- TRANSLATORS Short label for an option or field in the Communications navigation. -->
 			<nav
 				class="cc-hub-tabs"
 				:aria-label="t('communications', 'Communication areas')">

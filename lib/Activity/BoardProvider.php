@@ -15,7 +15,10 @@ use OCP\Activity\Exceptions\UnknownActivityException;
 use OCP\Activity\IEvent;
 use OCP\Activity\IManager;
 use OCP\Activity\IProvider;
+use OCP\IL10N;
 use OCP\IURLGenerator;
+use OCP\L10N\IFactory;
+use UnexpectedValueException;
 
 /** The activity stream does not reveal inaccessible or expired posts. */
 final class BoardProvider implements IProvider {
@@ -23,8 +26,8 @@ final class BoardProvider implements IProvider {
 		private BoardService $board,
 		private IManager $activities,
 		private IURLGenerator $urls,
-		private \OCP\IL10N $l10n,
-		private \OCP\L10N\IFactory $l10nFactory,
+		private IL10N $l10n,
+		private IFactory $l10nFactory,
 	) {
 	}
 
@@ -37,7 +40,7 @@ final class BoardProvider implements IProvider {
 		}
 		try {
 			$uid = $this->activities->getCurrentUserId();
-		} catch (\Throwable $error) {
+		} catch (UnexpectedValueException $error) {
 			throw new UnknownActivityException('Missing activity viewer', 0, $error);
 		}
 		if ($event->getAffectedUser() !== $uid) {

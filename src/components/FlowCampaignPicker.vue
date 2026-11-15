@@ -39,6 +39,7 @@ onMounted(async () => {
 		)
 	} catch (err) {
 		loadError.value =
+			// TRANSLATORS Prefix followed by a dynamic value in the Flow campaign selector; preserve its trailing space.
 			t('communications', 'Could not load campaigns: ')
 			+ (err instanceof Error ? err.message : String(err))
 	} finally {
@@ -49,10 +50,13 @@ onMounted(async () => {
 
 <template>
 	<div class="cc-flow-picker" data-testid="flow-campaign-picker">
-		<label class="cc-flow-picker-label" for="cc-flow-picker-select">{{
-			t('communications', 'Campaign to display')
-		}}</label>
+		<label class="cc-flow-picker-label" for="cc-flow-picker-select"
+			><!-- TRANSLATORS Short label for an option or field in the Flow campaign selector. -->{{
+				t('communications', 'Campaign to display')
+			}}</label
+		>
 		<p class="cc-flow-picker-hint">
+			<!-- TRANSLATORS Action or instruction in the Flow campaign selector. -->
 			{{
 				t(
 					'communications',
@@ -60,9 +64,14 @@ onMounted(async () => {
 				)
 			}}
 		</p>
-		<p v-if="loading">{{ t('communications', 'Loading campaigns…') }}</p>
+		<p v-if="loading">
+			<!-- TRANSLATORS Progress indicator shown in the Flow campaign selector. -->{{
+				t('communications', 'Loading campaigns…')
+			}}
+		</p>
 		<NcNoteCard v-else-if="loadError" type="error">{{ loadError }}</NcNoteCard>
 		<NcNoteCard v-else-if="!options.length" type="info">
+			<!-- TRANSLATORS Empty state or unavailable-condition message in the Flow campaign selector. -->
 			{{
 				t(
 					'communications',
@@ -70,6 +79,7 @@ onMounted(async () => {
 				)
 			}}
 		</NcNoteCard>
+		<!-- TRANSLATORS Action or instruction in the Flow campaign selector. -->
 		<NcSelect
 			v-else
 			v-model="selected"

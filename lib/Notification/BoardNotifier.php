@@ -11,8 +11,10 @@ namespace OCA\Communications\Notification;
 
 use OCA\Communications\Service\BoardService;
 use OCA\Communications\Service\PublicationLink;
+use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
+use OCP\L10N\IFactory;
 use OCP\Notification\AlreadyProcessedException;
 use OCP\Notification\INotification;
 use OCP\Notification\INotifier;
@@ -24,14 +26,15 @@ final class BoardNotifier implements INotifier {
 		private BoardService $board,
 		private IURLGenerator $urls,
 		private IUserManager $users,
-		private \OCP\IL10N $l10n,
-		private \OCP\L10N\IFactory $l10nFactory,
+		private IL10N $l10n,
+		private IFactory $l10nFactory,
 	) {
 	}
 	public function getID():string {
 		return 'communications';
 	}
 	public function getName():string {
+		// TRANSLATORS Short label for an option or field in the Nextcloud notification.
 		return $this->l10n->t('Announcement board');
 	}
 
@@ -50,6 +53,7 @@ final class BoardNotifier implements INotifier {
 			$author = $this->users->getDisplayName($item['actor']) ?: $item['actor'];
 			// TRANSLATORS Continuation after the name of the user who mentioned the recipient.
 			$notification->setParsedSubject($author . $localized->t(' mentioned you on the announcement board'))
+				// TRANSLATORS Action or instruction in the Nextcloud notification.
 				->setParsedMessage($localized->t('Open the announcement to read and reply.'));
 			$id = $item['campaignId'];
 		} elseif ($subject === 'published' && $type === 'cc_board_announcement') {

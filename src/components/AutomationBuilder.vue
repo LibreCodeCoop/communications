@@ -181,7 +181,9 @@ const pageRouteValue = computed({
 const routeOptions = computed(() => [
 	{
 		value: ANY_PAGE,
+		// TRANSLATORS Short label for an option or field in the automation trigger builder.
 		label: t('communications', 'Any page in this app'),
+		// TRANSLATORS Short label for an option or field in the automation trigger builder.
 		description: t('communications', 'All recognized interface pages'),
 	},
 	...routes.value,
@@ -217,7 +219,8 @@ watch([() => props.modelValue, () => props.placement], (next, previous) => {
 })
 const selectedRouteLabel = computed(() =>
 	props.pageRoute === ''
-		? t('communications', 'Any application page')
+		? // TRANSLATORS Short label for an option or field in the automation trigger builder.
+			t('communications', 'Any application page')
 		: routes.value.find((route) => route.value === props.pageRoute)?.label
 			|| props.pageRoute,
 )
@@ -226,6 +229,7 @@ const webhookExample = computed(() =>
 		{
 			campaignId:
 				props.campaignId
+				// TRANSLATORS Short label for an option or field in the automation trigger builder.
 				|| t('communications', '<campaign ID after saving>'),
 			uid: 'nextcloud_user',
 			eventId: 'unique-event-001',
@@ -236,8 +240,10 @@ const webhookExample = computed(() =>
 )
 const summary = computed(() => {
 	if (selectedIntent.value === 'board')
+		// TRANSLATORS Short label for an option or field in the automation trigger builder.
 		return t('communications', 'Available on activation')
 	if (selectedIntent.value === 'schedule')
+		// TRANSLATORS Descriptive message shown in the automation trigger builder.
 		return t(
 			'communications',
 			'During the chosen period, on the next eligible visit',
@@ -248,20 +254,24 @@ const summary = computed(() => {
 			+ ' → '
 			+ selectedAdvanced.value.actions[0].label
 		)
+	// TRANSLATORS Action or instruction in the automation trigger builder.
 	if (!selectedApp.value) return t('communications', 'Choose an app')
 	if (selectedMode.value === 'visit')
 		return selectedApp.value.label + ' → ' + selectedRouteLabel.value
 	return selectedAction.value
 		? selectedApp.value.label + ' → ' + selectedAction.value.label
-		: t('communications', 'Select an application event')
+		: // TRANSLATORS Action or instruction in the automation trigger builder.
+			t('communications', 'Select an application event')
 })
 const explanation = computed(() => {
 	if (selectedIntent.value === 'board')
+		// TRANSLATORS Explanatory help text shown in the automation trigger builder.
 		return t(
 			'communications',
 			'On activation, outbound channels are queued; content appears in Inbox if selected, and banners or dialogs appear on the next eligible visit.',
 		)
 	if (selectedIntent.value === 'schedule')
+		// TRANSLATORS Explanatory help text shown in the automation trigger builder.
 		return t(
 			'communications',
 			'The publication becomes eligible only within its availability period; it appears when the user returns to Nextcloud.',
@@ -270,29 +280,35 @@ const explanation = computed(() => {
 		selectedIntent.value === 'advanced'
 		&& selectedAdvancedId.value === 'webhook'
 	)
+		// TRANSLATORS Explanatory help text shown in the automation trigger builder.
 		return t(
 			'communications',
 			'The HMAC event specifies campaignId and uid. Only this campaign and the specified user can receive the presentation, subject to audience and frequency limits.',
 		)
 	if (selectedIntent.value === 'advanced' && selectedAdvancedId.value === 'flow')
+		// TRANSLATORS Descriptive message shown in the automation trigger builder.
 		return t(
 			'communications',
 			'Flow checks the configured conditions before recording the occurrence for that user.',
 		)
 	if (selectedMode.value === 'visit' && selectedApp.value)
 		return props.pageRoute
-			? t(
+			? // TRANSLATORS Explanatory help text shown in the automation trigger builder.
+				t(
 					'communications',
 					'Only when the authenticated user opens this interface route. Variable URL parameters are not stored.',
 				)
-			: t('communications', 'When opening any interface page in ')
+			: // TRANSLATORS Prefix followed by a dynamic value in the automation trigger builder; preserve its trailing space.
+				t('communications', 'When opening any interface page in ')
 					+ selectedApp.value.label
+					// TRANSLATORS Suffix after a selected app name; other apps' requests never trigger this campaign.
 					+ t(
 						'communications',
 						". API calls, downloads, and other apps' pages do not trigger this campaign.",
 					)
 	return (
 		selectedAction.value?.description
+		// TRANSLATORS Action or instruction in the automation trigger builder.
 		|| t('communications', 'Choose a trusted event emitted by the application.')
 	)
 })
@@ -410,6 +426,7 @@ async function loadRoutes(app: string | null): Promise<void> {
 		if (generation === routeGeneration) routes.value = json.routes || []
 	} catch (error) {
 		if (generation === routeGeneration)
+			// TRANSLATORS Validation or failure message shown in the automation trigger builder.
 			routeError.value = t(
 				'communications',
 				'Could not retrieve pages for this app.',
@@ -467,11 +484,13 @@ function flowLink(): string {
 <template>
 	<div class="cc-automation" data-testid="automation-builder">
 		<h2 class="cc-automation-title">
+			<!-- TRANSLATORS Question presented to the user in the automation trigger builder. -->
 			{{
 				t('communications', 'When should the publication become available?')
 			}}
 		</h2>
 
+		<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 		<div
 			class="cc-automation-intents"
 			role="group"
@@ -500,15 +519,19 @@ function flowLink(): string {
 			<div v-if="selectedIntent === 'app'" class="cc-automation-configuration">
 				<div class="cc-automation-field">
 					<div class="cc-field-label">
-						<label for="cc-app-source">{{
-							t('communications', 'Choose an application *')
-						}}</label>
+						<label for="cc-app-source"
+							><!-- TRANSLATORS Action or instruction in the automation trigger builder. -->{{
+								t('communications', 'Choose an application *')
+							}}</label
+						>
 						<NcPopover
 							popup-role="dialog"
 							:triggers="['click', 'focus', 'hover']"
 							placement="bottom-start"
 							class="cc-app-help-popover">
 							<template #trigger>
+								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
+								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 								<NcButton
 									variant="tertiary"
 									:aria-label="
@@ -531,6 +554,7 @@ function flowLink(): string {
 								</NcButton>
 							</template>
 							<p class="cc-help-content">
+								<!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->
 								{{
 									t(
 										'communications',
@@ -540,6 +564,8 @@ function flowLink(): string {
 							</p>
 						</NcPopover>
 					</div>
+					<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
+					<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
 					<NcSelect
 						v-model="appValue"
 						:options="appOptions"
@@ -569,6 +595,9 @@ function flowLink(): string {
 								<span>
 									<strong>{{ option.label }}</strong>
 									<small>
+										<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
+										<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
+										<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 										{{
 											option.canEvents && option.canPages
 												? t(
@@ -606,6 +635,7 @@ function flowLink(): string {
 					</NcSelect>
 					<p v-if="applications.length > 12" class="cc-native-hint">
 						{{ applications.length }}
+						<!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->
 						{{
 							t(
 								'communications',
@@ -619,10 +649,12 @@ function flowLink(): string {
 					<div
 						v-if="canSelectEvent && canSelectPage"
 						class="cc-automation-mode">
+						<!-- TRANSLATORS Question presented to the user in the automation trigger builder. -->
 						<NcRadioGroup
 							v-model="modeValue"
 							:label="t('communications', 'What should happen?')">
 							<div class="cc-automation-mode-options">
+								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 								<NcRadioGroupButton
 									value="event"
 									:label="
@@ -636,6 +668,8 @@ function flowLink(): string {
 						</NcRadioGroup>
 					</div>
 					<div v-else class="cc-native-hint cc-automation-only-mode">
+						<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
+						<!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->
 						{{
 							canSelectPage
 								? t(
@@ -650,9 +684,13 @@ function flowLink(): string {
 					</div>
 
 					<div v-if="selectedMode === 'event'" class="cc-automation-field">
-						<label for="cc-app-event">{{
-							t('communications', 'Application event *')
-						}}</label>
+						<label for="cc-app-event"
+							><!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
+								t('communications', 'Application event *')
+							}}</label
+						>
+						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
+						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
 						<NcSelect
 							v-model="actionValue"
 							:options="actionOptions"
@@ -684,9 +722,13 @@ function flowLink(): string {
 					</div>
 
 					<div v-else class="cc-automation-field">
-						<label for="cc-app-route">{{
-							t('communications', 'Web page or route *')
-						}}</label>
+						<label for="cc-app-route"
+							><!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
+								t('communications', 'Web page or route *')
+							}}</label
+						>
+						<!-- TRANSLATORS Progress indicator shown in the automation trigger builder. -->
+						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
 						<NcSelect
 							v-model="pageRouteValue"
 							:options="routeOptions"
@@ -715,6 +757,7 @@ function flowLink(): string {
 								</div>
 							</template>
 						</NcSelect>
+						<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 						<div
 							v-if="pageRoute && routeVariables.length"
 							class="cc-route-filters"
@@ -723,6 +766,7 @@ function flowLink(): string {
 								t('communications', 'Route variable restrictions')
 							">
 							<h4>
+								<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 								{{
 									t(
 										'communications',
@@ -731,6 +775,7 @@ function flowLink(): string {
 								}}
 							</h4>
 							<p class="cc-native-hint">
+								<!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->
 								{{
 									t(
 										'communications',
@@ -792,6 +837,7 @@ function flowLink(): string {
 							</div>
 						</div>
 						<p v-if="routeLoading" class="cc-native-hint">
+							<!-- TRANSLATORS Progress indicator shown in the automation trigger builder. -->
 							{{
 								t(
 									'communications',
@@ -803,6 +849,7 @@ function flowLink(): string {
 							routeError
 						}}</NcNoteCard>
 						<p class="cc-native-hint">
+							<!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->
 							{{
 								t(
 									'communications',
@@ -817,17 +864,20 @@ function flowLink(): string {
 			<div
 				v-else-if="selectedIntent === 'board'"
 				class="cc-automation-configuration">
-				<NcNoteCard type="info">{{
-					t(
-						'communications',
-						'Without a technical trigger, the publication becomes available in Inbox when activated. Recipients and notifications are configured in the next step.',
-					)
-				}}</NcNoteCard>
+				<NcNoteCard type="info"
+					><!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->{{
+						t(
+							'communications',
+							'Without a technical trigger, the publication becomes available in Inbox when activated. Recipients and notifications are configured in the next step.',
+						)
+					}}</NcNoteCard
+				>
 			</div>
 
 			<div
 				v-else-if="selectedIntent === 'schedule'"
 				class="cc-automation-configuration">
+				<!-- TRANSLATORS Explanation of when an announcement appears during a publication window. -->
 				<p class="cc-native-hint">
 					{{
 						t(
@@ -839,11 +889,18 @@ function flowLink(): string {
 			</div>
 
 			<div v-else class="cc-automation-configuration">
-				<h3>{{ t('communications', 'Integration or Flow') }}</h3>
+				<h3>
+					<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
+						t('communications', 'Integration or Flow')
+					}}
+				</h3>
 				<div class="cc-automation-field">
-					<label for="cc-advanced">{{
-						t('communications', 'Event source *')
-					}}</label>
+					<label for="cc-advanced"
+						><!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->{{
+							t('communications', 'Event source *')
+						}}</label
+					>
+					<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
 					<NcSelect
 						v-model="advancedValue"
 						:options="advancedSources"
@@ -861,6 +918,7 @@ function flowLink(): string {
 						v-if="selectedAdvanced.id === 'webhook'"
 						class="cc-automation-webhook">
 						<p v-if="!campaignId">
+							<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
 							{{
 								t(
 									'communications',
@@ -869,11 +927,13 @@ function flowLink(): string {
 							}}
 						</p>
 						<p v-else>
+							<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 							{{ t('communications', 'Use the identifier') }}
 							{{ campaignId }}
+							<!-- TRANSLATORS Short label for an option or field in the automation trigger builder. -->
 							{{ t('communications', 'in the field') }}
 							<code>campaignId</code
-							>{{
+							><!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->{{
 								t(
 									'communications',
 									'. The integration does not send the campaign to an entire group.',
@@ -885,6 +945,7 @@ function flowLink(): string {
 					<div
 						v-if="selectedAdvanced.id === 'flow'"
 						class="cc-automation-flow">
+						<!-- TRANSLATORS Instruction to configure a Flow rule for the saved publication. -->
 						<p v-if="campaignId">
 							{{
 								t(
@@ -894,6 +955,7 @@ function flowLink(): string {
 							}}
 						</p>
 						<p v-else>
+							<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
 							{{
 								t(
 									'communications',
@@ -901,6 +963,7 @@ function flowLink(): string {
 								)
 							}}
 						</p>
+						<!-- TRANSLATORS Action or instruction in the automation trigger builder. -->
 						<NcButton
 							:text="t('communications', 'Open Nextcloud Flow')"
 							:href="flowLink()"
@@ -912,14 +975,14 @@ function flowLink(): string {
 					</div>
 				</NcNoteCard>
 				<NcNoteCard v-else type="info"
-					>{{
+					><!-- TRANSLATORS Explanatory help text shown in the automation trigger builder. -->{{
 						t(
 							'communications',
 							'Flow evaluates internal conditions. An HMAC webhook records an event only for the user specified in',
 						)
 					}}
 					<code>uid</code
-					>{{
+					><!-- TRANSLATORS Descriptive message shown in the automation trigger builder. -->{{
 						t('communications', '; it never broadcasts to all users.')
 					}}</NcNoteCard
 				>

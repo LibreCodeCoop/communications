@@ -12,6 +12,7 @@ namespace OCA\Communications\Service;
 use OCA\Communications\Db\CampaignMapper;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCP\IL10N;
 
 /**
  * Compiled subscriptions are refreshed on CAMPAIGN WRITES. Normal Nextcloud
@@ -29,7 +30,7 @@ final class NativeEventSubscriptions {
 		private IAppManager $apps,
 		private CampaignMapper $campaignMapper,
 		private NativeEventCatalog $catalog,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -115,6 +116,7 @@ final class NativeEventSubscriptions {
 		}
 		$keys = $this->campaignMapper->activeNativeEventKeys($excludeCampaignId);
 		if (!in_array($trigger, $keys, true) && count($keys) >= self::MAX_SUBSCRIPTIONS) {
+			// TRANSLATORS Explanatory help text shown in the NativeEventSubscriptions service.
 			throw new \InvalidArgumentException($this->l10n->t('The limit of 80 active event types has been reached. Disable another campaign before activating a new source.'));
 		}
 	}

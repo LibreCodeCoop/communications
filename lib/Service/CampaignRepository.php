@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use OCA\Communications\Db\CampaignConflictException;
 use OCA\Communications\Db\CampaignMapper;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IUserManager;
 
 class CampaignRepository {
@@ -57,7 +58,7 @@ class CampaignRepository {
 		private CampaignInputValidator $inputValidator,
 		private CampaignOrderPlanner $orderPlanner,
 		private NativeEventSubscriptions $nativeSubscriptions,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 	}
 
@@ -292,8 +293,11 @@ class CampaignRepository {
 			$rows = $this->orderPlanner->plan($this->all(), $id, $direction, $targetId);
 		} catch (CampaignOrderException $error) {
 			$message = match ($error->reason) {
+				// TRANSLATORS Validation or failure message shown in the CampaignRepository service.
 				CampaignOrderException::INVALID_DIRECTION => $this->l10n->t('Invalid reordering operation.'),
+				// TRANSLATORS Action or instruction in the CampaignRepository service.
 				CampaignOrderException::MISSING_TARGET => $this->l10n->t('Select the destination campaign.'),
+				// TRANSLATORS Short label for an option or field in the CampaignRepository service.
 				CampaignOrderException::UNKNOWN_TARGET => $this->l10n->t('Destination campaign unavailable.'),
 				default => throw $error,
 			};
@@ -318,14 +322,17 @@ class CampaignRepository {
 			return false;
 		}
 		if ($original['status'] !== 'archived') {
+			// TRANSLATORS Action or instruction in the CampaignRepository service.
 			throw new InvalidArgumentException($this->l10n->t('Archive the publication before deleting it permanently.'));
 		}
 		if ($confirmName === '' || !hash_equals($original['name'], $confirmName)) {
+			// TRANSLATORS Action or instruction in the CampaignRepository service.
 			throw new InvalidArgumentException($this->l10n->t('Enter the exact internal name to permanently delete the publication.'));
 		}
 		try {
 			$this->mapper->purgeArchived($id);
 		} catch (CampaignConflictException $error) {
+			// TRANSLATORS Descriptive message shown in the CampaignRepository service.
 			throw new \RuntimeException($this->l10n->t('Concurrent deletion or changed state.'), 0, $error);
 		}
 		if (str_starts_with($original['trigger_key'], 'php_event.')) {
@@ -336,6 +343,7 @@ class CampaignRepository {
 
 	public function setStatus(int $id, string $status): ?array {
 		if (!in_array($status, self::STATUSES, true)) {
+			// TRANSLATORS Validation or failure message shown in the CampaignRepository service.
 			throw new InvalidArgumentException($this->l10n->t('Invalid campaign status.'));
 		}
 		$original = $this->find($id);

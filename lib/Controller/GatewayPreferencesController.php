@@ -17,6 +17,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\UseSession;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -26,7 +27,7 @@ final class GatewayPreferencesController extends Controller {
 		private IUserSession $session,
 		private GatewayRecipientPreferences $preferences,
 		private GatewayTransport $gateway,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 		parent::__construct('communications', $request);
 	}
@@ -43,6 +44,7 @@ final class GatewayPreferencesController extends Controller {
 	public function index(): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the GatewayPreferencesController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Login required.')], 401);
 		}
 		$saved = $this->preferences->forUser($uid);
@@ -67,6 +69,7 @@ final class GatewayPreferencesController extends Controller {
 	public function update(array $channels = []): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the GatewayPreferencesController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Login required.')], 401);
 		}
 		try {

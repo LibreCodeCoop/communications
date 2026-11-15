@@ -16,19 +16,21 @@ use OCP\Dashboard\IIconWidget;
 use OCP\Dashboard\Model\WidgetButton;
 use OCP\Dashboard\Model\WidgetItem;
 use OCP\Dashboard\Model\WidgetItems;
+use OCP\IL10N;
 use OCP\IURLGenerator;
 
 class BoardWidget implements IAPIWidgetV2, IIconWidget, IButtonWidget {
 	public function __construct(
 		private BoardService $board,
 		private IURLGenerator $urls,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 	}
 	public function getId():string {
 		return 'communications-board';
 	}
 	public function getTitle():string {
+		// TRANSLATORS Short label for an option or field in the Nextcloud dashboard widget.
 		return $this->l10n->t('Announcement board');
 	}
 	public function getOrder():int {
@@ -61,12 +63,14 @@ class BoardWidget implements IAPIWidgetV2, IIconWidget, IButtonWidget {
 				(string)$item['publishedAt']
 			);
 		}
+		// TRANSLATORS Empty state or unavailable-condition message in the Nextcloud dashboard widget.
 		return new WidgetItems($result, $result === [] ? $this->l10n->t('No announcements are available for you.') : '');
 	}
 	public function getWidgetButtons(string $userId):array {
 		return [new WidgetButton(
 			WidgetButton::TYPE_MORE,
 			$this->urls->linkToRouteAbsolute('communications.page.board'),
+			// TRANSLATORS Action or instruction in the Nextcloud dashboard widget.
 			$this->l10n->t('Open announcement board')
 		)];
 	}

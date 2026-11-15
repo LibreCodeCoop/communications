@@ -17,6 +17,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\UseSession;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -25,7 +26,7 @@ class BoardController extends Controller {
 		IRequest $request,
 		private IUserSession $session,
 		private BoardService $board,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 		parent::__construct('communications', $request);
 	}
@@ -40,6 +41,7 @@ class BoardController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/api/board')]
 	public function index(int $page = 1, string $search = '', string $filter = 'all'):JSONResponse {
 		$uid = $this->uid();
+		// TRANSLATORS Short label for an option or field in the BoardController API response.
 		return $uid === null ? new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401)
 			: new JSONResponse($this->board->list($uid, $page, $search, $filter === 'unread'?'unread':'all'));
 	}
@@ -51,10 +53,12 @@ class BoardController extends Controller {
 	public function show(int $id):JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$item = $this->board->view($uid, $id);
 		return $item ? new JSONResponse(['announcement' => $item])
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			: new JSONResponse(['error' => $this->l10n->t('Announcement not found.')], 404);
 	}
 
@@ -64,10 +68,12 @@ class BoardController extends Controller {
 	public function markRead(int $id):JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->board->markRead($uid, $id)
 			? new JSONResponse(['read' => true])
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			: new JSONResponse(['error' => $this->l10n->t('Publication not found.')], 404);
 	}
 
@@ -78,10 +84,12 @@ class BoardController extends Controller {
 	public function comments(int $id, int $before = 0):JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$items = $this->board->comments($uid, $id, max(0, $before));
 		return $items ? new JSONResponse($items)
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			: new JSONResponse(['error' => $this->l10n->t('Announcement not found.')], 404);
 	}
 
@@ -92,10 +100,12 @@ class BoardController extends Controller {
 	public function mentions(int $id, string $search = ''):JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$results = $this->board->mentionCandidates($uid, $id, $search);
 		if ($results === null) {
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Publication unavailable.')], 404);
 		}
 		return new JSONResponse(['users' => $results]);
@@ -107,6 +117,7 @@ class BoardController extends Controller {
 	public function createComment(int $id, string $message = ''):JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		try {
@@ -122,10 +133,12 @@ class BoardController extends Controller {
 	public function deleteComment(int $id, int $commentId):JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->board->deleteComment($uid, $id, $commentId)
 			? new JSONResponse(['deleted' => true])
+			// TRANSLATORS Short label for an option or field in the BoardController API response.
 			: new JSONResponse(['error' => $this->l10n->t('Comment not found or unavailable.')], 404);
 	}
 }

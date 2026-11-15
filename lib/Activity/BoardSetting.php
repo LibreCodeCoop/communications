@@ -10,16 +10,18 @@ declare(strict_types=1);
 namespace OCA\Communications\Activity;
 
 use OCP\Activity\ActivitySettings;
+use OCP\IL10N;
 
 final class BoardSetting extends ActivitySettings {
 	public function __construct(
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 	}
 	public function getIdentifier():string {
 		return 'communications';
 	}
 	public function getName():string {
+		// TRANSLATORS Activity setting for announcements published on the Communications board.
 		return $this->l10n->t('Announcements published on the board');
 	}
 	public function getGroupIdentifier():string {

@@ -95,6 +95,7 @@ async function saveGatewaySettings() {
 			{ channels },
 		)
 		gatewayChannels.value = data.channels || []
+		// TRANSLATORS Descriptive message shown in the Communications message Inbox.
 		gatewaySuccess.value = t(
 			'communications',
 			'Preferences saved. You can withdraw consent at any time.',
@@ -335,6 +336,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					<!-- TRANSLATORS Heading above messages delivered to the current Nextcloud account. -->
 					<h2>{{ t('communications', 'Your messages') }}</h2>
 					<p>
+						<!-- TRANSLATORS Action or instruction in the Communications message Inbox. -->
 						{{
 							t(
 								'communications',
@@ -361,6 +363,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 				class="cc-gateway-preferences"
 				:aria-label="t('communications', 'Messaging preferences')">
 				<h3>
+					<!-- TRANSLATORS Descriptive message shown in the Communications message Inbox. -->
 					{{
 						t(
 							'communications',
@@ -369,6 +372,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					}}
 				</h3>
 				<p>
+					<!-- TRANSLATORS Action or instruction in the Communications message Inbox. -->
 					{{
 						t(
 							'communications',
@@ -383,6 +387,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					gatewaySuccess
 				}}</NcNoteCard>
 				<p v-if="gatewayLoading">
+					<!-- TRANSLATORS Progress indicator shown in the Communications message Inbox. -->
 					{{ t('communications', 'Checking availability…') }}
 				</p>
 				<div
@@ -399,13 +404,18 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							{{ channel.label }}
 						</NcCheckboxRadioSwitch>
 						<!-- TRANSLATORS Messaging provider is set up and available for this user. -->
-						<span>{{
-							channel.available
-								? t('communications', 'Configured')
-								: channel.installed
-									? t('communications', 'Provider not configured')
-									: t('communications', 'App not installed')
-						}}</span>
+						<span
+							><!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. --><!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->{{
+								channel.available
+									? t('communications', 'Configured')
+									: channel.installed
+										? t(
+												'communications',
+												'Provider not configured',
+											)
+										: t('communications', 'App not installed')
+							}}</span
+						>
 					</div>
 					<template v-if="channel.enabled">
 						<NcTextField
@@ -418,6 +428,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							v-model="channel.sponsored"
 							type="checkbox"
 							:disabled="!channel.available">
+							<!-- TRANSLATORS Descriptive message shown in the Communications message Inbox. -->
 							{{
 								t(
 									'communications',
@@ -433,6 +444,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						&& !gatewayChannels.some((ch) => ch.available)
 					"
 					class="cc-gateway-preferences-hint">
+					<!-- TRANSLATORS Empty state or unavailable-condition message in the Communications message Inbox. -->
 					{{
 						t(
 							'communications',
@@ -441,6 +453,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					}}
 				</p>
 				<p class="cc-gateway-preferences-hint">
+					<!-- TRANSLATORS Explanatory help text shown in the Communications message Inbox. -->
 					{{
 						t(
 							'communications',
@@ -448,6 +461,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						)
 					}}
 				</p>
+				<!-- TRANSLATORS Action or instruction in the Communications message Inbox. -->
 				<NcButton
 					v-if="gatewaySettingsLoaded"
 					:text="t('communications', 'Save preferences')"
@@ -460,6 +474,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 			}}</NcNoteCard>
 			<template v-if="!selected">
 				<div class="cc-board-search">
+					<!-- TRANSLATORS Action or instruction in the Communications message Inbox. -->
 					<NcTextField
 						v-model="search"
 						type="search"
@@ -474,6 +489,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						/></template>
 					</NcButton>
 				</div>
+				<!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->
 				<div
 					class="cc-inbox-filters"
 					role="group"
@@ -491,8 +507,11 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						@click="switchFilter('unread')" />
 				</div>
 				<p v-if="loading" role="status">
+					<!-- TRANSLATORS Progress indicator shown in the Communications message Inbox. -->
 					{{ t('communications', 'Loading messages…') }}
 				</p>
+				<!-- TRANSLATORS Empty state or unavailable-condition message in the Communications message Inbox. -->
+				<!-- TRANSLATORS Descriptive message shown in the Communications message Inbox. -->
 				<NcEmptyContent
 					v-else-if="items.length === 0"
 					:name="t('communications', 'No messages found')"
@@ -529,7 +548,9 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							<span
 								v-if="item.source === 'contextual'"
 								class="cc-board-chip"
-								>{{ t('communications', 'Contextual notice') }}</span
+								><!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->{{
+									t('communications', 'Contextual notice')
+								}}</span
 							>
 							<!-- TRANSLATORS Badge marking a promotional publication. -->
 							<span
@@ -562,6 +583,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						</footer>
 					</article>
 				</div>
+				<!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->
 				<nav
 					v-if="total > 10"
 					class="cc-board-pagination"
@@ -574,6 +596,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					<!-- TRANSLATORS Label before the current Inbox page number. -->
 					<span
 						>{{ t('communications', 'Page') }} {{ page }}
+						<!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->
 						{{ t('communications', 'of') }}
 						{{ Math.ceil(total / 10) }}</span
 					>
@@ -598,6 +621,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					v-if="selected.inInbox === false && selected.source === 'canal'"
 					type="info"
 					class="cc-direct-channel-note">
+					<!-- TRANSLATORS Descriptive message shown in the Communications message Inbox. -->
 					{{
 						t(
 							'communications',
@@ -645,6 +669,8 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						}}{{ selected.commentCount }})
 					</h2>
 					<form @submit.prevent="sendComment">
+						<!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->
+						<!-- TRANSLATORS Descriptive message shown in the Communications message Inbox. -->
 						<NcTextArea
 							v-model="commentDraft"
 							:label="t('communications', 'Write a comment')"
@@ -666,6 +692,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					<div
 						v-if="comments.length === 0"
 						class="cc-board-empty-comments">
+						<!-- TRANSLATORS Empty state or unavailable-condition message in the Communications message Inbox. -->
 						{{ t('communications', 'No comments yet.') }}
 					</div>
 					<div
@@ -694,6 +721,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							:use-markdown="true"
 							:reference-limit="0" />
 					</div>
+					<!-- TRANSLATORS Action or instruction in the Communications message Inbox. -->
 					<NcButton
 						v-if="commentHasMore"
 						:text="t('communications', 'Load earlier comments')"

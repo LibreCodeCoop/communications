@@ -79,5 +79,50 @@ test('dynamic source messages explain each placeholder to translators', () => {
 			}
 		}
 	}
-	expect(missing, 'Place a TRANSLATORS hint directly before each placeholder translation').toEqual([])
+	expect(
+		missing,
+		'Place a TRANSLATORS hint directly before each placeholder translation',
+	).toEqual([])
+})
+
+test('every PHP and frontend translation call has a nearby TRANSLATORS explanation', () => {
+	const missing: string[] = []
+	const files = [
+		...sources('src'),
+		...sources('lib'),
+		...sources('templates'),
+		...sources('appinfo'),
+	]
+	for (const filename of files) {
+		const source = readFileSync(filename, 'utf8')
+		const translationCalls = filename.endsWith('.php')
+			? /->t\s*\(/g
+			: /\bt\s*\(\s*['"]communications['"]\s*,/g
+		const notes = [
+			...source.matchAll(
+				/(?:\/\/\s*TRANSLATORS\b[^\r\n]*|<!--\s*TRANSLATORS\b[^\r\n]*?-->|\/\*+\s*TRANSLATORS\b[^\r\n]*?\*\/)/g,
+			),
+		]
+		let nextNote = 0
+		const pending: number[] = []
+		for (const call of source.matchAll(translationCalls)) {
+			const pos = call.index
+			while (nextNote < notes.length && notes[nextNote].index < pos) {
+				pending.push(notes[nextNote].index)
+				nextNote++
+			}
+			// A note on a distant, unrelated section must not cover this call.
+			while (pending.length > 0 && pos - pending[0] > 2500) pending.shift()
+			if (pending.length > 0) {
+				pending.shift()
+			} else {
+				const line = source.slice(0, pos).split(/\r?\n/).length
+				missing.push(`${filename}:${line}`)
+			}
+		}
+	}
+	expect(
+		missing,
+		'A translator hint is required for every t() invocation',
+	).toEqual([])
 })

@@ -17,6 +17,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\UseSession;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -26,7 +27,7 @@ class CampaignController extends Controller {
 		private IUserSession $userSession,
 		private IConfig $config,
 		private DeliveryStore $deliveries,
-		private \OCP\IL10N $l10n,
+		private IL10N $l10n,
 	) {
 		parent::__construct('communications', $request);
 	}
@@ -58,6 +59,7 @@ class CampaignController extends Controller {
 	public function claim(string $page = 'any', bool $newVisit = false, string $path = ''): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$item = $this->deliveries->claim($uid, $page, $newVisit, $path);
@@ -70,6 +72,7 @@ class CampaignController extends Controller {
 	public function claimBatch(string $page = 'any', bool $newVisit = false, string $path = '', int $limit = 5):JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return new JSONResponse($this->deliveries->claimBatch($uid, $page, $newVisit, $path, max(1, min($limit, 5))));
@@ -81,10 +84,12 @@ class CampaignController extends Controller {
 	public function impression(int $deliveryId = 0, string $claimToken = ''): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->deliveries->transition($uid, $deliveryId, $claimToken, 'impression')
 			? new JSONResponse(['recorded' => true])
+			// TRANSLATORS Descriptive message shown in the CampaignController API response.
 			: new JSONResponse(['error' => $this->l10n->t('Delivery not found or reservation expired.')], 409);
 	}
 
@@ -99,11 +104,13 @@ class CampaignController extends Controller {
 	): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$ok = $deliveryId > 0 && $claimToken !== ''
 			? $this->deliveries->transition($uid, $deliveryId, $claimToken, 'dismiss')
 			: ($campaignId > 0 && $eventId !== '' && $this->deliveries->legacyAcknowledge($uid, $campaignId, $eventId));
+		// TRANSLATORS Validation or failure message shown in the CampaignController API response.
 		return $ok ? new JSONResponse(['acknowledged' => true]) : new JSONResponse(['error' => $this->l10n->t('Invalid delivery.')], 409);
 	}
 
@@ -113,10 +120,12 @@ class CampaignController extends Controller {
 	public function click(int $deliveryId = 0, string $claimToken = ''): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return $this->deliveries->transition($uid, $deliveryId, $claimToken, 'click')
 			? new JSONResponse(['recorded' => true])
+			// TRANSLATORS Validation or failure message shown in the CampaignController API response.
 			: new JSONResponse(['error' => $this->l10n->t('Invalid delivery.')], 409);
 	}
 
@@ -127,6 +136,7 @@ class CampaignController extends Controller {
 	public function preferences(): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		return new JSONResponse([
@@ -140,6 +150,7 @@ class CampaignController extends Controller {
 	public function setPreferences(bool $sponsoredOptout = false): JSONResponse {
 		$uid = $this->uid();
 		if ($uid === null) {
+			// TRANSLATORS Short label for an option or field in the CampaignController API response.
 			return new JSONResponse(['error' => $this->l10n->t('Authentication required.')], 401);
 		}
 		$this->config->setUserValue($uid, 'communications', 'sponsored_optout', $sponsoredOptout ? '1':'0');

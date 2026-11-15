@@ -42,6 +42,7 @@ const title = computed(
 	() =>
 		props.campaign.headline
 		|| props.campaign.title
+		// TRANSLATORS Short label for an option or field in the contextual announcement presentation.
 		|| t('communications', 'Untitled campaign'),
 )
 const message = computed(() => props.campaign.message || '')
@@ -91,9 +92,11 @@ function updateOpen(open: boolean): void {
 				inline />
 			<span v-else class="cc-note-empty-icon" aria-hidden="true"></span>
 		</template>
-		<span v-if="preview" class="cc-preview-screenreader-note">{{
-			t('communications', 'Test mode. No interaction is recorded.')
-		}}</span>
+		<span v-if="preview" class="cc-preview-screenreader-note"
+			><!-- TRANSLATORS Descriptive message shown in the contextual announcement presentation. -->{{
+				t('communications', 'Test mode. No interaction is recorded.')
+			}}</span
+		>
 		<!-- TRANSLATORS Label identifying a promotional announcement. -->
 		<p v-if="sponsored" class="cc-sponsored-label">
 			{{ t('communications', 'Sponsored content') }}
@@ -110,6 +113,7 @@ function updateOpen(open: boolean): void {
 				:target="preview ? undefined : target"
 				:text="ctaLabel"
 				@click="click" />
+			<!-- TRANSLATORS Action or instruction in the contextual announcement presentation. -->
 			<NcButton
 				v-if="sponsored"
 				variant="tertiary"
@@ -140,9 +144,11 @@ function updateOpen(open: boolean): void {
 			<p v-if="sponsored" class="cc-sponsored-label">
 				{{ t('communications', 'Sponsored content') }}
 			</p>
-			<span v-if="preview" class="cc-preview-screenreader-note">{{
-				t('communications', 'Test mode. No interaction is recorded.')
-			}}</span>
+			<span v-if="preview" class="cc-preview-screenreader-note"
+				><!-- TRANSLATORS Descriptive message shown in the contextual announcement presentation. -->{{
+					t('communications', 'Test mode. No interaction is recorded.')
+				}}</span
+			>
 			<NcRichText :text="message" :use-markdown="true" :reference-limit="0" />
 			<div class="cc-live-actions">
 				<NcButton
@@ -152,6 +158,7 @@ function updateOpen(open: boolean): void {
 					:target="preview ? undefined : target"
 					:text="ctaLabel"
 					@click="click" />
+				<!-- TRANSLATORS Action or instruction in the contextual announcement presentation. -->
 				<NcButton
 					v-if="sponsored"
 					variant="tertiary"
