@@ -63,3 +63,9 @@ Run `npm run test:package` to check both the generated asset installer and the p
 ### Nextcloud TypeScript formatting
 
 All tracked TypeScript files under `src/`, `tests/`, and Vite configuration entry points follow the shared `@nextcloud/prettier-config` (4-column tabs). `npm run format:ts` verifies the checked-in formatting, and `npm run format:ts:fix` applies the upstream formatter. `npm run lint` runs the check, so the existing organization-managed ESLint CI catches formatting drift without a duplicate workflow. PHP uses `Nextcloud\CodingStandard\Config` through `composer cs:check`; PHP formatting and structural design require separate review.
+
+### Frontend state and data boundaries
+
+The publications administration screen uses a setup-style Pinia store in src/stores/campaigns.ts for its catalog and publication list. Typed src/services/ clients own HTTP endpoints and data normalization. Wizard validation, application targeting, list ordering, and route-filter selection are testable functions without a Vue component or Nextcloud runtime. Local editor drafts, route lookups and recipient searches stay in component/composable scope, so in-flight responses from older selections cannot overwrite new ones.
+
+The recipient Inbox does not share its announcement or gateway-preference content through the administrative store. It uses a dedicated API service and its own component state. Publication changes broadcast only an invalidation signal; server-side authorization remains authoritative. Run npm run test:unit for the domain/store concurrency cases and the frontend-state Playwright spec in a disposable Nextcloud installation to check editor navigation.

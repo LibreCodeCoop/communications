@@ -2,7 +2,17 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup lang="ts">
 import { t, getLanguage } from '@nextcloud/l10n'
-import { requestApi } from './services/api'
+import {
+	addComment,
+	deleteComment,
+	fetchAnnouncement,
+	fetchComments,
+	fetchGatewayPreferences,
+	fetchInbox,
+	fetchMentions,
+	markAnnouncementRead,
+	persistGatewayPreferences,
+} from './services/inbox'
 
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 const emit = defineEmits<{ 'unread-count': [total: number] }>()
@@ -62,10 +72,7 @@ async function toggleGatewaySettings() {
 	gatewayLoading.value = true
 	gatewayError.value = ''
 	try {
-		const data = await request<{ channels?: GatewayPreferenceChannel[] }>(
-			'/api/gateway-preferences',
-		)
-		gatewayChannels.value = data.channels || []
+		gatewayChannels.value = await fetchGatewayPreferences()
 		gatewaySettingsLoaded.value = true
 	} catch (e) {
 		gatewayError.value = e instanceof Error ? e.message : String(e)
@@ -79,22 +86,9 @@ async function saveGatewaySettings() {
 	gatewayError.value = ''
 	gatewaySuccess.value = ''
 	try {
-		const channels = Object.fromEntries(
-			gatewayChannels.value.map((item) => [
-				item.id,
-				{
-					enabled: !!item.enabled,
-					destination: item.enabled ? item.destination.trim() : '',
-					sponsored: !!item.enabled && !!item.sponsored,
-				},
-			]),
+		gatewayChannels.value = await persistGatewayPreferences(
+			gatewayChannels.value,
 		)
-		const data = await request<{ channels?: GatewayPreferenceChannel[] }>(
-			'/api/gateway-preferences',
-			'POST',
-			{ channels },
-		)
-		gatewayChannels.value = data.channels || []
 		// TRANSLATORS Descriptive message shown in the Communications message Inbox.
 		gatewaySuccess.value = t(
 			'communications',
@@ -124,14 +118,9 @@ watch(commentDraft, (value) => {
 	if (!match || !id) return
 	mentionSearchTimer = setTimeout(async () => {
 		try {
-			const r = await request<{ users?: MentionOption[] }>(
-				'/api/board/'
-					+ id
-					+ '/mentions?'
-					+ new URLSearchParams({ search: mentionQuery.value }),
-			)
+			const users = await fetchMentions(id, mentionQuery.value)
 			if (generation !== mentionGeneration || selected.value?.id !== id) return
-			mentionOptions.value = (r.users || []).slice(0, 10)
+			mentionOptions.value = users
 		} catch {
 			if (generation === mentionGeneration) mentionOptions.value = []
 		}
@@ -177,30 +166,12 @@ function commentsAriaLabel(title: string): string {
 function safeLink(url: unknown): string {
 	return safeCtaLink(url)
 }
-async function request<T extends object>(
-	path: string,
-	method: 'GET' | 'POST' | 'DELETE' = 'GET',
-	body: Record<string, unknown> = {},
-): Promise<T> {
-	return requestApi<T>(path, method, method === 'GET' ? undefined : body)
-}
-
 async function refresh() {
 	const current = ++generation
 	loading.value = true
 	error.value = ''
 	try {
-		const q = new URLSearchParams({
-			page: String(page.value),
-			search: search.value.trim(),
-			filter: filter.value,
-		})
-		const data = await request<{
-			announcements?: InboxAnnouncement[]
-			total?: number
-			unreadTotal?: number
-			hasMore?: boolean
-		}>('/api/board?' + q)
+		const data = await fetchInbox(page.value, search.value, filter.value)
 		if (current !== generation) return
 		items.value = data.announcements || []
 		total.value = data.total || 0
@@ -231,12 +202,9 @@ function changePage(delta: number): void {
 async function openItem(id: number): Promise<void> {
 	error.value = ''
 	try {
-		const data = await request<{ announcement: InboxAnnouncement }>(
-			'/api/board/' + id,
-		)
-		selected.value = data.announcement
+		selected.value = await fetchAnnouncement(id)
 		if (selected.value.inInbox && !selected.value.readAt) {
-			await request('/api/board/' + id + '/read', 'POST', {})
+			await markAnnouncementRead(id)
 			selected.value.readAt = Date.now() / 1000
 			await refresh()
 		}
@@ -264,13 +232,7 @@ async function loadComments(more = false): Promise<void> {
 	if (!selected.value) return
 	try {
 		const id = selected.value.id
-		const query =
-			more && commentBefore.value ? '?before=' + commentBefore.value : ''
-		const data = await request<{
-			comments: InboxComment[]
-			hasMore?: boolean
-			nextBefore?: number | null
-		}>('/api/board/' + id + '/comments' + query)
+		const data = await fetchComments(id, more ? commentBefore.value : null)
 		if (selected.value?.id !== id) return
 		comments.value = more ? [...comments.value, ...data.comments] : data.comments
 		commentHasMore.value = !!data.hasMore
@@ -284,9 +246,7 @@ async function sendComment() {
 	commentBusy.value = true
 	error.value = ''
 	try {
-		await request('/api/board/' + selected.value.id + '/comments', 'POST', {
-			message: commentDraft.value,
-		})
+		await addComment(selected.value.id, commentDraft.value)
 		commentDraft.value = ''
 		await loadComments()
 		selected.value.commentCount++
@@ -300,11 +260,7 @@ async function removeComment(comment: InboxComment): Promise<void> {
 	if (!selected.value || !comment.canDelete || commentBusy.value) return
 	commentBusy.value = true
 	try {
-		await request(
-			'/api/board/' + selected.value.id + '/comments/' + comment.id,
-			'DELETE',
-			{},
-		)
+		await deleteComment(selected.value.id, comment.id)
 		comments.value = comments.value.filter((row) => row.id !== comment.id)
 		selected.value.commentCount = Math.max(0, selected.value.commentCount - 1)
 	} catch (e) {

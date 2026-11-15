@@ -55,7 +55,9 @@ function channelStatusLabel(status: string): string {
 							variant="tertiary"
 							class="cc-delivery-channel-help"
 							:aria-label="channelDetailsLabel(channel.label)"
-							:title="channelStatusLabel(channel.status.toLowerCase())">
+							:title="
+								channelStatusLabel(channel.status.toLowerCase())
+							">
 							<template #icon>
 								<NcIconSvgWrapper
 									:path="mdiHelpCircleOutline"

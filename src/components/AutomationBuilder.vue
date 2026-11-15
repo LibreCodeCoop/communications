@@ -2,7 +2,12 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup lang="ts">
 import { t } from '@nextcloud/l10n'
-import { requestApi } from '../services/api'
+import { useAppRoutes } from '../composables/useAppRoutes'
+import {
+	limitAppOptions,
+	searchAutomationApps,
+	updateRouteFilter,
+} from '../services/automationSelection'
 import { generateUrl } from '@nextcloud/router'
 import type {
 	AutomationCatalog,
@@ -77,10 +82,18 @@ const selectedMode = ref<TriggerMode>('event')
 const selectedAdvancedId = ref<string | null>(null)
 const appSearch = ref('')
 const MAX_OPTIONS = 12
-const routes = ref<PageRouteOption[]>([])
-const routeLoading = ref(false)
-const routeError = ref('')
-let routeGeneration = 0
+const {
+	routes,
+	loading: routeLoading,
+	failed: routeFailed,
+	select: loadRoutes,
+} = useAppRoutes()
+const routeError = computed(() =>
+	routeFailed.value
+		? // TRANSLATORS Validation or failure message shown in the automation trigger builder.
+			t('communications', 'Could not retrieve pages for this app.')
+		: '',
+)
 
 const intentIcons: Record<TriggerIntent, string> = {
 	app: mdiApps,
@@ -122,31 +135,12 @@ const actionOptions = computed(() =>
 		description: action.description,
 	})),
 )
-const filteredApplications = computed(() => {
-	const term = appSearch.value.trim().toLocaleLowerCase()
-	if (!term) return applications.value
-	return applications.value.filter((app) =>
-		[
-			app.label,
-			app.description,
-			...(app.keywords || []),
-			...(app.actions || []).flatMap((action) => [
-				action.label,
-				action.description,
-			]),
-		]
-			.join(' ')
-			.toLocaleLowerCase()
-			.includes(term),
-	)
-})
-const appOptions = computed(() => {
-	const chosen = selectedApp.value
-	const first = filteredApplications.value.slice(0, MAX_OPTIONS)
-	return chosen && !first.some((app) => app.id === chosen.id)
-		? [chosen, ...first.slice(0, MAX_OPTIONS - 1)]
-		: first
-})
+const filteredApplications = computed(() =>
+	searchAutomationApps(applications.value, appSearch.value),
+)
+const appOptions = computed(() =>
+	limitAppOptions(filteredApplications.value, selectedApp.value, MAX_OPTIONS),
+)
 const appValue = computed({
 	get: () => selectedAppId.value,
 	set: (id: string | null) => selectApp(id),
@@ -200,18 +194,10 @@ function changeRouteFilter(
 	field: 'operator' | 'value',
 	value: string,
 ): void {
-	const next = { ...props.pageFilters }
-	if (field === 'operator' && value === 'any') {
-		delete next[name]
-	} else {
-		const rule = {
-			...(next[name] || { operator: 'equals', value: '' }),
-			[field]: value,
-		}
-		if (field === 'operator' && value === 'digits') rule.value = ''
-		next[name] = rule
-	}
-	emit('update:pageFilters', next)
+	emit(
+		'update:pageFilters',
+		updateRouteFilter(props.pageFilters, name, field, value),
+	)
 }
 watch([() => props.modelValue, () => props.placement], (next, previous) => {
 	if (previous[0] !== next[0] || previous[1] !== next[1])
@@ -411,38 +397,10 @@ function selectMode(mode: TriggerMode): void {
 		)
 	}
 }
-async function loadRoutes(app: string | null): Promise<void> {
-	const generation = ++routeGeneration
-	routes.value = []
-	routeError.value = ''
-	if (!app) {
-		return
-	}
-	routeLoading.value = true
-	try {
-		const json = await requestApi<{ routes?: PageRouteOption[] }>(
-			'/api/routes?app=' + encodeURIComponent(app),
-		)
-		if (generation === routeGeneration) routes.value = json.routes || []
-	} catch (error) {
-		if (generation === routeGeneration)
-			// TRANSLATORS Validation or failure message shown in the automation trigger builder.
-			routeError.value = t(
-				'communications',
-				'Could not retrieve pages for this app.',
-			)
-	} finally {
-		if (generation === routeGeneration) routeLoading.value = false
-	}
-}
 watch(
 	[selectedAppId, selectedMode],
 	([app, mode]) => {
-		if (mode === 'visit' && app) void loadRoutes(app)
-		else {
-			routeGeneration++
-			routes.value = []
-		}
+		void loadRoutes(mode === 'visit' ? app : null)
 	},
 	{ immediate: true },
 )

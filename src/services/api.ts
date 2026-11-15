@@ -38,11 +38,9 @@ export async function requestApi<T extends object>(
 							? payload.message
 							: undefined
 					: undefined
-			throw new Error(
-				detail
-					|| httpFailureMessage(error.response.status),
-				{ cause: error },
-			)
+			throw new Error(detail || httpFailureMessage(error.response.status), {
+				cause: error,
+			})
 		}
 		throw error
 	}
