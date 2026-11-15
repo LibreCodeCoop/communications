@@ -35,7 +35,10 @@
       "@test",
       "@analyse"
     ],
-    "cs:check": "php-cs-fixer fix --dry-run --diff --using-cache=no",
+    "cs:check": [
+      "php-cs-fixer fix --dry-run --diff --using-cache=no",
+      "@php scripts/ci/check-php-source-style.php"
+    ],
     "cs:fix": "php-cs-fixer fix --using-cache=no",
     "mutation:test": "infection lib/Service/CtaUrl.php --threads=2 --no-progress --no-interaction",
     "test:unit": "phpunit --configuration phpunit.xml.dist",

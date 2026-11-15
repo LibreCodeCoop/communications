@@ -13,7 +13,7 @@ namespace OCA\Communications\Service;
 final class CtaUrl {
 	public static function isAllowed(string $url):bool {
 		if ($url === '' || strlen($url) > 1900
-	  || preg_match('/[\x00-\x20\x7f\x22\x27<>\x60\\\\]/', $url)) {
+			|| preg_match('/[\x00-\x20\x7f\x22\x27<>\x60\\\\]/', $url)) {
 			return false;
 		}
 		if (str_starts_with($url, '/')) {
@@ -22,7 +22,7 @@ final class CtaUrl {
 		if (preg_match('~^https?://~i', $url)) {
 			$parsed = parse_url($url);
 			return is_array($parsed) && !empty($parsed['host']) && !isset($parsed['user'])
-	&& !isset($parsed['pass']) && filter_var($url, FILTER_VALIDATE_URL) !== false;
+				&& !isset($parsed['pass']) && filter_var($url, FILTER_VALIDATE_URL) !== false;
 		}
 		if (preg_match('/^mailto:[^@\s]+@[^@\s]+$/i', $url)) {
 			return true;
