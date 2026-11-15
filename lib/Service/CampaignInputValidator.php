@@ -218,11 +218,16 @@ final class CampaignInputValidator {
 			throw new InvalidArgumentException($this->l10n->t('Invalid anonymous-visitor option.'));
 		}
 		$guestVisible = $guestVisible === true || $guestVisible === 1;
-		if ($guestVisible && ($audienceType !== 'all'
-			|| $presentation !== 'banner' || $trigger !== 'nextcloud.time.window'
-			|| $category !== 'institutional' || $placement !== 'any'
-			|| !in_array($appTargetMode, ['legacy','all'], true)
-			|| $boardVisible)) {
+		$guestEligibility = [
+			'audience_type' => $audienceType,
+			'presentation' => $presentation,
+			'trigger_key' => $trigger,
+			'category' => $category,
+			'placement' => $placement,
+			'app_target_mode' => $appTargetMode,
+			'board_visible' => $boardVisible,
+		];
+		if ($guestVisible && !GuestBannerPolicy::supports($guestEligibility)) {
 			throw new InvalidArgumentException($this->l10n->t('Anonymous visitors require a time-scheduled institutional banner for everyone without app restrictions.'));
 		}
 		$notificationFlags = [];
@@ -235,13 +240,13 @@ final class CampaignInputValidator {
 		}
 		$gatewayChannels = $payload['gateway_channels'] ?? [];
 		if (!is_array($gatewayChannels) || !array_is_list($gatewayChannels)
-	|| count($gatewayChannels) > count(GatewayTransport::LABELS)
-	|| count($gatewayChannels) !== count(array_unique($gatewayChannels, SORT_REGULAR))) {
+			|| count($gatewayChannels) > count(GatewayTransport::LABELS)
+			|| count($gatewayChannels) !== count(array_unique($gatewayChannels, SORT_REGULAR))) {
 			throw new InvalidArgumentException($this->l10n->t('Invalid Two-Factor Gateway channels.'));
 		}
 		foreach ($gatewayChannels as $gateway) {
 			if (!is_string($gateway) || !isset(GatewayTransport::LABELS[$gateway])) {
-				throw new InvalidArgumentException('Provedor Two-Factor Gateway desconhecido.');
+				throw new InvalidArgumentException($this->l10n->t('Unknown Two-Factor Gateway provider.'));
 			}
 		}
 		$hasOutbound = array_sum($notificationFlags) > 0 || $gatewayChannels !== [];
@@ -317,7 +322,7 @@ final class CampaignInputValidator {
 		}
 		$manualOrder = (int)$manualOrder;
 		if ($manualOrder < -1000000 || $manualOrder > 1000000) {
-			throw new InvalidArgumentException('Ordem fora do limite.');
+			throw new InvalidArgumentException($this->l10n->t('Presentation order is out of range.'));
 		}
 		$safeTranslations = $this->translations($payload);
 		$theme = $text('theme', 12) ?: 'default';

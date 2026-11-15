@@ -117,9 +117,7 @@ class CampaignRepository {
 			if ($c['ends_at'] !== null && $c['ends_at'] <= $now) {
 				continue;
 			}
-			if ($c['placement'] !== 'any'
-				|| !in_array($c['app_target_mode'], ['legacy','all'], true)
-				|| $c['board_visible']) {
+			if (!GuestBannerPolicy::supports($c)) {
 				continue;
 			}
 			$out[] = [
