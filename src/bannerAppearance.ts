@@ -13,7 +13,6 @@ import {
  mdiFlag, mdiGift, mdiPartyPopper, mdiRocketLaunch, mdiNewBox, mdiLightningBolt,
  mdiHelpCircle, mdiCheckCircle, mdiCheckDecagram, mdiCloseCircle, mdiCloseOctagon,
 } from '@mdi/js'
-import './bannerAppearance.css'
 import { t } from '@nextcloud/l10n'
 
 export const DEFAULT_BANNER_COLOR = '#6748AC'

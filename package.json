@@ -18,7 +18,9 @@
     "lint:types": "vue-tsc --noEmit",
     "lint:styles": "stylelint \"src/**/*.{css,vue}\"",
     "stylelint": "stylelint \"src/**/*.{css,vue}\"",
-    "test:mutation": "stryker run"
+    "test:mutation": "stryker run",
+    "playwright": "playwright test",
+    "playwright:install-ci": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",
@@ -27,7 +29,9 @@
     "@codemirror/state": "6.7.6",
     "@codemirror/view": "6.43.15",
     "@mdi/js": "7.4.47",
+    "@nextcloud/axios": "2.6.0",
     "@nextcloud/l10n": "3.4.1",
+    "@nextcloud/router": "3.2.0",
     "@nextcloud/vue": "9.14.1",
     "@uiw/codemirror-theme-material": "4.25.12",
     "vue": "^3.5.18",

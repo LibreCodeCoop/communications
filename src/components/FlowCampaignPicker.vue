@@ -2,6 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup lang="ts">
 import { t } from '@nextcloud/l10n'
+import { requestApi } from '../services/api'
 
 import { ref, computed, onMounted, watch } from 'vue'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
@@ -24,9 +25,7 @@ const options = computed(()=>campaigns.value.map(c=>({
 const reduce = (option: FlowCampaignOption) => option.value
 onMounted(async()=>{
   try {
-    const response=await fetch((window.OC?.webroot||'')+'/index.php/apps/communications/api/campaigns',{credentials:'same-origin'})
-    if(!response.ok)throw new Error('HTTP '+response.status)
-    const data = await response.json() as { campaigns?: FlowCampaign[] }
+    const data = await requestApi<{campaigns?: FlowCampaign[]}>('/api/campaigns')
     campaigns.value=(data.campaigns||[]).filter(c=>c.trigger_key==='nextcloud.flow.matched' && c.status!=='archived')
   } catch(err) {loadError.value=t('communications', 'Could not load campaigns: ') + (err instanceof Error ? err.message : String(err))}
   finally {loading.value=false}
@@ -47,3 +46,19 @@ onMounted(async()=>{
               :placeholder="t('communications', 'Choose a campaign')" />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.cc-flow-picker {
+  width:100%;
+  min-width:220px;
+  max-width:550px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:6px;
+}
+
+.cc-flow-picker-label {font-size:13px;font-weight:600;}
+
+.cc-flow-picker-hint {margin:0 0 8px;color:var(--color-text-maxcontrast);font-size:12px;}
+</style>

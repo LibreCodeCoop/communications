@@ -2,11 +2,14 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup lang="ts">
 import { t } from '@nextcloud/l10n'
+import { requestApi } from '../services/api'
+import { generateUrl } from '@nextcloud/router'
 import type { AutomationCatalog, NativeIntent, NativeSource, NativeAction, NativeApplication, TriggerIntent, TriggerMode, PageRouteFilters, PageRouteOption } from '../types/communications'
 
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcPopover from '@nextcloud/vue/components/NcPopover'
 import NcRadioGroup from '@nextcloud/vue/components/NcRadioGroup'
 import NcRadioGroupButton from '@nextcloud/vue/components/NcRadioGroupButton'
@@ -40,7 +43,6 @@ const emit = defineEmits<{
   'update:pageFilters': [value: PageRouteFilters]
   'intent-change': [value: {from: TriggerIntent | null; to: TriggerIntent}]
 }>()
-const BASE = (window.OC?.webroot || '') + '/index.php/apps/communications'
 const selectedIntent = ref<TriggerIntent | null>(null)
 const selectedAppId = ref<string | null>(null)
 const selectedMode = ref<TriggerMode>('event')
@@ -246,9 +248,7 @@ async function loadRoutes(app: string | null): Promise<void> {
   if(!app){return}
   routeLoading.value=true
   try{
-    const response=await fetch(BASE+'/api/routes?app='+encodeURIComponent(app),{credentials:'same-origin'})
-    if(!response.ok)throw new Error('HTTP '+response.status)
-    const json = await response.json() as { routes?: PageRouteOption[] }
+    const json = await requestApi<{routes?: PageRouteOption[]}>('/api/routes?app=' + encodeURIComponent(app))
     if(generation===routeGeneration)routes.value=json.routes||[]
   }catch(error){
     if(generation===routeGeneration)routeError.value=t('communications', 'Could not retrieve pages for this app.')
@@ -261,11 +261,20 @@ watch([selectedAppId,selectedMode],([app,mode])=>{
   else{routeGeneration++;routes.value=[]}
 },{immediate:true})
 function sourceIcon(id: string): string {return sourceIcons[id]||mdiPuzzleOutline}
+const routeOperatorOptions = [
+  {value: 'any', label: t('communications', 'Any value')},
+  {value: 'equals', label: t('communications', 'Equals')},
+  {value: 'prefix', label: t('communications', 'Starts with')},
+  {value: 'digits', label: t('communications', 'Numbers only')},
+]
+const selectRouteOperatorValue = (option: {value: string}): string => option.value
+const setRouteOperator = (variable: string, value: string | null): void => changeRouteFilter(variable, 'operator', value || 'any')
+const setRouteValue = (variable: string, value: string | number): void => changeRouteFilter(variable, 'value', String(value))
 const selectApplicationValue = (app: NativeApplication): string => app.id
 const selectActionValue = (action: {value: string}): string => action.value
 const selectRouteValue = (route: PageRouteOption): string => route.value
 const selectSourceValue = (source: NativeSource): string => source.id
-function flowLink(): string {return (window.OC?.webroot||'')+'/index.php/settings/admin/workflow'}
+function flowLink(): string { return generateUrl('/settings/admin/workflow') }
 </script>
 
 <template>
@@ -378,20 +387,18 @@ function flowLink(): string {return (window.OC?.webroot||'')+'/index.php/setting
               <p class="cc-native-hint">{{ t('communications', 'Restricts only path variable values; no concrete URL is stored. Use safe comparisons instead of arbitrary regular expressions.') }}</p>
               <div v-for="variable in routeVariables" :key="variable" class="cc-route-filter">
                 <label :for="'cc-route-operator-'+variable">{{ t('communications', 'Variable') }} {{ '{'+variable+'}' }}</label>
-                <select :id="'cc-route-operator-'+variable" class="cc-route-filter-select"
-                        :value="pageFilters[variable]?.operator||'any'"
-                        @change="changeRouteFilter(variable,'operator',$event.target.value)">
-                  <option value="any">{{ t('communications', 'Any value') }}</option>
-                  <option value="equals">{{ t('communications', 'Equals') }}</option>
-                  <option value="prefix">{{ t('communications', 'Starts with') }}</option>
-                  <option value="digits">{{ t('communications', 'Numbers only') }}</option>
-                </select>
+                <NcSelect :input-id="'cc-route-operator-'+variable" class="cc-route-filter-select"
+                          :model-value="pageFilters[variable]?.operator || 'any'"
+                          :options="routeOperatorOptions" :reduce="selectRouteOperatorValue"
+                          :clearable="false"
+                          @update:model-value="setRouteOperator(variable, $event)" />
                 <template v-if="['equals','prefix'].includes(pageFilters[variable]?.operator)">
                   <label :for="'cc-route-value-'+variable">{{ t('communications', 'Value for') }} {{ variable }}</label>
-                  <input :id="'cc-route-value-'+variable" type="text" maxlength="96"
-                         class="cc-route-filter-value" :value="pageFilters[variable]?.value||''"
-                         :placeholder="'Ex.: '+(variable==='view'?'recent':'123')"
-                         @input="changeRouteFilter(variable,'value',$event.target.value)" />
+                  <NcTextField :id="'cc-route-value-'+variable" :maxlength="96"
+                               class="cc-route-filter-value" :model-value="pageFilters[variable]?.value || ''"
+                               :label="t('communications', 'Value for {variable}', {variable})"
+                               :placeholder="t('communications', 'Example: {value}', {value: variable === 'view' ? 'recent' : '123'})"
+                               @update:model-value="setRouteValue(variable, $event)" />
                 </template>
               </div>
             </div>
@@ -445,3 +452,260 @@ function flowLink(): string {return (window.OC?.webroot||'')+'/index.php/setting
     </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+
+
+.cc-native-hint { color:var(--color-text-maxcontrast); font-size:12px; margin: 3px 0 0; }
+
+.cc-automation {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.cc-automation-intents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+}
+
+.cc-automation-flow { display:flex; flex-wrap:wrap; gap:8px;align-items:center; padding-top:10px; }
+
+.cc-automation-flow p { width:100%; }
+
+@media (max-width:640px) {
+  .cc-automation-intents,
+  .cc-automation-sources { grid-template-columns:1fr; } }
+
+.cc-automation {
+  gap: 0;
+}
+
+.cc-automation-title {
+  margin:0 0 3px!important;
+  font-size:19px!important;
+}
+
+.cc-automation-intents {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+
+.cc-automation-setup {
+  margin-top:18px;
+  padding-top:15px;
+  border-top:1px solid var(--color-border);
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+.cc-automation-option {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+}
+
+.cc-automation-option > span:last-child {display:flex;flex-direction:column;gap:2px;min-width:0;}
+
+.cc-automation-option strong {font-size:13px;font-weight:650;}
+
+.cc-automation-option small {font-size:11px;color:var(--color-text-maxcontrast);white-space:normal;}
+
+.cc-automation-selected {display:flex;gap:6px;align-items:center;font-size:13px;}
+
+.cc-automation-action-field .cc-native-hint {margin-top:6px;}
+
+.cc-automation-result {
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid var(--color-border);
+  background:var(--color-background-hover);
+}
+
+.cc-automation-result-label {display:flex;gap:8px;align-items:center;min-width:0;}
+
+.cc-automation-result-label strong {font-size:13px;overflow-wrap:anywhere;}
+
+.cc-automation-result p {margin:3px 0 0 26px;font-size:12px;color:var(--color-text-maxcontrast);}
+
+.cc-automation-result p.cc-automation-error {color:var(--color-error);}
+
+.cc-automation-flow {padding-top:8px;}
+
+.cc-automation-flow p {margin:0;}
+
+@media (max-width:800px) {
+  .cc-automation-intents {grid-template-columns:repeat(2,minmax(0,1fr));} }
+
+@media (max-width:490px) {
+  .cc-automation-intents {grid-template-columns:1fr 1fr;} }
+
+.cc-automation-intents {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+
+.cc-automation-intent-card {
+  display:flex !important;
+  flex-direction:column;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0;
+  min-height:89px !important;
+  height:auto !important;
+  padding:12px 13px !important;
+  border:1px solid var(--color-border) !important;
+  border-radius:var(--border-radius-large,12px) !important;
+  text-align:start;
+  align-items:stretch !important;
+  justify-content:flex-start !important;
+  gap:8px;
+  white-space:normal;
+}
+
+.cc-automation-intent-card[aria-pressed="true"] {
+  border-color:var(--color-primary-element) !important;
+  background:var(--color-background-hover) !important;
+  color:var(--color-main-text) !important;
+}
+
+.cc-automation-intent-card :is(:deep(.button-vue__wrapper),:deep(.button-vue__text)) {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:7px;
+  min-width:0;
+  white-space:normal;
+  width:100%;
+  text-align:start;
+}
+
+.cc-automation-intent-title {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--color-main-text);
+  font-weight:650;
+  line-height:1.2;
+  font-size:14px;
+}
+
+.cc-automation-intent-title strong {font-weight:650;}
+
+.cc-automation-intent-description {
+  display:block;
+  color:var(--color-text-maxcontrast);
+  font-size:12px;
+  line-height:1.4;
+  white-space:normal;
+}
+
+.cc-automation-setup {margin-top:16px;gap:14px;}
+
+.cc-automation-configuration {display:flex;flex-direction:column;gap:14px;max-width:760px;}
+
+.cc-automation-configuration h3 {font-size:15px;font-weight:650;margin:0;}
+
+.cc-automation-field {display:flex;flex-direction:column;gap:6px;min-width:0;}
+
+.cc-automation-field label {font-size:13px;font-weight:650;}
+
+.cc-automation-field :is(:deep(.v-select), .vue-select) {width:100%;max-width:none;}
+
+.cc-automation-field .cc-native-hint {margin:2px 0;}
+
+.cc-route-filters { display:grid; gap:10px; padding:12px; border:1px solid var(--color-border);
+  border-radius:10px; background:var(--color-main-background); }
+
+.cc-route-filters h4 { font-size:13px; margin:0; }
+
+.cc-route-filter { display:grid; grid-template-columns:minmax(100px,1fr) minmax(170px,1fr);
+  gap:7px 12px; align-items:center; }
+
+.cc-route-filter label { font-size:12px; }
+
+.cc-route-filter-select, .cc-route-filter-value { min-width:0; width:100%; min-height:38px;
+  padding:7px 10px; color:var(--color-main-text); background:var(--color-main-background);
+  border:1px solid var(--color-border); border-radius:var(--border-radius);
+  font:inherit; font-size:13px; }
+
+.cc-route-filter :is(select,input):focus-visible { outline:2px solid var(--color-primary-element); outline-offset:2px; }
+
+@media (max-width:600px) { .cc-route-filter {grid-template-columns:1fr;} }
+
+.cc-automation-mode {min-width:0;}
+
+.cc-automation-mode-options {
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+}
+
+.cc-automation-mode-options > * {
+  flex:0 1 auto;
+  min-width:175px;
+}
+
+.cc-automation-only-mode {
+  color:var(--color-text-maxcontrast);
+}
+
+.cc-automation-result {margin-top:3px;}
+
+@media (max-width:800px) {
+  .cc-automation-intents {grid-template-columns:1fr;} }
+
+@media (max-width:800px) {
+  .cc-automation-intent-card {min-height:68px !important;} }
+
+@media (max-width:800px) {
+  .cc-automation-mode-options {flex-direction:column;} }
+
+@media (max-width:800px) {
+  .cc-automation-mode-options > * {min-width:0;} }
+
+.cc-automation-webhook {display:flex;flex-direction:column;gap:8px;margin-top:12px;min-width:0;}
+
+.cc-automation-webhook p {margin:0;}
+
+.cc-automation-webhook pre {
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  font-size:12px;
+  line-height:1.4;
+  background:var(--color-main-background);
+  border:1px solid var(--color-border);
+  padding:12px;
+  border-radius:8px;
+  max-width:100%;
+}
+
+.cc-automation-setup { margin-top:16px; padding-top:14px; }
+
+.cc-field-label { display:flex; align-items:center; gap:10px; }
+
+.cc-app-help-popover { display:inline-flex; align-items:center; }
+
+.cc-app-help-popover button { min-width:32px; min-height:32px; }
+
+.cc-help-content { max-width:340px; padding:14px 16px; margin:0; font-size:13px; line-height:1.5; }
+
+.cc-automation-option img.cc-app-icon, .cc-automation-selected img.cc-app-icon {
+  width:20px; height:20px; flex:none; object-fit:contain;
+}
+
+.cc-automation-selected img.cc-app-icon { width:18px; height:18px; }
+
+.cc-banner-type-label .cc-native-hint { margin:4px 0 0; }
+
+.cc-unified-channel-group .cc-native-hint {font-size:12px;margin:0;line-height:1.45;}
+
+.cc-gateway-provider-details[open]>p.cc-native-hint {margin:12px 0 4px;}
+
+.cc-delivery-section>.cc-native-hint {max-width:790px;line-height:1.5;}
+</style>

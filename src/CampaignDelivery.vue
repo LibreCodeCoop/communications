@@ -4,11 +4,12 @@
 -->
 <script setup lang="ts">
 import { t } from '@nextcloud/l10n'
+import { requestApi } from './services/api'
+import { generateUrl } from '@nextcloud/router'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import CampaignPresentation from './components/CampaignPresentation.vue'
 import type { ClaimedPresentation, ClaimBatchResponse } from './types/communications'
 
-const apiRoot=(window.OC?.webroot||'')+'/index.php/apps/communications'
 const current = ref<ClaimedPresentation | null>(null)
 const banners = ref<ClaimedPresentation[]>([])
 const MAX_BANNERS=5
@@ -30,7 +31,10 @@ function appContext(): string {
 }
 
 async function post(path: string, data: Record<string, unknown>, keepalive = false): Promise<ClaimBatchResponse> {
-  const response=await fetch(apiRoot+path,{
+  if (!keepalive) return requestApi<ClaimBatchResponse>(path, 'POST', data)
+  // The rare keepalive acknowledgement still needs native fetch: Axios uses
+  // XHR, which cannot guarantee keepalive behavior during page navigation.
+  const response=await fetch(generateUrl('/apps/communications' + path),{
     method:'POST',credentials:'same-origin',keepalive,
     headers:{
       'Content-Type':'application/json',
@@ -187,3 +191,32 @@ onUnmounted(()=>{
                         @cta="finish(current,'click')"
                         @optout="sponsoredOptout(current)"/>
 </template>
+
+<style lang="scss" scoped>
+
+.cc-live-stack {
+  position: fixed;
+  top: calc(var(--header-height, 50px) + 13px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  width: min(670px, 95vw);
+  max-height: calc(100vh - var(--header-height, 50px) - 28px);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.cc-live-stack :deep(.cc-live-banner) {
+  position: relative;
+  flex-shrink: 0;
+  top: auto;
+  inset-inline-start: auto;
+  transform: none;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+}
+</style>

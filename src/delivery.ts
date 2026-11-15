@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { createApp } from 'vue'
 import CampaignDelivery from './CampaignDelivery.vue'
-import './delivery.css'
 
 function mount() {
   const root = document.createElement('div')

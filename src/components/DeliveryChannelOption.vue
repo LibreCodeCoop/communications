@@ -55,3 +55,78 @@ function change(channel: DeliveryChannel, enabled: boolean): void {
     <p class="cc-delivery-channel-description">{{ channel.description }}</p>
   </div>
 </template>
+
+<style lang="scss" scoped>
+
+
+.cc-delivery-channel {
+  min-width:0;padding:11px 0;border-bottom:1px solid var(--color-border);
+}
+
+.cc-delivery-channel:last-child {border-bottom:none;padding-bottom:0;}
+
+.cc-delivery-channel-header {
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;
+}
+
+.cc-delivery-channel-control {min-width:0;flex:1 1 auto;line-height:1.35;}
+
+.cc-delivery-channel-control :deep(.checkbox-radio-switch) {min-width:0;margin:0;}
+
+.cc-delivery-channel-control .checkbox-radio-switch__label {overflow-wrap:anywhere;}
+
+.cc-delivery-channel-unavailable {font-size:13px;font-weight:600;overflow-wrap:anywhere;}
+
+.cc-delivery-channel-status {
+  display:flex;align-items:center;justify-content:flex-end;gap:3px;
+  font-size:11px;color:var(--color-text-maxcontrast);flex:0 0 auto;
+  max-width:50%;
+}
+
+.cc-delivery-channel-status span {text-align:end;line-height:1.3;}
+
+.cc-delivery-channel-help {min-width:28px !important;min-height:28px !important;flex:none;}
+
+.cc-delivery-channel-help-content {max-width:310px;min-width:180px;padding:10px 12px;line-height:1.5;}
+
+.cc-delivery-channel-help-content strong {display:block;margin-bottom:6px;}
+
+.cc-delivery-channel-help-content p {margin:0;white-space:normal;overflow-wrap:anywhere;font-size:13px;}
+
+.cc-delivery-channel-description {font-size:11px;line-height:1.4;
+  color:var(--color-text-maxcontrast);margin:4px 0 0;}
+
+.cc-delivery-channel[data-availability="missing_app"],
+.cc-delivery-channel[data-availability="adapter_missing"],
+.cc-delivery-channel[data-availability="missing_app_and_adapter"] {
+  color:var(--color-main-text);
+}
+
+@media (max-width:600px) {
+ .cc-delivery-channel-header {flex-wrap:wrap;align-items:flex-start;}
+}
+
+@media (max-width:600px) {
+ .cc-delivery-channel-status {max-width:100%;margin-inline-start:auto;}
+}
+
+@media (max-width:600px) {
+ .cc-delivery-channel-help-content {min-width:0;max-width:min(280px,calc(100vw - 48px));}
+}
+
+.cc-gateway-provider-details .cc-delivery-channel:last-child {border-bottom:0;}
+
+.cc-delivery-section .cc-delivery-selector>.cc-delivery-channel {
+ padding:13px 8px 12px;
+ border-bottom:1px solid var(--color-border);
+}
+
+.cc-delivery-section .cc-delivery-selector>.cc-delivery-channel[data-selected="true"] {
+ background:color-mix(in srgb,var(--color-primary-element) 6%,transparent);
+ border-radius:8px;
+}
+
+.cc-delivery-section .cc-delivery-selector .cc-gateway-provider-details .cc-delivery-channel {
+ margin-inline:6px;
+}
+</style>

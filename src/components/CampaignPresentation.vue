@@ -85,3 +85,119 @@ function updateOpen(open: boolean): void { if (!open) close() }
     </div>
   </NcDialog>
 </template>
+
+<style lang="scss" scoped>
+/*
+ * Shared by editor and delivery. The built-in message type retains its native
+ * semantics. Neutral/custom override only presentation, never the event role.
+ */
+.cc-note-neutral.notecard {
+  --note-theme: var(--color-border-dark, var(--color-border));
+  --note-background: var(--color-main-background);
+  background-color: var(--color-main-background) !important;
+  border-inline-start: 2px solid var(--color-border) !important;
+}
+
+.cc-note-custom.notecard {
+  /* Use a restrained tint to preserve readable text with either NC theme. */
+  --note-background: color-mix(in srgb, var(--cc-selected-color) 18%, var(--color-main-background));
+  /* Blend towards the user's text color to keep icons/borders distinguishable. */
+  --note-theme: color-mix(in srgb, var(--cc-selected-color) 45%, var(--color-main-text) 55%);
+  background-color: var(--note-background) !important;
+}
+
+.cc-note-no-icon.notecard :deep(.notecard__icon) {
+  display: none !important;
+}
+
+.cc-note-empty-icon { display:none !important; }
+
+.cc-banner-note-icon {
+  flex: none;
+  color: var(--note-theme);
+}
+
+
+.cc-live-banner {
+  position: fixed;
+  z-index: 1100;
+  top: calc(var(--header-height, 50px) + 13px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  width: min(670px, 95vw);
+  box-sizing: border-box;
+  /* Native NcNoteCard owns the semantic background, border and icon. */
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-large, 12px);
+  padding: 16px 18px;
+  box-shadow: 0 12px 35px var(--color-box-shadow);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.cc-live-banner.notecard { margin: 0; }
+
+.cc-live-banner > div { min-width: 0; width: 100%; }
+
+.cc-live-content h2 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 8px;
+}
+
+.cc-live-content p,
+.cc-live-content ul,
+.cc-live-dialog-content p,
+.cc-live-dialog-content ul {
+  margin: 6px 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.cc-live-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.cc-live-dialog-content { padding: 14px 16px 20px; min-width:0; }
+
+.cc-preview-screenreader-note {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cc-sponsored-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--color-text-maxcontrast);
+  margin: 0 0 8px !important;
+}
+
+.cc-live-dialog-content[data-theme="warning"] { border-top: 4px solid var(--color-warning-text); }
+
+.cc-live-dialog-content[data-theme="primary"] { border-top: 4px solid var(--color-primary-element); }
+
+.cc-live-dialog-content[data-theme="info"] { border-top: 4px solid var(--color-info-text); }
+
+.cc-live-dialog-content[data-theme="success"] { border-top: 4px solid var(--color-success-text); }
+
+.cc-live-dialog-content[data-theme="error"] { border-top: 4px solid var(--color-error-text); }
+
+.cc-live-dialog-content[data-theme="custom"] { border-top: 4px solid color-mix(in srgb, var(--cc-selected-color) 45%, var(--color-main-text) 55%); }
+
+.cc-live-dialog-content[data-theme="neutral"] { border-top: none; }
+</style>

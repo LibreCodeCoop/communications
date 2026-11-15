@@ -2,7 +2,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 import { defineCustomElement } from 'vue'
 import FlowCampaignPicker from './components/FlowCampaignPicker.vue'
-import './flow.css'
 
 const tag='librecode-contextual-campaign-picker'
 if (!window.customElements.get(tag)) {
@@ -14,7 +13,7 @@ function register() {
   api.registerOperator({
     id:'OCA\\Communications\\Service\\FlowCampaignOperation',
     operation:'',
-    color:'#158570',
+    color: 'var(--color-primary-element)',
     element:tag,
   })
 }

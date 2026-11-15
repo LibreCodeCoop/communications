@@ -27,4 +27,27 @@ describe('global stylesheet isolation', () => {
       expect(violations, 'Unscoped CSS can affect unrelated Nextcloud apps').toEqual([])
     })
   }
+
+  it('keeps all application component styles scoped to their Vue owners', () => {
+    const componentPaths = [
+      'src/AppHub.vue',
+      'src/CampaignAdmin.vue',
+      'src/CommunicationsBoard.vue',
+      'src/CampaignDelivery.vue',
+      'src/components/AutomationBuilder.vue',
+      'src/components/CampaignPresentation.vue',
+      'src/components/DeliveryChannelOption.vue',
+      'src/components/FlowCampaignPicker.vue',
+      'src/components/MarkdownEditor.vue',
+    ]
+    for (const componentPath of componentPaths) {
+      const code = readFileSync(componentPath, 'utf8')
+      expect(code, `${componentPath} must own its CSS`).toMatch(/<style[^>]+scoped[^>]*>/)
+      expect(code.match(/<style[^>]*>/g)?.every(tag => tag.includes('scoped'))).toBe(true)
+    }
+    const globalCss = readFileSync('src/management.css', 'utf8')
+    expect(globalCss).toMatch(/#communications-vue/)
+    expect(globalCss).not.toMatch(/\.cc-native-|\.cc-hub-|\.cc-automation-/)
+  })
+
 })

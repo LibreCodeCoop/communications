@@ -3,7 +3,5 @@
 import { createApp } from 'vue'
 import AppHub from './AppHub.vue'
 import './management.css'
-import './board.css'
-import './delivery.css'
 const root=document.getElementById('communications-vue')
 if (root) createApp(AppHub).mount(root)

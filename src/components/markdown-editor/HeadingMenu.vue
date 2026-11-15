@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
 		background: var(--color-main-background);
 		border: 1px solid var(--color-border);
 		border-radius: 10px;
-		box-shadow: 0 10px 26px rgba(15, 23, 42, 0.22);
+		box-shadow: 0 10px 26px var(--color-box-shadow);
 	}
 
 	&__item {

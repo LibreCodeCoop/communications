@@ -86,3 +86,120 @@ onUnmounted(()=>window.removeEventListener('popstate',applyHistory))
     </div>
   </NcAppContent>
 </template>
+
+<style lang="scss" scoped>
+
+.cc-hub {width:100%;max-width:none;min-height:calc(100vh - var(--header-height,50px));overflow:auto;}
+
+.cc-hub-shell {min-height:100%;background:var(--color-main-background);}
+
+.cc-hub-top {display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:24px clamp(14px,3vw,48px) 16px;}
+
+.cc-hub-brand {min-width:0;}
+
+.cc-hub-brand h1 {font-size:clamp(25px,2.5vw,32px);margin:0;}
+
+.cc-hub-brand p {font-size:13px;color:var(--color-text-maxcontrast);margin:6px 0 0;}
+
+.cc-hub-tabs {display:flex;align-items:center;gap:8px;padding:0 clamp(14px,3vw,48px) 12px;
+ border-bottom:1px solid var(--color-border);flex-wrap:wrap;}
+
+.cc-hub-tabs button {min-height:40px;}
+
+.cc-hub-count {font-size:11px;font-weight:700;padding:2px 7px;border-radius:12px;
+ background:var(--color-background-hover);color:var(--color-main-text);}
+
+.cc-hub-admin .cc-native-page {padding-top:24px;}
+
+.cc-hub-board .cc-board-main {padding-top:24px;}
+
+.cc-hub-admin .cc-native-heading h1 {font-size:23px;}
+
+.cc-hub-board .cc-board-heading {margin-bottom:18px;}
+
+.cc-hub-board .cc-board-heading h2 {font-size:21px;margin:0 0 6px;}
+
+@media (max-width:650px) {
+ .cc-hub-top {align-items:flex-start;flex-wrap:wrap;padding-top:16px;}}
+
+@media (max-width:650px) {
+ .cc-hub-top>button {width:100%;}}
+
+.cc-hub-shell { width:100%; min-width:0; }
+
+.cc-hub-pane { width:100%; min-width:0; }
+
+.cc-hub-pane[style*="display: none"] { display:none !important; }
+
+.cc-hub-admin .cc-native-app,
+.cc-hub-board .cc-board-app { min-height:0; overflow:visible; }
+
+.cc-hub-admin .cc-native-page {padding-top:20px;}
+
+.cc-hub-board .cc-board-main {
+  max-width:1200px;
+  width:100%;
+  margin:0;
+  padding:20px clamp(14px,3vw,48px) 54px;
+}
+
+.cc-hub-board .cc-board-heading { margin-bottom:16px; }
+
+.cc-hub-board .cc-board-heading h2 {margin:0 0 5px;font-size:18px;}
+
+.cc-hub-board .cc-board-heading p {font-size:13px;}
+
+.cc-hub-top {padding-top:22px;padding-bottom:15px;}
+
+.cc-hub-brand h1 {font-size:clamp(23px,2.2vw,30px);}
+
+.cc-hub-tabs {gap:14px;padding-bottom:0;}
+
+.cc-hub-tabs .cc-hub-tab {border:0 !important;border-bottom:3px solid transparent !important;
+  border-radius:0 !important;min-height:46px;background:transparent !important;
+  color:var(--color-main-text) !important;padding:0 12px !important;}
+
+.cc-hub-tabs .cc-hub-tab-active {
+  border-bottom-color:var(--color-primary-element) !important;
+  background:var(--color-background-hover) !important;
+  color:var(--color-main-text) !important;
+}
+
+.cc-hub-tabs .cc-hub-tab:hover {background:var(--color-background-hover) !important;}
+
+.cc-hub-tabs .cc-hub-tab:focus-visible {outline:2px solid var(--color-primary-element);outline-offset:-2px;}
+
+.cc-hub-admin .cc-native-heading-overview {margin-bottom:15px;}
+
+.cc-hub-admin .cc-native-heading-overview h2 {font-size:18px;margin:0;}
+
+.cc-hub-admin .cc-native-heading-overview p {font-size:13px;margin-top:6px;}
+
+.cc-hub-admin .cc-native-stats {display:flex;flex-wrap:wrap;gap:9px;margin-bottom:21px;}
+
+.cc-hub-admin .cc-native-stat {flex:1 1 135px;min-width:112px;padding:11px 14px;gap:4px;}
+
+.cc-hub-admin .cc-native-stat strong {font-size:22px;}
+
+.cc-hub-admin .cc-native-stat span {font-size:12px;}
+
+.cc-hub-admin .cc-editor-settings {margin-top:22px;}
+
+.cc-hub-admin .cc-editor-delegation {max-width:720px;}
+
+@media (max-width:640px) {
+ .cc-hub-top {padding-top:16px;}}
+
+@media (max-width:640px) {
+ .cc-hub-board .cc-board-main {padding:16px 12px 36px;}}
+
+@media (max-width:640px) {
+ .cc-hub-tabs {gap:4px;}}
+
+@media (max-width:640px) {
+ .cc-hub-tabs .cc-hub-tab {padding:0 8px !important;}}
+
+@media (max-width:640px) {
+ .cc-hub-admin .cc-native-stat {flex-basis:125px;}}
+</style>

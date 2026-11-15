@@ -2,6 +2,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup lang="ts">
 import { t, getLanguage } from '@nextcloud/l10n'
+import { requestApi } from './services/api'
 
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 const emit = defineEmits<{ 'unread-count': [total: number] }>()
@@ -17,8 +18,8 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import { mdiCommentTextOutline, mdiArrowLeft, mdiMagnify, mdiBellCogOutline } from '@mdi/js'
 
-const BASE = (window.OC?.webroot || '') + '/index.php/apps/communications'
 const items = ref<InboxAnnouncement[]>([])
+const heading = ref<HTMLElement | null>(null)
 const total = ref(0)
 const page = ref(1)
 const hasMore = ref(false)
@@ -118,18 +119,9 @@ function dateText(ts: number | null | undefined): string {
 }
 function safeLink(url: unknown): string { return safeCtaLink(url) }
 async function request<T extends object>(path: string, method: 'GET' | 'POST' | 'DELETE' = 'GET', body: Record<string, unknown> = {}): Promise<T> {
-  const opts: RequestInit = {method, credentials: 'same-origin', headers: {Accept: 'application/json'}}
-  if (method!=='GET') {
-    const headers = opts.headers as Record<string, string>
-    headers['Content-Type'] = 'application/json'
-    headers.requesttoken = window.OC?.requestToken || window.oc_requesttoken || ''
-    opts.body=JSON.stringify(body||{})
-  }
-  const response=await fetch(BASE+path, opts)
-  const data=await response.json().catch(()=>({}))
-  if (!response.ok) throw new Error(data.error || t('communications', 'HTTP failure ')+response.status)
-  return data as T
+  return requestApi<T>(path, method, method === 'GET' ? undefined : body)
 }
+
 async function refresh() {
   const current=++generation
   loading.value=true
@@ -151,7 +143,7 @@ function switchFilter(value: string): void {filter.value=value;page.value=1;void
 function changePage(delta: number): void {
   page.value += delta
   void refresh()
-  document.querySelector('.cc-board-heading')?.scrollIntoView({block:'start', behavior:'smooth'})
+  heading.value?.scrollIntoView({block:'start', behavior:'smooth'})
 }
 async function openItem(id: number): Promise<void> {
   error.value=''
@@ -230,7 +222,7 @@ onUnmounted(()=>window.removeEventListener('popstate',onPopState))
 <template>
   <section class="cc-board-app" :aria-label="t('communications', 'Inbox')">
     <main class="cc-board-main">
-      <header class="cc-board-heading">
+      <header ref="heading" class="cc-board-heading">
         <div>
           <h2>{{ t('communications', 'Your messages') }}</h2>
           <p>{{ t('communications', 'View announcements and notices addressed to you.') }}</p>
@@ -364,3 +356,131 @@ onUnmounted(()=>window.removeEventListener('popstate',onPopState))
     </main>
   </section>
 </template>
+
+<style lang="scss" scoped>
+.cc-board-app {width:100%; max-width:none; overflow:auto;}
+
+.cc-board-main {max-width:980px; margin:0 auto; padding:28px clamp(12px,4vw,40px) 64px;}
+
+.cc-board-heading {display:flex;align-items:center;gap:17px;margin-bottom:26px;}
+
+.cc-board-heading h1 {font-size:clamp(25px,2.5vw,34px);margin:0 0 6px;}
+
+.cc-board-heading p {margin:0;color:var(--color-text-maxcontrast);}
+
+.cc-board-search {display:flex;align-items:flex-end;gap:12px;margin:0 0 22px;}
+
+.cc-board-search>div {flex:1;}
+
+.cc-board-article {border:1px solid var(--color-border);border-radius:var(--border-radius-large,12px);
+ padding:22px 24px;margin-bottom:16px;min-width:0;overflow-wrap:anywhere;}
+
+.cc-board-article h2 {font-size:21px;margin:12px 0 15px;}
+
+.cc-board-article :deep(.rich-text--wrapper img) {max-width:100%;height:auto;}
+
+.cc-board-metadata {display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+ color:var(--color-text-maxcontrast);font-size:12px;}
+
+.cc-board-chip {border:1px solid var(--color-border);border-radius:15px;padding:2px 9px;
+ background:var(--color-background-hover);}
+
+.cc-board-article-actions {display:flex;justify-content:space-between;align-items:center;gap:12px;
+ margin-top:18px;padding-top:12px;border-top:1px solid var(--color-border);}
+
+.cc-board-article-actions>span {font-size:12px;color:var(--color-text-maxcontrast);}
+
+.cc-board-pagination {display:flex;align-items:center;justify-content:center;gap:15px;margin-top:25px;}
+
+.cc-board-comments {margin-top:28px;}
+
+.cc-board-comments h2 {font-size:20px;margin:0 0 18px;}
+
+.cc-board-comments form {display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+
+.cc-board-comments form>button {align-self:flex-end;}
+
+.cc-board-comment {padding:17px 0;border-bottom:1px solid var(--color-border);}
+
+.cc-board-comment :deep(.rich-text--wrapper) {margin-top:10px;}
+
+.cc-board-cta {display:inline-block;color:var(--color-primary-element);margin-top:16px;}
+
+.cc-board-empty-comments {color:var(--color-text-maxcontrast);padding:16px 0;}
+@media(max-width:600px){.cc-board-main{padding:18px 12px 50px}.cc-board-article{padding:14px}
+.cc-board-search{flex-wrap:wrap}.cc-board-search>button{width:100%}}
+
+.cc-inbox-filters {display:flex;gap:8px;flex-wrap:wrap;margin:-5px 0 20px;}
+
+.cc-board-unread {border-inline-start:4px solid var(--color-primary-element);}
+
+.cc-unread-label {color:var(--color-primary-element);font-weight:700;}
+
+.cc-board-article-actions>button {max-width:100%;}
+
+.cc-mention-choices {
+ display:flex;flex-wrap:wrap;gap:5px;padding:6px 0 12px;
+ border-bottom:1px solid var(--color-border);
+}
+
+.cc-mention-choices button {max-width:100%;}
+
+/* Recipient-side opt-in stays within the Inbox rather than a third app area. */
+.cc-board-heading {flex-wrap:wrap;justify-content:space-between;}
+
+.cc-gateway-preferences-button {margin-inline-start:auto;}
+
+.cc-gateway-preferences {border:1px solid var(--color-border);border-radius:12px;
+ padding:18px 20px;margin:-8px 0 22px;background:var(--color-main-background);}
+
+.cc-gateway-preferences h3 {font-size:16px;margin:0 0 7px;}
+
+.cc-gateway-preferences>p {font-size:13px;color:var(--color-text-maxcontrast);margin:0 0 14px;}
+
+.cc-gateway-preference {padding:11px 0;border-bottom:1px solid var(--color-border);min-width:0;}
+
+.cc-gateway-preference-heading {display:flex;justify-content:space-between;align-items:center;gap:12px;}
+
+.cc-gateway-preference-heading>span {font-size:12px;color:var(--color-text-maxcontrast);text-align:end;}
+
+.cc-gateway-preference>div:not(.cc-gateway-preference-heading) {margin:8px 0;}
+
+.cc-gateway-preference :deep(.checkbox-radio-switch) {margin:7px 0;}
+
+.cc-gateway-preferences-hint {font-size:12px!important;}
+@media(max-width:600px) {
+ .cc-gateway-preferences {padding:13px;}
+ .cc-gateway-preference-heading {flex-wrap:wrap;align-items:flex-start;}
+ .cc-gateway-preference-heading>span {margin-inline-start:auto;}
+}
+
+/* A direct-only link remains readable but is not a copy in the Inbox. */
+.cc-direct-channel-note {margin:12px 0;}
+
+
+
+.cc-hub-board .cc-board-main {padding-top:24px;}
+
+.cc-hub-board .cc-board-heading {margin-bottom:18px;}
+
+.cc-hub-board .cc-board-heading h2 {font-size:21px;margin:0 0 6px;}
+
+.cc-hub-admin .cc-native-app,
+.cc-hub-board .cc-board-app { min-height:0; overflow:visible; }
+
+.cc-hub-board .cc-board-main {
+  max-width:1200px;
+  width:100%;
+  margin:0;
+  padding:20px clamp(14px,3vw,48px) 54px;
+}
+
+.cc-hub-board .cc-board-heading { margin-bottom:16px; }
+
+.cc-hub-board .cc-board-heading h2 {margin:0 0 5px;font-size:18px;}
+
+.cc-hub-board .cc-board-heading p {font-size:13px;}
+
+@media (max-width:640px) {
+ .cc-hub-board .cc-board-main {padding:16px 12px 36px;}}
+</style>
