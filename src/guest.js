@@ -16,7 +16,12 @@
   let timer=null
   const allowedTypes=new Set(['info','default','primary','success','warning','error','custom','neutral'])
   function safeUrl(value) {
-    if(typeof value!=='string'||!value||value.length>1900||/[\x00-\x20\x7f"'<>\x60\\]/.test(value))return ''
+    if (typeof value !== 'string' || !value || value.length > 1900) return ''
+    const unsafePunctuation = new Set(['"', "'", '<', '>', '`', '\\'])
+    if ([...value].some(char => {
+      const code = char.charCodeAt(0)
+      return code <= 32 || code === 127 || unsafePunctuation.has(char)
+    })) return ''
     if(value.startsWith('/')){
       if(value.startsWith('//'))return ''
       const webroot=window.OC?.webroot||''
@@ -37,7 +42,7 @@
   }
   function markDismissed(item) {
     try {localStorage.setItem(storagePrefix+item.id,String(item.version))}
-    catch{}
+    catch{ return }
   }
   function text(tag,content,cls){
     const element=document.createElement(tag)
