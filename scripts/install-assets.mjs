@@ -16,3 +16,16 @@ for (const [dir, bundle, jsTarget, cssTarget] of [
   copyFileSync(dir+'/'+css, cssTarget)
   console.log('Installed '+jsTarget+' and '+cssTarget)
 }
+// These lightweight, dependency-free browser adapters are maintained in src/.
+// Keep their public filenames stable: Nextcloud registers 'guest' and 'loader'
+// directly, and loader.js locates campaigns.js relative to its own URL.
+for (const [source, target] of [
+  ['src/guest.js', 'js/guest.js'],
+  ['src/loader.js', 'js/loader.js'],
+  ['src/guest.css', 'css/guest.css'],
+]) {
+  if (!existsSync(source)) throw new Error('Missing source asset: ' + source)
+  copyFileSync(source, target)
+  console.log('Installed ' + target)
+}
+

@@ -6,12 +6,8 @@
 *.sqlite
 *.db
 node_modules/
-js/management.js
-js/campaigns.js
-js/flow.js
-css/management.css
-css/campaigns.css
-css/flow.css
+/js/
+/css/
 vendor/
 dist/
 dist-delivery/
