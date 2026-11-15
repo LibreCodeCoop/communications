@@ -27,7 +27,7 @@
      steps:
      - name: Restore context
        id: cache
-@@ -127,23 +131,40 @@
+@@ -127,17 +131,34 @@
      - name: Install Playwright browsers
        run: npm run playwright:install-ci --if-present
  
@@ -64,19 +64,3 @@
    merge-reports:
      # Merge reports after playwright-tests, even if some shards have failed
      if: ${{ !cancelled() }}
-     needs: [playwright-tests]
- 
--    runs-on: ubuntu-latest-low
-+    runs-on: ubuntu-latest
-     steps:
-     - name: Restore context
-       id: cache
-@@ -196,7 +217,7 @@
-   summary:
-     permissions:
-       contents: none
--    runs-on: ubuntu-latest-low
-+    runs-on: ubuntu-latest
-     needs: [playwright-tests]
- 
-     if: always()

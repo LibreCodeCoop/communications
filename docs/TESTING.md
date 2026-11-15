@@ -32,9 +32,13 @@ The consolidated schema is compared with the pre-consolidation contract in `test
 
 ### Official Nextcloud CI templates
 
-The GitHub Actions flows for PHPStan (`phpstan.yml`), PHPUnit on SQLite/MariaDB/PostgreSQL (`phpunit-*.yml`) and Playwright (`playwright.yml`) are copied from `nextcloud/.github` by the existing LibreCode workflow synchronization action. They are not independently maintained forks. App-specific differences live in adjacent `.yml.patch` files: our Composer aliases and pinned OCP dependency, generic LibreSign fixture, database matrix, route/schema checks and container teardown. `.github/nextcloud-actions-lock.txt` records the official catalog revision and hashes; `.github/actions-lock.txt` remains exclusive to the LibreCode catalog. The reusable Nextcloud Playwright report-merging workflow uses `tests/playwright/merge.config.ts`.
+PHPStan (`phpstan.yml`), PHPUnit on SQLite/MariaDB/PostgreSQL (`phpunit-*.yml`) and Playwright (`playwright.yml`) now come through **one** source, `LibreCodeCoop/.github`. That source already pins and renders the original Nextcloud templates, substituting public runner labels centrally. `.github/actions-lock.txt` is the only workflow lockfile in this application. The standard Composer `phpstan` and `test:unit` aliases are provided locally, with `phpstan.neon` declaring the target Nextcloud PHP minimum. There is only one application-specific overlay: `.github/workflows/playwright.yml.patch` (database matrix, generic LibreSign event fixture, schema/routes assertions and cleanup). The existing shared synchronizer applies this patch and preserves the previous valid workflow if application fails. The Playwright report-merging config remains `tests/playwright/merge.config.ts`. **This architecture depends on LibreCodeCoop/.github PR #115; do not merge the application PR first.**
 
 The CSS framework is the native `@nextcloud/vue` component and theme-variable system, not an additional Bootstrap-style framework. Rules needed for banners, administration, Inbox and automation are kept in `scoped` Vue SFC styles. The residual global stylesheet contains only the Nextcloud mount geometry. `@nextcloud/axios` handles the ordinary authenticated HTTP requests; only page-unload acknowledgements use native `fetch(keepalive)` because the standard Axios transport does not provide an equivalent browser guarantee.
+
+### Standard Vue indentation
+
+The component `<template>`, `<script setup>` and `<style scoped>` blocks are formatted with Nextcloud's `@nextcloud/prettier-config` (four-column tabs). `npm run format:vue` checks for drift; `npm run format:vue:fix` applies the official formatter to every Vue SFC. The ordinary `npm run lint` includes the formatting check, so indentation drift fails the existing organization-managed ESLint workflow.
 
 ### Nextcloud translation and icon conventions
 

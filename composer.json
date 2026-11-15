@@ -29,7 +29,7 @@
   "scripts": {
     "lint": "find lib templates tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l",
     "test": "phpunit --configuration phpunit.xml.dist",
-    "analyse": "phpstan analyse --configuration phpstan.neon.dist --no-progress",
+    "analyse": "@phpstan",
     "check": [
       "@lint",
       "@test",
@@ -38,7 +38,8 @@
     "cs:check": "php-cs-fixer fix --dry-run --diff --using-cache=no",
     "cs:fix": "php-cs-fixer fix --using-cache=no",
     "mutation:test": "infection lib/Service/CtaUrl.php --threads=2 --no-progress --no-interaction",
-    "test:unit": "phpunit --configuration phpunit.xml.dist"
+    "test:unit": "phpunit --configuration phpunit.xml.dist",
+    "phpstan": "phpstan analyse --configuration phpstan.neon"
   },
   "config": {
     "sort-packages": true,
