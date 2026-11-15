@@ -16,7 +16,9 @@ use OCP\IDBConnection;
 class BoardMapper {
 	public const TABLE = 'cc_board_comments';
 
-	public function __construct(private IDBConnection $db) {
+	public function __construct(
+		private IDBConnection $db,
+	) {
 	}
 
 	/** Recorded event-triggered Inbox receipt, indexed by campaign and epoch. */

@@ -18,7 +18,9 @@ class BoardPublicationMapper {
 	private const PUB = 'cc_board_pub';
 	private const SENT = 'cc_board_sent';
 
-	public function __construct(private IDBConnection $db) {
+	public function __construct(
+		private IDBConnection $db,
+	) {
 	}
 
 	/** @return array<string, mixed>|null */

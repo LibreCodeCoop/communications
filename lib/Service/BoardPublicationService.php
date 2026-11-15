@@ -11,8 +11,8 @@ namespace OCA\Communications\Service;
 
 use OCA\Communications\BackgroundJob\BoardBroadcastJob;
 use OCA\Communications\BackgroundJob\EventChannelDeliveryJob;
-use OCA\Communications\Events\AnnouncementPublished;
 use OCA\Communications\Db\BoardPublicationMapper;
+use OCA\Communications\Events\AnnouncementPublished;
 use OCP\Activity\IManager as ActivityManager;
 use OCP\App\IAppManager;
 use OCP\BackgroundJob\IJobList;
@@ -94,7 +94,7 @@ final class BoardPublicationService {
 				}
 				$this->jobs->add(BoardBroadcastJob::class, ['id' => $id,'version' => $version,'offset' => 0]);
 				$stats['enqueued']++;
-			} catch (\Throwable $e) {
+			} catch (\Exception $e) {
 				$stats['errors']++;
 				$this->logger->error('Failed to publish contextual announcement ' . $id,
 					['app' => self::APP,'exception' => $e]);
@@ -146,7 +146,7 @@ final class BoardPublicationService {
 				'app' => self::APP,'campaignId' => $id,'channel' => $channel,
 				'exceptionClass' => $e::class,
 			]);
-		} catch (\Throwable $e) {
+		} catch (\Exception $e) {
 			$attempt = (int)$row['attempts'] + 1;
 			// External provider exceptions may include a phone, chat ID or message:
 			// neither persist their text nor attach them as logger exceptions.
@@ -384,4 +384,5 @@ final class BoardPublicationService {
 	/** Non-personalized publication overview for admin diagnostics. */
 	public function stats(int $id): array {
 		return $this->outbox->stats($id);
-	}}
+	}
+}

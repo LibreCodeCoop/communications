@@ -45,12 +45,7 @@ class EventStore {
 	 * @return array{id:int,event_uuid:string,uid:string,trigger_key:string,context_app:string,created_at:int}
 	 */
 	public function record(string $uid, string $trigger, string $contextApp = 'any', ?string $idempotencyKey = null): array {
-		if ($uid === '' || mb_strlen($uid) > 64 || $trigger === '' || mb_strlen($trigger) > 64) {
-			throw new \InvalidArgumentException('Invalid event subject.');
-		}
-		if (!preg_match('/^[a-z0-9_-]{1,32}$/', $contextApp)) {
-			throw new \InvalidArgumentException('Invalid app context.');
-		}
+		EventInputPolicy::assertValid($uid, $trigger, $contextApp);
 		$dedupeKey = $idempotencyKey === null
 			? bin2hex(random_bytes(32))
 			: hash('sha256', $uid . "\0" . $trigger . "\0" . $idempotencyKey);
