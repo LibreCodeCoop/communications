@@ -2,20 +2,26 @@
 SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script setup lang="ts">
 import { t, getLanguage } from '@nextcloud/l10n'
-import { requestApi } from './services/api'
 import {
 	campaignRecordToForm,
 	serializeCampaignForm,
 	validateCampaignPayload,
 } from './services/campaignForm'
 import type { CampaignSavePayload } from './services/campaignForm'
+import { useCampaignStore } from './stores/campaigns'
+import { storeToRefs } from 'pinia'
+import { effectiveCampaignStatus, selectCampaigns } from './services/campaignList'
+import { fetchCampaignMetrics, persistEditorGroups } from './services/campaigns'
+import { useCampaignUserLookup } from './composables/useCampaignUserLookup'
+import { intentChangePatch, validateWizardStep } from './services/campaignWizard'
+import { channelChangePatch } from './services/deliveryChannelSelection'
+import type { WizardIssue } from './services/campaignWizard'
 
 import { computed, onMounted, ref, watch } from 'vue'
 import type {
 	CampaignRecord,
 	CampaignForm,
 	CampaignCatalog,
-	CampaignApiPayload,
 	CampaignMetrics,
 	GroupSelection,
 	UserSelection,
@@ -248,13 +254,8 @@ const bannerTypes = [
 	},
 ]
 const selectable = (option: { value: string }): string => option.value
-const campaigns = ref<CampaignRecord[]>([])
-const catalog = ref<CampaignCatalog>({
-	groups: [],
-	automation: { intents: [], sources: [], placements: [], applications: [] },
-	deliveryChannels: [],
-})
-const loading = ref(true)
+const campaignStore = useCampaignStore()
+const { campaigns, catalog, loading } = storeToRefs(campaignStore)
 const saving = ref(false)
 const view = ref('list')
 watch(view, (value) => emit('editor-view', value), { immediate: true })
@@ -297,82 +298,46 @@ const nextStepLabel = computed(() =>
 			t('communications', 'Continue: Review and publish'),
 )
 
-function checkWizardStep(step: number): boolean {
-	errorMessage.value = ''
-	if (step === 1 && !automationReady.value) {
-		// TRANSLATORS Action or instruction in the publications management screen.
-		errorMessage.value = t(
-			'communications',
-			'Choose when to deliver the publication.',
-		)
-		return false
-	}
-	if (
-		step === 1
-		&& form.value.trigger_key === 'nextcloud.time.window'
-		&& (!(form.value.starts_at instanceof Date)
-			|| Number.isNaN(form.value.starts_at.getTime()))
-	) {
-		// TRANSLATORS Action or instruction in the publications management screen.
-		errorMessage.value = t('communications', 'Enter the scheduled start date.')
-		return false
-	}
-	if (step === 2) {
-		if (
-			!form.value.name.trim()
-			|| !form.value.headline.trim()
-			|| !form.value.message.trim()
-		) {
+function wizardError(issue: WizardIssue): string {
+	switch (issue) {
+		case 'trigger':
 			// TRANSLATORS Action or instruction in the publications management screen.
-			errorMessage.value = t(
+			return t('communications', 'Choose when to deliver the publication.')
+		case 'startDate':
+			// TRANSLATORS Action or instruction in the publications management screen.
+			return t('communications', 'Enter the scheduled start date.')
+		case 'content':
+			// TRANSLATORS Action or instruction in the publications management screen.
+			return t(
 				'communications',
 				'Enter the internal name, title, and message before continuing.',
 			)
-			return false
-		}
-		if (
-			form.value.audience_type === 'group'
-			&& selectedGroups.value.length === 0
-		) {
+		case 'groups':
 			// TRANSLATORS Action or instruction in the publications management screen.
-			errorMessage.value = t(
-				'communications',
-				'Select at least one recipient group.',
-			)
-			return false
-		}
-		if (
-			form.value.audience_type === 'users'
-			&& selectedUsers.value.length === 0
-		) {
+			return t('communications', 'Select at least one recipient group.')
+		case 'users':
 			// TRANSLATORS Action or instruction in the publications management screen.
-			errorMessage.value = t(
-				'communications',
-				'Select at least one recipient user.',
-			)
-			return false
-		}
-		if (
-			Boolean(form.value.cta_label.trim())
-			!== Boolean(form.value.cta_url.trim())
-		) {
+			return t('communications', 'Select at least one recipient user.')
+		case 'cta':
 			// TRANSLATORS Descriptive message shown in the publications management screen.
-			errorMessage.value = t(
+			return t(
 				'communications',
 				'To display a button, enter its text and URL.',
 			)
-			return false
-		}
-		if (!hasDestination.value) {
+		case 'destination':
 			// TRANSLATORS Action or instruction in the publications management screen.
-			errorMessage.value = t(
-				'communications',
-				'Select at least one delivery method.',
-			)
-			return false
-		}
+			return t('communications', 'Select at least one delivery method.')
 	}
-	return true
+}
+function checkWizardStep(step: number): boolean {
+	const problem = validateWizardStep(step, form.value, {
+		automationReady: automationReady.value,
+		hasDestination: hasDestination.value,
+		groupCount: selectedGroups.value.length,
+		userCount: selectedUsers.value.length,
+	})
+	errorMessage.value = problem ? wizardError(problem) : ''
+	return problem === null
 }
 function goToWizardStep(target: number): void {
 	if (target < 1 || target > 3) return
@@ -394,18 +359,7 @@ function onIntentChange({
 	from: TriggerIntent | null
 	to: TriggerIntent
 }): void {
-	// A scheduled draft must not silently keep a future date when changed into
-	// an event-driven campaign, which would otherwise never appear in tests.
-	if (to === 'board' && from === null) {
-		// No channel is preselected for a new immediate publication.
-		form.value.presentation = 'none'
-	}
-
-	if (to !== 'schedule') form.value.guest_visible = false
-	if (from === 'schedule' && to !== 'schedule') {
-		form.value.starts_at = null
-		form.value.ends_at = null
-	}
+	Object.assign(form.value, intentChangePatch(from, to))
 }
 
 const feedback = ref('')
@@ -430,10 +384,10 @@ const metricsOpen = ref(false)
 const metricsLoading = ref(false)
 const metricsData = ref<CampaignMetrics | null>(null)
 const metricsCampaign = ref<CampaignRecord | null>(null)
-const userSearchOptions = ref<UserSelection[]>([])
+const userLookup = useCampaignUserLookup()
+const userSearchOptions = userLookup.options
 const page = ref(1)
 const PAGE_SIZE = 10
-let userSearchGeneration = 0
 const form = ref<CampaignForm>(makeDefault())
 
 // Outbound channels, Inbox history and presentation are independent.
@@ -654,55 +608,21 @@ const deliveryChannelOptions = computed(() =>
 		}
 	}),
 )
-function setNoticeChannel(field: ChannelNoticeField, enabled: boolean) {
-	if (form.value.guest_visible) return
+function setNoticeChannel(field: ChannelNoticeField, enabled: boolean): void {
 	const channel = deliveryChannelDefinitions.find((item) => item.field === field)
-	if (!channel) return
-	const ready = (catalog.value.deliveryChannels || []).some(
-		(item) => item.id === channel.id && item.ready === true,
-	)
-	// A previously selected channel must remain removable when its app disappears.
-	if (enabled && !ready) return
-	form.value[field] = !!enabled
+	if (channel) onDeliveryChannelChange({ id: channel.id, enabled })
 }
-function onDeliveryChannelChange({ id, enabled }: { id: string; enabled: boolean }) {
-	if (id === 'banner' || id === 'modal') {
-		if (enabled) {
-			// First visual destination on an immediate campaign defaults to a
-			// single impression per user, not daily surprise modals/banners.
-			if (
-				form.value.trigger_key === 'nextcloud.board.published'
-				&& form.value.presentation === 'none'
-				&& form.value.frequency === 'event'
-			) {
-				form.value.frequency = 'once'
-			}
-			form.value.presentation = id
-		} else if (form.value.presentation === id) {
-			form.value.presentation = 'none'
-		}
-		if (id !== 'banner' || !enabled) form.value.guest_visible = false
-		return
-	}
-	if (id === 'inbox') {
-		inboxCopy.value = enabled
-		return
-	}
-	if (id.startsWith('gateway:')) {
-		const gateway = id.slice(8)
-		if (!gatewayDefinitions.some((item) => item.id === id)) return
-		const selected = [...(form.value.gateway_channels || [])]
-		const ready = (catalog.value.deliveryChannels || []).some(
-			(item) => item.id === id && item.ready === true,
-		)
-		if (enabled && (form.value.guest_visible || !ready)) return
-		form.value.gateway_channels = enabled
-			? [...new Set([...selected, gateway])]
-			: selected.filter((item) => item !== gateway)
-		return
-	}
-	const channel = deliveryChannelDefinitions.find((item) => item.id === id)
-	if (channel?.field) setNoticeChannel(channel.field, enabled)
+function onDeliveryChannelChange(change: { id: string; enabled: boolean }): void {
+	Object.assign(
+		form.value,
+		channelChangePatch(
+			form.value,
+			change,
+			catalog.value.deliveryChannels,
+			gatewayDefinitions.map((gateway) => gateway.id),
+			deliveryChannelDefinitions,
+		),
+	)
 }
 const noticeUsers = computed({
 	get: () => !!form.value.notify_users,
@@ -987,32 +907,6 @@ function makeDefault(): CampaignForm {
 	}
 }
 
-async function api<T extends object = CampaignApiPayload>(
-	path: string,
-	{
-		method = 'GET',
-		body,
-	}: { method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'; body?: unknown } = {},
-): Promise<T> {
-	return requestApi<T>(path, method, body)
-}
-
-/**
- * Instant cross-tab refresh without broadcasting campaign content or targeting.
- * The lightweight page adapter re-checks eligibility with the server.
- */
-function announceChanges() {
-	try {
-		if (typeof BroadcastChannel !== 'undefined') {
-			const channel = new BroadcastChannel('communications')
-			channel.postMessage({ event: 'changed' })
-			channel.close()
-		}
-		localStorage.setItem('communications-campaign-update', String(Date.now()))
-	} catch (_) {
-		// Storage denied by the browser; normal 30-second fallback remains.
-	}
-}
 function errorMessageFor(error: unknown): string {
 	return error instanceof Error ? error.message : String(error)
 }
@@ -1024,11 +918,7 @@ function flash(
 	feedbackType.value = type
 }
 function effectiveStatus(c: CampaignRecord): string {
-	if (c.status !== 'active') return c.status
-	const now = Math.floor(Date.now() / 1000)
-	if (c.starts_at !== null && c.starts_at > now) return 'scheduled'
-	if (c.ends_at !== null && c.ends_at <= now) return 'ended'
-	return 'active'
+	return effectiveCampaignStatus(c, Math.floor(Date.now() / 1000))
 }
 const labels: Record<string, string> = {
 	// TRANSLATORS State of a publication that can currently be displayed or delivered.
@@ -1080,29 +970,12 @@ const stats = computed(() => [
 	},
 ])
 const visible = computed(() =>
-	campaigns.value
-		.filter((c) => {
-			const q = search.value.trim().toLocaleLowerCase()
-			if (filterStatus.value === 'all' && c.status === 'archived') return false
-			if (
-				filterStatus.value !== 'all'
-				&& effectiveStatus(c) !== filterStatus.value
-			)
-				return false
-			return (
-				!q
-				|| [c.name, c.headline, c.description, c.trigger_key]
-					.join(' ')
-					.toLocaleLowerCase()
-					.includes(q)
-			)
-		})
-		.sort(
-			(a, b) =>
-				(a.manual_order || 0) - (b.manual_order || 0)
-				|| b.priority - a.priority
-				|| b.id - a.id,
-		),
+	selectCampaigns(
+		campaigns.value,
+		filterStatus.value,
+		search.value,
+		Math.floor(Date.now() / 1000),
+	),
 )
 const pageCount = computed(() =>
 	Math.max(1, Math.ceil(visible.value.length / PAGE_SIZE)),
@@ -1143,25 +1016,11 @@ const userChoices = computed(() => {
 		return true
 	})
 })
-async function searchUsers(search: string) {
-	const generation = ++userSearchGeneration
-	if (search.trim().length < 2) {
-		userSearchOptions.value = []
-		return
-	}
+async function searchUsers(search: string): Promise<void> {
 	try {
-		const payload = await api<{ users?: Array<{ id: string; name: string }> }>(
-			'/api/users?search=' + encodeURIComponent(search),
-		)
-		if (generation === userSearchGeneration) {
-			userSearchOptions.value = (payload.users || []).map((user) => ({
-				id: user.id,
-				displayName: user.name,
-				user: user.id,
-			}))
-		}
-	} catch (e) {
-		flash(errorMessageFor(e), 'error')
+		await userLookup.search(search)
+	} catch (error) {
+		flash(errorMessageFor(error), 'error')
 	}
 }
 function openPreview(campaign: CampaignRecord | null = null): void {
@@ -1371,11 +1230,7 @@ async function saveEditorGroups() {
 	if (editorConfigLoading.value || !catalog.value.canConfigureEditors) return
 	editorConfigLoading.value = true
 	try {
-		const data = await api<{ groups: string[] }>('/api/editor-groups', {
-			method: 'POST',
-			body: { groups: editorGroupValues.value },
-		})
-		editorGroupValues.value = data.groups
+		editorGroupValues.value = await persistEditorGroups(editorGroupValues.value)
 		// TRANSLATORS Action or instruction in the publications management screen.
 		flash(t('communications', 'Editorial groups updated.'), 'success')
 	} catch (e) {
@@ -1384,18 +1239,9 @@ async function saveEditorGroups() {
 		editorConfigLoading.value = false
 	}
 }
-async function refresh() {
-	const data = await api<{ campaigns: CampaignRecord[] }>('/api/campaigns')
-	campaigns.value = data.campaigns || []
-}
 async function updateStatus(c: CampaignRecord, status: string) {
 	try {
-		await api('/api/campaigns/' + c.id + '/status', {
-			method: 'POST',
-			body: { status },
-		})
-		await refresh()
-		announceChanges()
+		await campaignStore.updateStatus(c.id, status)
 		flash(
 			status === 'active'
 				? // TRANSLATORS Short label for an option or field in the publications management screen.
@@ -1414,10 +1260,7 @@ async function openMetrics(c: CampaignRecord) {
 	metricsOpen.value = true
 	metricsLoading.value = true
 	try {
-		const result = await api<{ metrics: CampaignMetrics }>(
-			'/api/campaigns/' + c.id + '/metrics',
-		)
-		metricsData.value = result.metrics
+		metricsData.value = await fetchCampaignMetrics(c.id)
 	} catch (e) {
 		flash(errorMessageFor(e), 'error')
 	} finally {
@@ -1432,12 +1275,7 @@ async function moveCampaign(
 	if (orderSaving.value || c.status === 'archived') return
 	orderSaving.value = true
 	try {
-		await api('/api/campaigns/' + c.id + '/move', {
-			method: 'POST',
-			body: { direction, target_id: targetId },
-		})
-		await refresh()
-		announceChanges()
+		await campaignStore.reorder(c.id, direction, targetId)
 		// TRANSLATORS Short label for an option or field in the publications management screen.
 		flash(t('communications', 'Display order updated.'), 'success')
 	} catch (e) {
@@ -1467,13 +1305,8 @@ async function dropReorder(event: DragEvent, target: CampaignRecord) {
 }
 async function duplicate(c: CampaignRecord) {
 	try {
-		const result = await api<{ campaign: CampaignRecord }>(
-			'/api/campaigns/' + c.id + '/duplicate',
-			{ method: 'POST', body: {} },
-		)
-		await refresh()
-		announceChanges()
-		openEdit(result.campaign)
+		const duplicated = await campaignStore.duplicate(c.id)
+		openEdit(duplicated)
 		// TRANSLATORS Short label for an option or field in the publications management screen.
 		flash(t('communications', 'Copy created as a draft.'), 'success')
 	} catch (e) {
@@ -1496,15 +1329,10 @@ async function deletePermanently() {
 	deleting.value = true
 	const id = deleteTarget.value.id
 	try {
-		await api('/api/campaigns/' + id + '/purge', {
-			method: 'POST',
-			body: { confirmName: deleteName.value },
-		})
+		await campaignStore.purge(id, deleteName.value)
 		confirmDeleteOpen.value = false
 		deleteTarget.value = null
 		deleteName.value = ''
-		await refresh()
-		announceChanges()
 		flash(
 			// TRANSLATORS Descriptive message shown in the publications management screen.
 			t(
@@ -1526,12 +1354,7 @@ function askArchive(c: CampaignRecord) {
 async function archive() {
 	if (!archiveTarget.value) return
 	try {
-		await api('/api/campaigns/' + archiveTarget.value.id, {
-			method: 'DELETE',
-			body: {},
-		})
-		await refresh()
-		announceChanges()
+		await campaignStore.archive(archiveTarget.value.id)
 		// TRANSLATORS Short label for an option or field in the publications management screen.
 		flash(t('communications', 'Publication archived.'), 'success')
 	} catch (e) {
@@ -1545,7 +1368,7 @@ function openCreate() {
 	selectedGroups.value = []
 	selectedExcludedGroups.value = []
 	selectedUsers.value = []
-	userSearchOptions.value = []
+	userLookup.clear()
 	form.value = makeDefault()
 	initialFormSnapshot.value = JSON.stringify(serializableForm())
 	editorId.value = null
@@ -1571,7 +1394,7 @@ function openEdit(c: CampaignRecord) {
 			groupChoices.value.find((option) => option.id === id)?.displayName || id
 		return { id, displayName: label, isNoUser: true }
 	})
-	userSearchOptions.value = []
+	userLookup.clear()
 	form.value = campaignRecordToForm(c, groupIds, DEFAULT_BANNER_COLOR)
 	initialFormSnapshot.value = JSON.stringify(serializableForm())
 	editorId.value = c.id
@@ -1611,22 +1434,14 @@ async function save() {
 	saving.value = true
 	try {
 		const isNew = editorId.value === null
-		const saved = await api<{ campaign: CampaignRecord }>(
-			isNew ? '/api/campaigns' : '/api/campaigns/' + editorId.value,
-			{
-				method: isNew ? 'POST' : 'PUT',
-				body: data,
-			},
-		)
-		await refresh()
-		announceChanges()
+		const saved = await campaignStore.save(data, editorId.value)
 		if (
 			isNew
 			&& ['nextcloud.flow.matched', 'external.webhook'].includes(
 				data.trigger_key,
 			)
 		) {
-			editorId.value = saved.campaign.id
+			editorId.value = saved.id
 			initialFormSnapshot.value = JSON.stringify(serializableForm())
 			flash(
 				data.trigger_key === 'nextcloud.flow.matched'
@@ -1662,18 +1477,11 @@ async function save() {
 
 onMounted(async () => {
 	try {
-		const [metadata, data] = await Promise.all([
-			api<CampaignCatalog>('/api/catalog'),
-			api<{ campaigns: CampaignRecord[] }>('/api/campaigns'),
-		])
-		catalog.value = metadata
-		editorGroupValues.value = metadata.editorGroups || []
-		campaigns.value = data.campaigns || []
+		await campaignStore.load()
+		editorGroupValues.value = catalog.value.editorGroups || []
 		if (new URL(location.href).searchParams.get('view') === 'new') openCreate()
 	} catch (e) {
 		flash(errorMessageFor(e), 'error')
-	} finally {
-		loading.value = false
 	}
 })
 </script>

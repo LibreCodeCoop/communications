@@ -40,6 +40,7 @@
     "@nextcloud/router": "3.2.0",
     "@nextcloud/vue": "9.14.1",
     "@uiw/codemirror-theme-material": "4.25.12",
+    "pinia": "4.1.0",
     "vue": "^3.5.18",
     "vue-codemirror6": "1.7.0"
   },
