@@ -26,7 +26,7 @@ final class CampaignOrderPlanner {
 		if (!in_array($direction, ['up','down','before','after'], true)) {
 			throw new InvalidArgumentException($this->l10n->t('Invalid reordering operation.'));
 		}
-		$rows = array_values(array_filter($this->all(),
+		$rows = array_values(array_filter($campaigns,
 			static fn (array $c):bool => $c['status'] !== 'archived'));
 		usort($rows, static fn (array $a, array $b):int
 			=> ($a['manual_order'] <=> $b['manual_order'])
