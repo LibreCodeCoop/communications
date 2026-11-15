@@ -32,7 +32,7 @@ Development uses the organization-managed lint, type-check, build, Node test and
 
 Route registration is checked by reflecting the controllers' `#[FrontpageRoute]` declarations and comparing their paths and verbs against the Nextcloud router. There is no second hand-maintained route inventory; adding a controller action makes the test discover it automatically.
 
-The first-installation schema is checked against `tests/integration/schema-contract.sqlite.json`. The assertion checks full SQLite column types/defaults and portable nullability/length/index contracts in PostgreSQL and MariaDB on disposable databases. During pre-release development, discard and recreate isolated test databases after a schema change; there is no published upgrade chain.
+The first-installation schema is checked against the canonical `lib/Migration/InitialSchema.php` definitions, without a separate JSON snapshot to update after schema changes. The disposable-database assertion compares SQLite column types/defaults and portable nullability/length/index contracts in PostgreSQL and MariaDB. A schema change updates its migration source of truth only; integration checks still verify that the installed database matches it. During pre-release development, discard and recreate isolated test databases after a schema change; there is no published upgrade chain.
 
 Frontend TypeScript unit tests belong in `tests/js/unit/` (Vitest); PHP unit tests remain in `tests/php/Unit/` (PHPUnit). Browser tests live in `tests/e2e/`, application integration contracts in `tests/integration/`, disposable test infrastructure in `tests/ci/`, and Node packaging checks in `tests/build/`. The runner configuration owns discovery paths rather than listing individual tests.
 

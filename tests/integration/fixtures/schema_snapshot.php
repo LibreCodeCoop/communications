@@ -45,12 +45,46 @@ foreach ($db->createSchema()->getTables() as $table) {
 }
 ksort($tables);
 
-$expected = json_decode(
-	(string)file_get_contents(__DIR__ . '/../schema-contract.sqlite.json'),
-	true,
-	512,
-	JSON_THROW_ON_ERROR,
-);
+// Derive the expected schema from the same declarative source used by the
+// initial migration. A legitimate schema change must never require maintaining
+// a second, hand-edited SQLite JSON copy.
+$expected = [];
+foreach (\OCA\Communications\Migration\InitialSchema::definitions() as $name => $definition) {
+	$table = new \Doctrine\DBAL\Schema\Table($name);
+	foreach ($definition['columns'] as $columnName => [$type, $columnOptions]) {
+		$table->addColumn($columnName, $type, $columnOptions);
+	}
+	$table->setPrimaryKey($definition['primary']);
+	foreach ($definition['indexes'] as [$columns, $indexName, $unique]) {
+		if ($unique) {
+			$table->addUniqueIndex($columns, $indexName);
+		} else {
+			$table->addIndex($columns, $indexName);
+		}
+	}
+	$columns = [];
+	foreach ($table->getColumns() as $column) {
+		$columns[$column->getName()] = [
+			'type' => strtolower((new \ReflectionClass($column->getType()))->getShortName()),
+			'length' => $column->getLength(),
+			'notnull' => $column->getNotnull(),
+			'default' => $column->getDefault(),
+			'autoincrement' => $column->getAutoincrement(),
+		];
+	}
+	$indexes = [];
+	foreach ($table->getIndexes() as $index) {
+		$indexes[$index->isPrimary() ? 'primary' : $index->getName()] = [
+			'columns' => $index->getColumns(),
+			'unique' => $index->isUnique(),
+			'primary' => $index->isPrimary(),
+		];
+	}
+	ksort($columns);
+	ksort($indexes);
+	$expected[$name] = ['columns' => $columns, 'indexes' => $indexes];
+}
+ksort($expected);
 
 $failures = [];
 if (array_keys($expected) !== array_keys($tables)) {
@@ -72,7 +106,7 @@ foreach ($expected as $tableName => $contract) {
 		}
 		$found = $actual['columns'][$name];
 		// Databases normalize types, defaults and autoincrement differently.
-		// Verify the full initial-install schema on SQLite, and the portable
+		// Verify the migration's full declaration on SQLite, and the portable
 		// nullability/length contract on PostgreSQL and MariaDB.
 		if ($isSqlite && $found !== $column) {
 			$failures[] = "Column differs: {$tableName}.{$name}";
