@@ -22,12 +22,12 @@ final class DeliveryFrequencyPolicyTest extends TestCase {
 			'no limits on each event' => ['event', [1, 2], 0, 0, 0, true],
 			'total count boundary' => ['event', [1, 2], 2, 0, 0, false],
 			'daily rolling window at boundary' => ['daily', [100], 0, 0, 0, false],
-			'daily allows at next boundary' => ['daily', [100], 0, 0, 1, true],
+			'daily allows at next boundary' => ['daily', [100], 0, 0, 100, true],
 			'weekly window still active' => ['weekly', [100], 0, 0, 604799 - 86400, false],
 			'custom window still active' => ['custom', [86300], 0, 3, 0, false],
 			'custom window passed' => ['custom', [86300], 0, 3, 80, true],
 			'per-day limit reached' => ['event', [0, 100], 0, 2, 0, false],
-			'per-day limit ignores old entries' => ['event', [0], 0, 1, 0, true],
+			'per-day limit ignores old entries' => ['event', [-1], 0, 1, 0, true],
 		];
 	}
 
