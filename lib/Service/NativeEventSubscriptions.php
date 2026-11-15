@@ -11,7 +11,7 @@ namespace OCA\Communications\Service;
 
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
-use OCP\IDBConnection;
+use OCA\Communications\Db\CampaignMapper;
 
 /**
  * Compiled subscriptions are refreshed on CAMPAIGN WRITES. Normal Nextcloud
@@ -27,7 +27,7 @@ final class NativeEventSubscriptions {
 	public function __construct(
 		private IAppConfig $config,
 		private IAppManager $apps,
-		private IDBConnection $db,
+		private CampaignMapper $campaignMapper,
 		private NativeEventCatalog $catalog,
 		private \OCP\IL10N $l10n,
 	) {
@@ -113,36 +113,14 @@ final class NativeEventSubscriptions {
 		if ($status !== 'active' || !str_starts_with($trigger, 'php_event.')) {
 			return;
 		}
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('trigger_key')->from('cc_campaigns')
-			->where($qb->expr()->eq('status', $qb->createNamedParameter('active')))
-			->andWhere($qb->expr()->like('trigger_key', $qb->createNamedParameter('php_event.%')))
-			->groupBy('trigger_key');
-		if ($excludeCampaignId !== null) {
-			$qb->andWhere($qb->expr()->neq('id', $qb->createNamedParameter($excludeCampaignId)));
-		}
-		$result = $qb->executeQuery();
-		$keys = $result->fetchFirstColumn();
-		$result->closeCursor();
+		$keys = $this->campaignMapper->activeNativeEventKeys($excludeCampaignId);
 		if (!in_array($trigger, $keys, true) && count($keys) >= self::MAX_SUBSCRIPTIONS) {
 			throw new \InvalidArgumentException($this->l10n->t('The limit of 80 active event types has been reached. Disable another campaign before activating a new source.'));
 		}
 	}
 
-	/**
-	 * Rebuild after a create/update/pause/archive. Querying occurs only on
-	 * management writes; disabled applications are never subscribed to.
-	 */
 	public function refresh(): void {
-		$qb = $this->db->getQueryBuilder();
-		$result = $qb->select('trigger_key')->from('cc_campaigns')
-			->where($qb->expr()->eq('status', $qb->createNamedParameter('active')))
-			->andWhere($qb->expr()->like('trigger_key', $qb->createNamedParameter('php_event.%')))
-			->groupBy('trigger_key')
-			->setMaxResults(self::MAX_SUBSCRIPTIONS + 1)
-			->executeQuery();
-		$keys = $result->fetchFirstColumn();
-		$result->closeCursor();
+		$keys = $this->campaignMapper->activeNativeEventKeys(null, self::MAX_SUBSCRIPTIONS + 1);
 		if (count($keys) > self::MAX_SUBSCRIPTIONS) {
 			throw new \RuntimeException('Too many active dynamic event classes.');
 		}

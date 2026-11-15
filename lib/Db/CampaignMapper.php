@@ -151,4 +151,23 @@ class CampaignMapper {
 		}
 		$qb->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))->executeStatement();
 	}
+
+	/** Active native event keys, with optional campaign exclusion. */
+	public function activeNativeEventKeys(?int $excludeCampaignId = null, ?int $limit = null): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('trigger_key')->from(self::TABLE)
+			->where($qb->expr()->eq('status', $qb->createNamedParameter('active')))
+			->andWhere($qb->expr()->like('trigger_key', $qb->createNamedParameter('php_event.%')))
+			->groupBy('trigger_key');
+		if ($excludeCampaignId !== null) {
+			$qb->andWhere($qb->expr()->neq('id', $qb->createNamedParameter($excludeCampaignId, IQueryBuilder::PARAM_INT)));
+		}
+		if ($limit !== null) {
+			$qb->setMaxResults($limit);
+		}
+		$result = $qb->executeQuery();
+		$keys = $result->fetchFirstColumn();
+		$result->closeCursor();
+		return $keys;
+	}
 }
