@@ -80,7 +80,7 @@
     "Archive": "Arquivar",
     "Archive publication": "Arquivar publicação",
     "Archive the publication before deleting it permanently.": "Arquive a publicação antes de excluí-la definitivamente.",
-    "Archive “": "Arquivar “",
+    "Archive “{name}”? It will no longer be displayed and can be restored later.": "Arquivar “{name}”? Ela deixará de ser apresentada e poderá ser restaurada depois.",
     "Archived": "Arquivada",
     "At most once every 24 hours": "No máximo uma vez a cada 24 horas",
     "At most once every 7 days": "No máximo uma vez a cada 7 dias",
@@ -580,6 +580,7 @@
     "Start *": "Início *",
     "Starts with": "Começa com",
     "Statistics": "Estatísticas",
+    "Statistics for {name}": "Estatísticas de {name}",
     "Status": "Status",
     "Status updated.": "Status atualizado.",
     "Subject to the provider's policies and approved templates.": "Sujeito às políticas e modelos aprovados do provedor.",
@@ -683,12 +684,12 @@
     "no end date": "sem prazo final",
     "now": "agora",
     "numeric": "numérico",
+    "{ready} of {total} providers configured": "{ready} de {total} provedores configurados",
     "of": "de",
     "options: search by name to find more.": "opções: pesquise pelo nome para encontrar outras.",
     "starts with": "começa com",
     "{count} in 24 hours": "{count} em 24 horas",
-    "— Choose color": "— Escolher cor",
-    "”? It will no longer be displayed and can be restored later.": "”? Ela deixará de ser apresentada e poderá ser restaurada depois."
+    "— Choose color": "— Escolher cor"
   },
   "pluralForm": "nplurals=2; plural=(n != 1);"
 }

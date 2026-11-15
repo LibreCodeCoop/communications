@@ -371,6 +371,15 @@ const deleteTarget = ref<CampaignRecord | null>(null)
 const deleteName = ref('')
 const deleting = ref(false)
 const archiveTarget = ref<CampaignRecord | null>(null)
+
+const archiveConfirmationMessage = computed(() => {
+	// TRANSLATORS {name} is the publication being archived; this sentence may be reordered for different languages.
+	return t(
+		'communications',
+		'Archive “{name}”? It will no longer be displayed and can be restored later.',
+		{ name: archiveTarget.value?.name || '' },
+	)
+})
 const rowMenuOpen = ref<Record<number, boolean>>({})
 const draggingCampaignId = ref<number | null>(null)
 const orderSaving = ref(false)
@@ -384,6 +393,13 @@ const metricsOpen = ref(false)
 const metricsLoading = ref(false)
 const metricsData = ref<CampaignMetrics | null>(null)
 const metricsCampaign = ref<CampaignRecord | null>(null)
+
+const metricsDialogName = computed(() => {
+	// TRANSLATORS {name} is the publication name in the statistics dialog title.
+	return t('communications', 'Statistics for {name}', {
+		name: metricsCampaign.value?.name || '',
+	})
+})
 const userLookup = useCampaignUserLookup()
 const userSearchOptions = userLookup.options
 const page = ref(1)
@@ -564,6 +580,15 @@ const gatewayGroup = computed(() =>
 const gatewayReadyCount = computed(
 	() => gatewayOptions.value.filter((x) => x.ready).length,
 )
+
+const gatewayProviderCountLabel = computed(() => {
+	if (!gatewayGroup.value?.installed) return adminAppNotInstalledLabel
+	// TRANSLATORS {ready} is the number of configured messaging providers; {total} is the total number of available providers.
+	return t('communications', '{ready} of {total} providers configured', {
+		ready: gatewayReadyCount.value,
+		total: gatewayOptions.value.length,
+	})
+})
 
 const deliveryChannelOptions = computed(() =>
 	deliveryChannelDefinitions.map((definition) => {
@@ -1484,6 +1509,182 @@ onMounted(async () => {
 		flash(errorMessageFor(e), 'error')
 	}
 })
+
+// TRANSLATORS Heading for the publications management overview.
+const adminOverviewLabel = t('communications', 'Overview')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminAllPublicationsLabel = t('communications', 'All publications')
+// TRANSLATORS Column heading for the publication name.
+const adminPublicationLabel = t('communications', 'Publication')
+// TRANSLATORS Column heading for the event or schedule that activates publication.
+const adminTriggerLabel = t('communications', 'Trigger')
+// TRANSLATORS Column heading for intended recipients.
+const adminAudienceLabel = t('communications', 'Audience')
+// TRANSLATORS Column heading for publication availability.
+const adminPeriodLabel = t('communications', 'Period')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminGroupsWithEditorialPermissionsLabel = t(
+	'communications',
+	'Groups with editorial permissions',
+)
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminIdentificationLabel = t('communications', 'Identification')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminContentLabel = t('communications', 'Content')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminTranslationLanguageLabel = t('communications', 'Translation language')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminRecipientsLabel = t('communications', 'Recipients')
+// TRANSLATORS Action or instruction in the publications management screen.
+const adminSendToLabel = t('communications', 'Send to')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminGroupMatchingLabel = t('communications', 'Group matching')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminHowToMatchExcludedGroupsLabel = t(
+	'communications',
+	'How to match excluded groups',
+)
+// TRANSLATORS Descriptive message shown in the publications management screen.
+const adminMessagingAndSMSTwoFactorLabel = t(
+	'communications',
+	'Messaging and SMS (Two-Factor Gateway)',
+)
+// TRANSLATORS Availability indicator when a messaging provider app is absent.
+const adminAppNotInstalledLabel = t('communications', 'App not installed')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminMessageTypeLabel = t('communications', 'Message type')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminBannerColorLabel = t('communications', 'Banner color')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminBannerIconLabel = t('communications', 'Banner icon')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminAllowDismissingTheBannerLabel = t(
+	'communications',
+	'Allow dismissing the banner',
+)
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminTextAlignmentLabel = t('communications', 'Text alignment')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminTextColorOptionalLabel = t('communications', 'Text color (optional)')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminVisualDestinationLabel = t('communications', 'Visual destination')
+// TRANSLATORS Name of a delivery option without a banner or dialog.
+const adminNoContextualDisplayLabel = t('communications', 'No contextual display')
+// TRANSLATORS Name of a contextual visual delivery format: banner.
+const adminContextualBannerLabel = t('communications', 'Contextual banner')
+// TRANSLATORS Name of a contextual visual delivery format: modal dialog.
+const adminModalDialogLabel = t('communications', 'Modal dialog')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminPriority0100Label = t('communications', 'Priority (0–100)')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminWhereToDisplayLabel = t('communications', 'Where to display')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminFrequencyLimitLabel = t('communications', 'Frequency limit')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminWhereToDisplayThePublicationLabel = t(
+	'communications',
+	'Where to display the publication',
+)
+// TRANSLATORS Descriptive message shown in the publications management screen.
+const adminIncludedOrExcludedApplicationsLabel = t(
+	'communications',
+	'Included or excluded applications *',
+)
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminCategoryLabel = t('communications', 'Category')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminVisualThemeLabel = t('communications', 'Visual theme')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminPublicationStatusLabel = t('communications', 'Publication status')
+// TRANSLATORS Action or instruction in the publications management screen.
+const adminChooseAValidConditionToLabel = t(
+	'communications',
+	'Choose a valid condition to continue.',
+)
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminForWhomLabel = t('communications', 'For whom')
+// TRANSLATORS Short label for an option or field in the publications management screen.
+const adminPublicationTitleLabel = t('communications', 'Publication title')
+// TRANSLATORS Progress indicator shown in the publications management screen.
+const adminLoadingLabel = t('communications', 'Loading…')
+// TRANSLATORS Metrics label for browser-reported estimates of announcement impressions.
+const adminEstimatedImpressionsLabel = t('communications', 'Estimated impressions')
+// TRANSLATORS Metrics label counting clicks on publication actions.
+const adminClicksLabel = t('communications', 'Clicks')
+// TRANSLATORS Metrics label counting dismissals of a contextual publication.
+const adminDismissalsLabel = t('communications', 'Dismissals')
+// TRANSLATORS Metrics label counting queued or leased publication deliveries.
+const adminQueuedOrReservedDeliveriesLabel = t(
+	'communications',
+	'Queued or reserved deliveries',
+)
+
+// TRANSLATORS Empty-state instruction for the publication management list.
+const adminCreateAPublicationOrChangeLabel = t(
+	'communications',
+	'Create a publication or change the filters.',
+)
+// TRANSLATORS Empty-state title when no publications match filters.
+const adminNoPublicationsFoundLabel = t('communications', 'No publications found')
+// TRANSLATORS Title for the editor when creating a publication.
+const adminNewPublicationLabel = t('communications', 'New publication')
+// TRANSLATORS Title for the editor when updating an existing publication.
+const adminEditPublicationLabel = t('communications', 'Edit publication')
+// TRANSLATORS Placeholder example of a publication internal name.
+const adminExampleWelcomeNoticeLabel = t('communications', 'Example: Welcome notice')
+// TRANSLATORS Required field label for the publication internal name.
+const adminInternalNameLabel = t('communications', 'Internal name *')
+// TRANSLATORS Placeholder for the publication message editor.
+const adminWriteYourMessageLabel = t('communications', 'Write your message…')
+// TRANSLATORS Required field label for publication message body.
+const adminDisplayedMessageLabel = t('communications', 'Displayed message *')
+// TRANSLATORS Placeholder for choosing recipient groups.
+const adminSelectOneOrMoreGroupsLabel = t(
+	'communications',
+	'Select one or more groups',
+)
+// TRANSLATORS Selector label for the groups that receive a publication.
+const adminRecipientGroupsLabel = t('communications', 'Recipient groups')
+// TRANSLATORS Placeholder for searching individual Nextcloud recipients.
+const adminSearchByNameOrIdentifierLabel = t(
+	'communications',
+	'Search by name or identifier',
+)
+// TRANSLATORS Selector label for individual publication recipients.
+const adminRecipientUsersLabel = t('communications', 'Recipient users')
+// TRANSLATORS Placeholder for selecting excluded groups.
+const adminTheseGroupsWillNotReceiveLabel = t(
+	'communications',
+	'These groups will not receive the publication',
+)
+// TRANSLATORS Selector label for the excluded recipient groups.
+const adminExcludedGroupsLabel = t('communications', 'Excluded groups')
+// TRANSLATORS Status description when a publication is not active.
+const adminWhileDraftOrPausedThisHint = t(
+	'communications',
+	'While draft or paused, this publication will not be displayed or sent.',
+)
+// TRANSLATORS Status description for a publication being activated.
+const adminThePublicationWillBecomeActiveHint = t(
+	'communications',
+	'The publication will become active according to the configured schedule and rules.',
+)
+// TRANSLATORS Button for persisting a publication.
+const adminSavePublicationLabel = t('communications', 'Save publication')
+// TRANSLATORS Progress label while saving a publication.
+const adminSavingLabel = t('communications', 'Saving…')
+// TRANSLATORS Preview action for visual banner or modal delivery.
+const adminTestPresentationLabel = t('communications', 'Test presentation')
+// TRANSLATORS Preview action for a publication without visual display.
+const adminPreviewMessageLabel = t('communications', 'Preview message')
+// TRANSLATORS Action to pause an active publication.
+const adminPauseActionLabel = t('communications', 'Pause')
+// TRANSLATORS Action to activate a publication.
+const adminActivateActionLabel = t('communications', 'Activate')
+// TRANSLATORS Heading for a non-visual publication's message preview.
+const adminMessagePreviewTitleLabel = t('communications', 'Message preview')
+// TRANSLATORS Heading for a contextual banner or modal preview.
+const adminPreviewTitleLabel = t('communications', 'Preview')
 </script>
 
 <template>
@@ -1500,9 +1701,7 @@ onMounted(async () => {
 				<div class="cc-native-heading cc-native-heading-overview">
 					<div>
 						<h2>
-							<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-								t('communications', 'Overview')
-							}}
+							{{ adminOverviewLabel }}
 						</h2>
 						<p>
 							<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->
@@ -1530,9 +1729,7 @@ onMounted(async () => {
 					<div class="cc-native-list-head">
 						<div>
 							<h2>
-								<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-									t('communications', 'All publications')
-								}}
+								{{ adminAllPublicationsLabel }}
 							</h2>
 							<p>
 								<!-- TRANSLATORS Explanatory help text shown in the publications management screen. -->
@@ -1563,40 +1760,25 @@ onMounted(async () => {
 						</div>
 					</div>
 
-					<!-- TRANSLATORS Empty state or unavailable-condition message in the publications management screen. -->
-					<!-- TRANSLATORS Action or instruction in the publications management screen. -->
 					<NcEmptyContent
 						v-if="!loading && !visible.length"
-						:name="t('communications', 'No publications found')"
-						:description="
-							t(
-								'communications',
-								'Create a publication or change the filters.',
-							)
-						" />
+						:name="adminNoPublicationsFoundLabel"
+						:description="adminCreateAPublicationOrChangeLabel" />
 					<div v-else class="cc-native-table-scroll">
 						<table class="cc-native-table">
 							<thead>
 								<tr>
 									<th>
-										<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t('communications', 'Publication')
-										}}
+										{{ adminPublicationLabel }}
 									</th>
 									<th>
-										<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t('communications', 'Trigger')
-										}}
+										{{ adminTriggerLabel }}
 									</th>
 									<th>
-										<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t('communications', 'Audience')
-										}}
+										{{ adminAudienceLabel }}
 									</th>
 									<th>
-										<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t('communications', 'Period')
-										}}
+										{{ adminPeriodLabel }}
 									</th>
 									<!-- TRANSLATORS Column indicating the publication lifecycle state. -->
 									<th>{{ t('communications', 'Status') }}</th>
@@ -1739,14 +1921,8 @@ onMounted(async () => {
 													<!-- TRANSLATORS Action or instruction in the publications management screen. -->
 													{{
 														campaign.status === 'active'
-															? t(
-																	'communications',
-																	'Pause',
-																)
-															: t(
-																	'communications',
-																	'Activate',
-																)
+															? adminPauseActionLabel
+															: adminActivateActionLabel
 													}}
 												</NcActionButton>
 												<!-- TRANSLATORS Restore an archived publication to the editable list. -->
@@ -1894,14 +2070,9 @@ onMounted(async () => {
 							}}
 						</p>
 						<div class="cc-native-control">
-							<label for="cc-editor-groups"
-								><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-									t(
-										'communications',
-										'Groups with editorial permissions',
-									)
-								}}</label
-							>
+							<label for="cc-editor-groups">{{
+								adminGroupsWithEditorialPermissionsLabel
+							}}</label>
 							<!-- TRANSLATORS Action or instruction in the publications management screen. -->
 							<NcSelect
 								v-model="editorGroupValues"
@@ -1942,12 +2113,10 @@ onMounted(async () => {
 							:text="t('communications', 'Back to publications')"
 							@click="cancelEdit" />
 						<h1>
-							<!-- TRANSLATORS Action or instruction in the publications management screen. -->
-							<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 							{{
 								editMode
-									? t('communications', 'Edit publication')
-									: t('communications', 'New publication')
+									? adminEditPublicationLabel
+									: adminNewPublicationLabel
 							}}
 						</h1>
 						<p>
@@ -2074,22 +2243,13 @@ onMounted(async () => {
 							</div>
 							<section class="cc-native-section">
 								<h2>
-									<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-										t('communications', 'Identification')
-									}}
+									{{ adminIdentificationLabel }}
 								</h2>
-								<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-								<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 								<NcTextField
 									v-model="form.name"
-									:label="t('communications', 'Internal name *')"
+									:label="adminInternalNameLabel"
 									:maxlength="160"
-									:placeholder="
-										t(
-											'communications',
-											'Example: Welcome notice',
-										)
-									" />
+									:placeholder="adminExampleWelcomeNoticeLabel" />
 								<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 								<NcTextArea
 									v-model="form.description"
@@ -2103,9 +2263,7 @@ onMounted(async () => {
 							</section>
 							<section class="cc-native-section">
 								<h2>
-									<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-										t('communications', 'Content')
-									}}
+									{{ adminContentLabel }}
 								</h2>
 								<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 								<NcTextField
@@ -2113,23 +2271,11 @@ onMounted(async () => {
 									:label="t('communications', 'Displayed title *')"
 									:maxlength="180" />
 								<div class="cc-native-rich">
-									<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-									<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 									<MarkdownEditor
 										v-model="form.message"
-										:label="
-											t(
-												'communications',
-												'Displayed message *',
-											)
-										"
+										:label="adminDisplayedMessageLabel"
 										:description="contentFormattingHelp"
-										:placeholder="
-											t(
-												'communications',
-												'Write your message…',
-											)
-										"
+										:placeholder="adminWriteYourMessageLabel"
 										min-height="130px"
 										max-height="410px" />
 								</div>
@@ -2189,14 +2335,9 @@ onMounted(async () => {
 										}}
 									</p>
 									<div class="cc-native-control">
-										<label for="cc-translation-locale"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t(
-													'communications',
-													'Translation language',
-												)
-											}}</label
-										>
+										<label for="cc-translation-locale">{{
+											adminTranslationLanguageLabel
+										}}</label>
 										<NcSelect
 											v-model="translationLocale"
 											:options="languageOptions"
@@ -2229,16 +2370,12 @@ onMounted(async () => {
 							</section>
 							<section class="cc-native-section">
 								<h2>
-									<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-										t('communications', 'Recipients')
-									}}
+									{{ adminRecipientsLabel }}
 								</h2>
 								<div class="cc-native-control">
-									<label for="cc-audience"
-										><!-- TRANSLATORS Action or instruction in the publications management screen. -->{{
-											t('communications', 'Send to')
-										}}</label
-									>
+									<label for="cc-audience">{{
+										adminSendToLabel
+									}}</label>
 									<NcSelect
 										v-model="form.audience_type"
 										:options="audienceOptions"
@@ -2249,29 +2386,20 @@ onMounted(async () => {
 								<div
 									v-if="form.audience_type === 'group'"
 									class="cc-native-control">
-									<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-									<!-- TRANSLATORS Action or instruction in the publications management screen. -->
 									<NcSelectUsers
 										v-model="selectedGroups"
 										:options="groupChoices"
 										input-id="cc-group"
-										:input-label="
-											t('communications', 'Recipient groups')
-										"
+										:input-label="adminRecipientGroupsLabel"
 										:placeholder="
-											t(
-												'communications',
-												'Select one or more groups',
-											)
+											adminSelectOneOrMoreGroupsLabel
 										"
 										multiple
 										keep-open />
 									<div class="cc-native-control">
-										<label for="cc-group-match"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t('communications', 'Group matching')
-											}}</label
-										>
+										<label for="cc-group-match">{{
+											adminGroupMatchingLabel
+										}}</label>
 										<NcSelect
 											v-model="form.group_match"
 											:options="groupMatchOptions"
@@ -2283,20 +2411,13 @@ onMounted(async () => {
 								<div
 									v-if="form.audience_type === 'users'"
 									class="cc-native-control">
-									<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-									<!-- TRANSLATORS Action or instruction in the publications management screen. -->
 									<NcSelectUsers
 										v-model="selectedUsers"
 										:options="userChoices"
 										input-id="cc-users"
-										:input-label="
-											t('communications', 'Recipient users')
-										"
+										:input-label="adminRecipientUsersLabel"
 										:placeholder="
-											t(
-												'communications',
-												'Search by name or identifier',
-											)
+											adminSearchByNameOrIdentifierLabel
 										"
 										multiple
 										keep-open
@@ -2327,34 +2448,19 @@ onMounted(async () => {
 										}}
 									</summary>
 									<div class="cc-native-control">
-										<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-										<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->
 										<NcSelectUsers
 											v-model="selectedExcludedGroups"
 											:options="groupChoices"
 											input-id="cc-excluded"
-											:input-label="
-												t(
-													'communications',
-													'Excluded groups',
-												)
-											"
+											:input-label="adminExcludedGroupsLabel"
 											:placeholder="
-												t(
-													'communications',
-													'These groups will not receive the publication',
-												)
+												adminTheseGroupsWillNotReceiveLabel
 											"
 											multiple
 											keep-open />
-										<label for="cc-excluded-match"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t(
-													'communications',
-													'How to match excluded groups',
-												)
-											}}</label
-										>
+										<label for="cc-excluded-match">{{
+											adminHowToMatchExcludedGroupsLabel
+										}}</label>
 										<NcSelect
 											v-model="form.excluded_match"
 											:options="excludedMatchOptions"
@@ -2413,27 +2519,12 @@ onMounted(async () => {
 										@change="onDeliveryChannelChange" />
 									<details class="cc-gateway-provider-details">
 										<summary>
-											<strong
-												><!-- TRANSLATORS Descriptive message shown in the publications management screen. -->{{
-													t(
-														'communications',
-														'Messaging and SMS (Two-Factor Gateway)',
-													)
-												}}</strong
-											>
-											<span
-												><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-													gatewayGroup?.installed
-														? gatewayReadyCount
-															+ ' de '
-															+ gatewayOptions.length
-															+ ' provedores configurados'
-														: t(
-																'communications',
-																'App not installed',
-															)
-												}}</span
-											>
+											<strong>{{
+												adminMessagingAndSMSTwoFactorLabel
+											}}</strong>
+											<span>{{
+												gatewayProviderCountLabel
+											}}</span>
 										</summary>
 										<p class="cc-native-hint">
 											<!-- TRANSLATORS Explanatory help text shown in the publications management screen. -->
@@ -2540,9 +2631,7 @@ onMounted(async () => {
 										<span
 											id="cc-banner-type-label"
 											class="cc-native-label"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t('communications', 'Message type')
-											}}</span
+											>{{ adminMessageTypeLabel }}</span
 										>
 										<p class="cc-native-hint">
 											<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->
@@ -2592,14 +2681,9 @@ onMounted(async () => {
 										<div
 											v-if="form.theme === 'custom'"
 											class="cc-banner-color-picker">
-											<span class="cc-native-label"
-												><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-													t(
-														'communications',
-														'Banner color',
-													)
-												}}</span
-											>
+											<span class="cc-native-label">{{
+												adminBannerColorLabel
+											}}</span>
 											<NcColorPicker
 												v-model="form.banner_color"
 												:palette="colorPickerPalette"
@@ -2656,14 +2740,9 @@ onMounted(async () => {
 										</div>
 										<div
 											class="cc-native-control cc-banner-icon-picker">
-											<label for="cc-banner-icon"
-												><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-													t(
-														'communications',
-														'Banner icon',
-													)
-												}}</label
-											>
+											<label for="cc-banner-icon">{{
+												adminBannerIconLabel
+											}}</label>
 											<NcSelect
 												v-model="form.banner_icon"
 												:options="bannerIconOptions"
@@ -2715,11 +2794,8 @@ onMounted(async () => {
 										v-if="form.presentation === 'banner'"
 										v-model="form.dismissible"
 										type="switch"
-										><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t(
-												'communications',
-												'Allow dismissing the banner',
-											)
+										>{{
+											adminAllowDismissingTheBannerLabel
 										}}</NcCheckboxRadioSwitch
 									>
 								</div>
@@ -2729,11 +2805,9 @@ onMounted(async () => {
 										|| form.presentation === 'none'
 									"
 									class="cc-native-control">
-									<label for="cc-text-align"
-										><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t('communications', 'Text alignment')
-										}}</label
-									>
+									<label for="cc-text-align">{{
+										adminTextAlignmentLabel
+									}}</label>
 									<NcSelect
 										v-model="form.text_align"
 										:options="alignments"
@@ -2747,14 +2821,7 @@ onMounted(async () => {
 										|| form.presentation === 'none'
 									"
 									class="cc-banner-color-picker">
-									<label
-										><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t(
-												'communications',
-												'Text color (optional)',
-											)
-										}}</label
-									>
+									<label>{{ adminTextColorOptionalLabel }}</label>
 									<NcColorPicker
 										v-model="selectedTextColor"
 										clearable
@@ -2851,43 +2918,22 @@ onMounted(async () => {
 								</h2>
 								<div class="cc-native-pair">
 									<div class="cc-native-control cc-format-summary">
-										<span class="cc-native-label"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t(
-													'communications',
-													'Visual destination',
-												)
-											}}</span
-										>
-										<strong
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. --><!-- TRANSLATORS Short label for an option or field in the publications management screen. --><!-- TRANSLATORS Empty state or unavailable-condition message in the publications management screen. -->{{
-												form.presentation === 'modal'
-													? t(
-															'communications',
-															'Modal dialog',
-														)
-													: form.presentation === 'banner'
-														? t(
-																'communications',
-																'Contextual banner',
-															)
-														: t(
-																'communications',
-																'No contextual display',
-															)
-											}}</strong
-										>
+										<span class="cc-native-label">{{
+											adminVisualDestinationLabel
+										}}</span>
+										<strong>{{
+											form.presentation === 'modal'
+												? adminModalDialogLabel
+												: form.presentation === 'banner'
+													? adminContextualBannerLabel
+													: adminNoContextualDisplayLabel
+										}}</strong>
 									</div>
 									<div
 										class="cc-native-control cc-native-priority">
-										<label for="cc-priority"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t(
-													'communications',
-													'Priority (0–100)',
-												)
-											}}</label
-										>
+										<label for="cc-priority">{{
+											adminPriority0100Label
+										}}</label>
 										<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 										<NcTextField
 											id="cc-priority"
@@ -2925,14 +2971,9 @@ onMounted(async () => {
 											&& form.app_target_mode === 'area'
 										"
 										class="cc-native-control">
-										<label for="cc-placement"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t(
-													'communications',
-													'Where to display',
-												)
-											}}</label
-										>
+										<label for="cc-placement">{{
+											adminWhereToDisplayLabel
+										}}</label>
 										<NcSelect
 											v-model="form.placement"
 											:options="placementOptions"
@@ -2947,14 +2988,9 @@ onMounted(async () => {
 											)
 										"
 										class="cc-native-control">
-										<label for="cc-frequency"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t(
-													'communications',
-													'Frequency limit',
-												)
-											}}</label
-										>
+										<label for="cc-frequency">{{
+											adminFrequencyLimitLabel
+										}}</label>
 										<NcSelect
 											v-model="form.frequency"
 											:options="frequencyOptions"
@@ -2972,14 +3008,9 @@ onMounted(async () => {
 											!== 'nextcloud.page.opened'
 									"
 									class="cc-native-control cc-app-targeting">
-									<label for="cc-app-target-mode"
-										><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t(
-												'communications',
-												'Where to display the publication',
-											)
-										}}</label
-									>
+									<label for="cc-app-target-mode">{{
+										adminWhereToDisplayThePublicationLabel
+									}}</label>
 									<NcSelect
 										v-model="form.app_target_mode"
 										:options="targetModeOptions"
@@ -2992,14 +3023,9 @@ onMounted(async () => {
 											|| form.app_target_mode === 'exclude'
 										"
 										class="cc-native-control">
-										<label for="cc-app-target-apps"
-											><!-- TRANSLATORS Descriptive message shown in the publications management screen. -->{{
-												t(
-													'communications',
-													'Included or excluded applications *',
-												)
-											}}</label
-										>
+										<label for="cc-app-target-apps">{{
+											adminIncludedOrExcludedApplicationsLabel
+										}}</label>
 										<!-- TRANSLATORS Action or instruction in the publications management screen. -->
 										<NcSelect
 											v-model="form.app_target_apps"
@@ -3104,11 +3130,9 @@ onMounted(async () => {
 								</div>
 								<div class="cc-native-pair">
 									<div class="cc-native-control">
-										<label for="cc-category"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t('communications', 'Category')
-											}}</label
-										>
+										<label for="cc-category">{{
+											adminCategoryLabel
+										}}</label>
 										<NcSelect
 											v-model="form.category"
 											:options="categoryOptions"
@@ -3119,11 +3143,9 @@ onMounted(async () => {
 									<div
 										v-if="form.presentation === 'modal'"
 										class="cc-native-control">
-										<label for="cc-theme"
-											><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-												t('communications', 'Visual theme')
-											}}</label
-										>
+										<label for="cc-theme">{{
+											adminVisualThemeLabel
+										}}</label>
 										<NcSelect
 											v-model="form.theme"
 											:options="themeOptions"
@@ -3164,11 +3186,9 @@ onMounted(async () => {
 										clearable />
 								</div>
 								<div class="cc-native-control">
-									<label for="cc-publish"
-										><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t('communications', 'Publication status')
-										}}</label
-									>
+									<label for="cc-publish">{{
+										adminPublicationStatusLabel
+									}}</label>
 									<NcSelect
 										v-model="form.status"
 										:options="publishOptions"
@@ -3178,18 +3198,10 @@ onMounted(async () => {
 								</div>
 							</section>
 							<NcNoteCard type="info" class="cc-wizard-review-note">
-								<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->
-								<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->
 								{{
 									form.status === 'active'
-										? t(
-												'communications',
-												'The publication will become active according to the configured schedule and rules.',
-											)
-										: t(
-												'communications',
-												'While draft or paused, this publication will not be displayed or sent.',
-											)
+										? adminThePublicationWillBecomeActiveHint
+										: adminWhileDraftOrPausedThisHint
 								}}
 							</NcNoteCard>
 						</div>
@@ -3209,12 +3221,7 @@ onMounted(async () => {
 								<span
 									v-if="wizardStep === 1 && !canContinue"
 									class="cc-wizard-required-hint"
-									><!-- TRANSLATORS Action or instruction in the publications management screen. -->{{
-										t(
-											'communications',
-											'Choose a valid condition to continue.',
-										)
-									}}</span
+									>{{ adminChooseAValidConditionToLabel }}</span
 								>
 								<NcButton
 									v-if="wizardStep < 3"
@@ -3222,16 +3229,14 @@ onMounted(async () => {
 									:text="nextStepLabel"
 									:disabled="!canContinue"
 									@click="continueWizard" />
-								<!-- TRANSLATORS Progress indicator shown in the publications management screen. -->
-								<!-- TRANSLATORS Action or instruction in the publications management screen. -->
 								<NcButton
 									v-else
 									variant="primary"
 									:disabled="saving"
 									:text="
 										saving
-											? t('communications', 'Saving…')
-											: t('communications', 'Save publication')
+											? adminSavingLabel
+											: adminSavePublicationLabel
 									"
 									@click="save" />
 							</div>
@@ -3267,9 +3272,7 @@ onMounted(async () => {
 										:path="mdiAccountGroupOutline"
 										:size="17" />
 									<dt>
-										<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-											t('communications', 'For whom')
-										}}
+										{{ adminForWhomLabel }}
 									</dt>
 									<dd>{{ audienceReview }}</dd>
 								</div>
@@ -3320,8 +3323,8 @@ onMounted(async () => {
 								<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 								{{
 									form.presentation === 'none'
-										? t('communications', 'Message preview')
-										: t('communications', 'Preview')
+										? adminMessagePreviewTitleLabel
+										: adminPreviewTitleLabel
 								}}
 							</h2>
 							<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
@@ -3388,9 +3391,8 @@ onMounted(async () => {
 											? { textAlign: form.text_align }
 											: undefined
 									"
-									><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-										form.headline
-										|| t('communications', 'Publication title')
+									>{{
+										form.headline || adminPublicationTitleLabel
 									}}</strong
 								>
 								<div
@@ -3431,14 +3433,12 @@ onMounted(async () => {
 									)
 								}}
 							</p>
-							<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
-							<!-- TRANSLATORS Short label for an option or field in the publications management screen. -->
 							<NcButton
 								wide
 								:text="
 									form.presentation === 'none'
-										? t('communications', 'Preview message')
-										: t('communications', 'Test presentation')
+										? adminPreviewMessageLabel
+										: adminTestPresentationLabel
 								"
 								:disabled="
 									!form.headline.trim() || !form.message.trim()
@@ -3509,7 +3509,7 @@ onMounted(async () => {
 
 	<NcDialog
 		v-model:open="metricsOpen"
-		:name="'Resultados: ' + (metricsCampaign?.name || '')"
+		:name="metricsDialogName"
 		size="normal"
 		container="body">
 		<div class="cc-native-metrics">
@@ -3523,42 +3523,24 @@ onMounted(async () => {
 				}}
 			</p>
 			<p v-if="metricsLoading">
-				<!-- TRANSLATORS Progress indicator shown in the publications management screen. -->{{
-					t('communications', 'Loading…')
-				}}
+				{{ adminLoadingLabel }}
 			</p>
 			<div v-else-if="metricsData" class="cc-native-metrics-grid">
 				<section>
 					<strong>{{ metricsData.estimatedImpressions }}</strong
-					><span
-						><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-							t('communications', 'Estimated impressions')
-						}}</span
-					>
+					><span>{{ adminEstimatedImpressionsLabel }}</span>
 				</section>
 				<section>
 					<strong>{{ metricsData.clicks }}</strong
-					><span
-						><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-							t('communications', 'Clicks')
-						}}</span
-					>
+					><span>{{ adminClicksLabel }}</span>
 				</section>
 				<section>
 					<strong>{{ metricsData.dismissals }}</strong
-					><span
-						><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-							t('communications', 'Dismissals')
-						}}</span
-					>
+					><span>{{ adminDismissalsLabel }}</span>
 				</section>
 				<section>
 					<strong>{{ metricsData.queuedOrClaimed }}</strong
-					><span
-						><!-- TRANSLATORS Short label for an option or field in the publications management screen. -->{{
-							t('communications', 'Queued or reserved deliveries')
-						}}</span
-					>
+					><span>{{ adminQueuedOrReservedDeliveriesLabel }}</span>
 				</section>
 			</div>
 			<!-- TRANSLATORS Close the current preview or dialog. -->
@@ -3618,16 +3600,7 @@ onMounted(async () => {
 		size="small"
 		container="body">
 		<p>
-			<!-- TRANSLATORS Action or instruction in the publications management screen. -->
-			{{ t('communications', 'Archive “')
-			}}{{
-				archiveTarget?.name
-			}}<!-- TRANSLATORS Descriptive message shown in the publications management screen. -->{{
-				t(
-					'communications',
-					'”? It will no longer be displayed and can be restored later.',
-				)
-			}}
+			{{ archiveConfirmationMessage }}
 		</p>
 		<template #actions>
 			<!-- TRANSLATORS Dismiss the current editor or confirmation dialog without saving. -->

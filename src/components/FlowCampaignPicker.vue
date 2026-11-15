@@ -46,15 +46,18 @@ onMounted(async () => {
 		loading.value = false
 	}
 })
+
+// TRANSLATORS Short label for an option or field in the Flow campaign selector.
+const flowCampaignToDisplayLabel = t('communications', 'Campaign to display')
+// TRANSLATORS Progress indicator shown in the Flow campaign selector.
+const flowLoadingCampaignsLabel = t('communications', 'Loading campaigns…')
 </script>
 
 <template>
 	<div class="cc-flow-picker" data-testid="flow-campaign-picker">
-		<label class="cc-flow-picker-label" for="cc-flow-picker-select"
-			><!-- TRANSLATORS Short label for an option or field in the Flow campaign selector. -->{{
-				t('communications', 'Campaign to display')
-			}}</label
-		>
+		<label class="cc-flow-picker-label" for="cc-flow-picker-select">{{
+			flowCampaignToDisplayLabel
+		}}</label>
 		<p class="cc-flow-picker-hint">
 			<!-- TRANSLATORS Action or instruction in the Flow campaign selector. -->
 			{{
@@ -65,9 +68,7 @@ onMounted(async () => {
 			}}
 		</p>
 		<p v-if="loading">
-			<!-- TRANSLATORS Progress indicator shown in the Flow campaign selector. -->{{
-				t('communications', 'Loading campaigns…')
-			}}
+			{{ flowLoadingCampaignsLabel }}
 		</p>
 		<NcNoteCard v-else-if="loadError" type="error">{{ loadError }}</NcNoteCard>
 		<NcNoteCard v-else-if="!options.length" type="info">

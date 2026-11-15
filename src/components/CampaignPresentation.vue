@@ -71,6 +71,12 @@ function optout() {
 function updateOpen(open: boolean): void {
 	if (!open) close()
 }
+
+// TRANSLATORS Descriptive message shown in the contextual announcement presentation.
+const presentationTestModeNoInteractionIsLabel = t(
+	'communications',
+	'Test mode. No interaction is recorded.',
+)
 </script>
 
 <template>
@@ -92,11 +98,9 @@ function updateOpen(open: boolean): void {
 				inline />
 			<span v-else class="cc-note-empty-icon" aria-hidden="true"></span>
 		</template>
-		<span v-if="preview" class="cc-preview-screenreader-note"
-			><!-- TRANSLATORS Descriptive message shown in the contextual announcement presentation. -->{{
-				t('communications', 'Test mode. No interaction is recorded.')
-			}}</span
-		>
+		<span v-if="preview" class="cc-preview-screenreader-note">{{
+			presentationTestModeNoInteractionIsLabel
+		}}</span>
 		<!-- TRANSLATORS Label identifying a promotional announcement. -->
 		<p v-if="sponsored" class="cc-sponsored-label">
 			{{ t('communications', 'Sponsored content') }}
@@ -144,11 +148,9 @@ function updateOpen(open: boolean): void {
 			<p v-if="sponsored" class="cc-sponsored-label">
 				{{ t('communications', 'Sponsored content') }}
 			</p>
-			<span v-if="preview" class="cc-preview-screenreader-note"
-				><!-- TRANSLATORS Descriptive message shown in the contextual announcement presentation. -->{{
-					t('communications', 'Test mode. No interaction is recorded.')
-				}}</span
-			>
+			<span v-if="preview" class="cc-preview-screenreader-note">{{
+				presentationTestModeNoInteractionIsLabel
+			}}</span>
 			<NcRichText :text="message" :use-markdown="true" :reference-limit="0" />
 			<div class="cc-live-actions">
 				<NcButton

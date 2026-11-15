@@ -281,6 +281,33 @@ onMounted(async () => {
 	window.addEventListener('popstate', onPopState)
 })
 onUnmounted(() => window.removeEventListener('popstate', onPopState))
+
+// TRANSLATORS Availability indicator when a messaging provider app is absent.
+const boardAppNotInstalledLabel = t('communications', 'App not installed')
+// TRANSLATORS Availability indicator when an installed messaging provider still needs setup.
+const boardProviderNotConfiguredLabel = t(
+	'communications',
+	'Provider not configured',
+)
+// TRANSLATORS Availability indicator when a messaging provider is configured for the current user.
+const boardConfiguredLabel = t('communications', 'Configured')
+// TRANSLATORS Short label for an option or field in the Communications message Inbox.
+const boardContextualNoticeLabel = t('communications', 'Contextual notice')
+
+// TRANSLATORS Empty-state description for filtered Inbox messages.
+const boardYouHaveNoMessagesMatchingLabel = t(
+	'communications',
+	'You have no messages matching this filter.',
+)
+// TRANSLATORS Empty-state title when no Inbox messages match a filter.
+const boardNoMessagesFoundLabel = t('communications', 'No messages found')
+// TRANSLATORS Placeholder explaining mentions in the Inbox comment editor.
+const boardWriteYourCommentUseIdentifierHint = t(
+	'communications',
+	'Write your comment. Use @identifier to mention someone.',
+)
+// TRANSLATORS Label for the Inbox comment editor.
+const boardWriteACommentLabel = t('communications', 'Write a comment')
 </script>
 
 <template>
@@ -360,18 +387,13 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							{{ channel.label }}
 						</NcCheckboxRadioSwitch>
 						<!-- TRANSLATORS Messaging provider is set up and available for this user. -->
-						<span
-							><!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. --><!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->{{
-								channel.available
-									? t('communications', 'Configured')
-									: channel.installed
-										? t(
-												'communications',
-												'Provider not configured',
-											)
-										: t('communications', 'App not installed')
-							}}</span
-						>
+						<span>{{
+							channel.available
+								? boardConfiguredLabel
+								: channel.installed
+									? boardProviderNotConfiguredLabel
+									: boardAppNotInstalledLabel
+						}}</span>
 					</div>
 					<template v-if="channel.enabled">
 						<NcTextField
@@ -466,17 +488,10 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 					<!-- TRANSLATORS Progress indicator shown in the Communications message Inbox. -->
 					{{ t('communications', 'Loading messages…') }}
 				</p>
-				<!-- TRANSLATORS Empty state or unavailable-condition message in the Communications message Inbox. -->
-				<!-- TRANSLATORS Descriptive message shown in the Communications message Inbox. -->
 				<NcEmptyContent
 					v-else-if="items.length === 0"
-					:name="t('communications', 'No messages found')"
-					:description="
-						t(
-							'communications',
-							'You have no messages matching this filter.',
-						)
-					" />
+					:name="boardNoMessagesFoundLabel"
+					:description="boardYouHaveNoMessagesMatchingLabel" />
 				<div v-else class="cc-board-list">
 					<article
 						v-for="item in items"
@@ -504,9 +519,7 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 							<span
 								v-if="item.source === 'contextual'"
 								class="cc-board-chip"
-								><!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->{{
-									t('communications', 'Contextual notice')
-								}}</span
+								>{{ boardContextualNoticeLabel }}</span
 							>
 							<!-- TRANSLATORS Badge marking a promotional publication. -->
 							<span
@@ -625,19 +638,12 @@ onUnmounted(() => window.removeEventListener('popstate', onPopState))
 						}}{{ selected.commentCount }})
 					</h2>
 					<form @submit.prevent="sendComment">
-						<!-- TRANSLATORS Short label for an option or field in the Communications message Inbox. -->
-						<!-- TRANSLATORS Descriptive message shown in the Communications message Inbox. -->
 						<NcTextArea
 							v-model="commentDraft"
-							:label="t('communications', 'Write a comment')"
+							:label="boardWriteACommentLabel"
 							:maxlength="4000"
 							:rows="3"
-							:placeholder="
-								t(
-									'communications',
-									'Write your comment. Use @identifier to mention someone.',
-								)
-							" />
+							:placeholder="boardWriteYourCommentUseIdentifierHint" />
 						<!-- TRANSLATORS Submit a new comment to the announcement. -->
 						<NcButton
 							variant="primary"
